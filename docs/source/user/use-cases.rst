@@ -401,72 +401,38 @@ An instance of dSIPRouter can either be a single tenant configuration (like sbc.
 Steps to Implement
 ++++++++++++++++++
 
-1. `Buy a license <https://dopensource.com/dsiprouter-annual-subscriptions/>`_  and follow the license installation instructions that are emailed to you.
+Setup the Microsoft Portion of the Direct Routing Configuration
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+1. `Buy a license <https://dopensource.com/product/dsiprouter-subscription-monthly/>`_  and follow the license installation instructions that are emailed to you.
 2. Add any carriers you need for inbound and outbound routing, define appropriate routes.
 3. Authorize your SBC's domain with Microsoft 365 by adding a TXT record starting with ms= per `Microsoft's documentation <https://docs.microsoft.com/en-us/microsoft-365/admin/setup/add-domain?view=o365-worldwide>`_.
    Note: For multi-tenant use, authorizing the root subdomain or domain (if you use *.sbc.example.com, you would authorize sbc.example.com) should avoid the need to authorize each subdomain below this (like clientname.example.com)
 4. Create a global admin user with proper Teams licensing associated with the domain (or for multi-tenant both the root subdomain (eg: sbc.example.com) and client's domain (eg: client.sbc.example.com))
-5. Add the Teams session border controller in `Teams Admin Center <https://admin.teams.microsoft.com/direct-routing/v2>`_. Ensure the SIP port is correct (usually 5061) and the SBC is enabled!
-6. `Install PowerShell <https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-linux>`_ type pwsh then:
+5. Add the dSIPRouter host as the session border controller in `Teams Admin Center <https://admin.teams.microsoft.com/direct-routing/v2>`_. Ensure the SIP port is correct (usually 5061) and the SBC is enabled!
 
-.. code-block:: powershell
 
-	Install-Module -Name MicrosoftTeams
-	Import-Module MicrosoftTeams
-	$userCredential = Get-Credential
-	Connect-MicrosoftTeams -Credential $userCredential
+Setup the dSIPRouter Portion of the Direct Routing Configuration
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   
 
-*Login Note*:
+1. Login to dSIPRouter
+2. Click on Domains
+3. Click Add
+4. Enter the domain name that matches the SBC domain you registered with Microsoft (eg: sbc.example.com)
+5. Select "Microsoft Teams Direct Routing" as the Domain Type
 
-If your using multi-factor authentication (MFA/2FA), log in by typing Connect-MicrosoftTeams
+.. image:: images/direct-routing-add-domain.png
+    :align: center
 
-*Debian 10 Note*:
+6. Click Add
+7. Click Reload to apply the changes
+8. Click on the yellow rocket ship icon to test
 
-If you run into `this OpenSSL issue <https://github.com/PowerShell/PowerShell/issues/12202>`_ , here is `a workaround <https://github.com/PowerShell/PowerShell/issues/12202#issuecomment-720402212>`_!
-**Replace sbc.example.com, user@example.com and +13137175555** with your SBC's FQDN, the user's email address and their phone number (with + then country code, use +1 if you are in the North American Numbering Plan)
+.. image:: images/direct-routing-test.png
+    :align: center
 
-.. code-block:: powershell
+9. If the test is successful, you should see a green check mark.  If not, you will see gray X's indicating what failed.  
 
-	Set-CsOnlinePstnUsage -Identity Global -Usage @{Add="US and Canada"}
-	Set-CsOnlineVoiceRoute -Identity "LocalRoute" -NumberPattern ".*" -OnlinePstnGatewayList sbc.example.com
-	New-CsOnlineVoiceRoutingPolicy "US Only" -OnlinePstnUsages "US and Canada"
-
-	# This is suppose to stop MSTeams from using the Microsoft Dialing Plan and using the routing policies that was defined above
-	Set-CsTenantHybridConfiguration -UseOnPremDialPlan $False
-
-	# Apply and the US Only Voice Routing Policy to the user
-	Grant-CsOnlineVoiceRoutingPolicy -Identity “user@example.com“ -PolicyName "US Only"
-
-	# If it doesn’t return a value of US Only, then wait 15 minutes and try it again.  It sometime takes a while for the policy to be ready.
-	Get-CsOnlineUser “user@example.com" | select OnlineVoiceRoutingPolicy
-
-	# Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail
-	Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled $true -HostedVoiceMail $true
-
-*Note*: Log out by typing ``Disconnect-MicrosoftTeams``
-
-Credits to Mack at dSIPRouter for the SkypeForBusiness script and `this blog post <https://seanmcavinue.net/2021/04/20/configure-teams-direct-routing-simple-deployment-via-powershell/>`_ for helping me update these commands for the new MicrosoftTeams PowerShell module.
-
-Add a single Teams User
-+++++++++++++++++++++++
-
-If you have an existing dSIPRouter SBC configured in Teams and have added a DID as an inbound route already, then run the commands below in PowerShell to add an additional user.
-
-**Replace user@example.com and +13137175555** with your SBC's FQDN, the user's email address and their phone number (with + then country code, use +1 if you are in the North American Numbering Plan)
-
-.. code-block:: powershell
-
-	# Get Credentials, if using MFA/2FA just run Connect-MicrosoftTeams
-	$userCredential = Get-Credential
-	Connect-MicrosoftTeams -Credential $userCredential
-
-	# Apply and the US Only Voice Routing Policy to the user
-	Grant-CsOnlineVoiceRoutingPolicy -Identity “user@example.com“ -PolicyName "US Only"
-
-	# Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail
-	Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled $true -HostedVoiceMail $true
-
-*Note*: Log out by typing ``Disconnect-MicrosoftTeams``
 
 Configure STIR/SHAKEN (SUBSCRIPTION REQUIRED)
 ---------------------------------------------
