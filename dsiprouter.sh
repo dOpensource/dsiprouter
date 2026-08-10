@@ -1161,7 +1161,7 @@ function updateKamailioStartup {
 function generateRtpengineConfig() {
     mkdir -p ${BACKUPS_DIR}/rtpengine/
     cp -af ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/. ${BACKUPS_DIR}/rtpengine/ 2>/dev/null
-    #cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/rtpengine.conf ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/rtpengine.conf ${SYSTEM_RTPENGINE_CONFIG_DIR}/
     rm -rf ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/rtpengine.conf
     ln -sf ${SYSTEM_RTPENGINE_CONFIG_DIR}/rtpengine.conf ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/rtpengine.conf
 }
