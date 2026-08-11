@@ -37,6 +37,12 @@ def init_db(mapper,dbengine):
         if 'container_port_mapped' not in existing_columns:
             with dbengine.begin() as conn:
                 conn.execute(text("ALTER TABLE dsip_agent ADD COLUMN container_port_mapped VARCHAR(64) NOT NULL DEFAULT ''"))
+        if 'agent_services_api_key' not in existing_columns:
+            with dbengine.begin() as conn:
+                # DEFAULT '' backfills existing rows, then drop it so upgraded
+                # installs match what create_all() builds on a fresh install
+                conn.execute(text("ALTER TABLE dsip_agent ADD COLUMN agent_services_api_key VARCHAR(255) NOT NULL DEFAULT ''"))
+                conn.execute(text("ALTER TABLE dsip_agent ALTER COLUMN agent_services_api_key DROP DEFAULT"))
         if 'container_port_exposed' in existing_columns:
             with dbengine.begin() as conn:
                 conn.execute(text("UPDATE dsip_agent SET container_port_mapped = container_port_exposed WHERE container_port_mapped = ''"))
