@@ -80,7 +80,7 @@ def _infer_container_port(container):
 
 
 class VoiceAgentContainer(dockerContainer):
-    def __init__(self, agent_name, image_name=None,container_name=None, agent_instructions=None, agent_api_key=None, webhook_secret=None, tools_api_keys=None, callback_email=None, greeting_message=None):
+    def __init__(self, agent_name, image_name=None,container_name=None, agent_instructions=None, agent_api_key=None, webhook_secret=None, tools_api_keys=None, callback_email=None, greeting_message=None, agent_services_api_key=None):
         self.agent_name = agent_name
         self.image_name = image_name or settings.VOICEAI_AGENT_IMAGE
         self.container_name = container_name
@@ -92,6 +92,7 @@ class VoiceAgentContainer(dockerContainer):
         self.tools_api_keys = tools_api_keys
         self.callback_email = callback_email
         self.greeting_message = greeting_message
+        self.agent_services_api_key = agent_services_api_key
 
         env = {
             'AGENT_NAME': self.agent_name, 
@@ -101,8 +102,9 @@ class VoiceAgentContainer(dockerContainer):
             'WEBHOOK_SECRET': self.webhook_secret or '',
             'OPENAI_WEBHOOK_SECRET': self.webhook_secret or '',
             'TOOLS_API_KEYS': self.tools_api_keys or '',
-            'CALLBACK_EMAIL': self.callback_email or '',
-            'AGENT_GREETING_MESSAGE': self.greeting_message or ''
+            'AGENT_CALLBACK_EMAIL': self.callback_email or '',
+            'AGENT_GREETING_MESSAGE': self.greeting_message or '',
+            'AGENT_SERVICES_API_KEY': self.agent_services_api_key or ''
             }
 
         # Let Docker auto-assign an available host port for container port 9000/tcp.
@@ -124,7 +126,8 @@ class VoiceAgentContainer(dockerContainer):
             'webhook_secret': self.webhook_secret,
             'tools_api_keys': self.tools_api_keys,
             'callback_email': self.callback_email,
-            'greeting_message': self.greeting_message
+            'greeting_message': self.greeting_message,
+            'agent_services_api_key': self.agent_services_api_key
         }
     
     def start(self):
@@ -185,6 +188,7 @@ def _map_payload_to_agent(payload):
     mapped['did_mapping'] = payload.get('agent-did-mapping', payload.get('did_mapping', payload.get('did_mappings', '')))
     mapped['deployment_type'] = payload.get('agent-deployment-type', payload.get('deployment_type', ''))
     mapped['deployment_profile_id'] = payload.get('agent-deployment-profile-id', payload.get('deployment_profile_id', 0)) or 0
+    mapped['agent_services_api_key'] = payload.get('agent-services-api-key', payload.get('agent_services_api_key', ''))
     return mapped
 
 
@@ -352,6 +356,7 @@ def create_agent():
             tools=mapped.get('tools', ''),
             callback_email=mapped.get('callback_email', ''),
             webhook_secret=mapped.get('webhook_secret', ''),
+            agent_services_api_key=mapped.get('agent_services_api_key', ''),
             did_mapping=mapped.get('did_mapping', ''),
             deployment_type=mapped.get('deployment_type', ''),
             deployment_profile_id=int(mapped.get('deployment_profile_id', 0)),
@@ -426,7 +431,7 @@ def control_agent(agent_id, control):
         if control == 'start':
             # Placeholder for starting the agent
             print(f"Starting agent: {agent.name}")
-            va = VoiceAgentContainer(agent_name=agent.name, container_name=agent.container_name, image_name=agent.image_name, agent_instructions=agent.instructions, tools_api_keys=agent.tools, callback_email=agent.callback_email, greeting_message=agent.greeting_message,webhook_secret=agent.webhook_secret)
+            va = VoiceAgentContainer(agent_name=agent.name, container_name=agent.container_name, image_name=agent.image_name, agent_instructions=agent.instructions, tools_api_keys=agent.tools, callback_email=agent.callback_email, greeting_message=agent.greeting_message,webhook_secret=agent.webhook_secret, agent_services_api_key=agent.agent_services_api_key)
             if va.start():
                 agent.status = 1
                 agent.container_port = getattr(va, 'container_port', '')

@@ -54,6 +54,7 @@ CREATE TABLE `dsip_agent` (
   `status` int(11) NOT NULL,
   `error` varchar(200) NOT NULL,
   `webhook_secret` varchar(255) NOT NULL,
+  `agent_services_api_key` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
