@@ -51,10 +51,12 @@ class dSIPAgent(Base):
     status = Column(Integer, nullable=False, default=0)
     error = Column(String(200), nullable=False, default='')
     webhook_secret = Column('webhook_secret', String(255), nullable=False, default='')
+    # optional; passed to the container as AGENT_SERVICES_API_KEY
+    agent_services_api_key = Column('agent_services_api_key', String(255), nullable=False, default='')
 
     def __init__(self, name, type, project_id, greeting_message, instructions,
                  instructions_id=0, guardrails='', tools='', callback_email='',
-                 training_website='', did_mapping='', deployment_type='', deployment_profile_id=0, status=0, error='', image_name=settings.VOICEAI_AGENT_IMAGE,webhook_secret="", container_port='', container_port_mapped=''):
+                 training_website='', did_mapping='', deployment_type='', deployment_profile_id=0, status=0, error='', image_name=settings.VOICEAI_AGENT_IMAGE,webhook_secret="", container_port='', container_port_mapped='', agent_services_api_key=''):
         self.name = name
         self.type = type
         self.project_id = project_id
@@ -75,6 +77,7 @@ class dSIPAgent(Base):
         self.status = status
         self.error = error
         self.webhook_secret = webhook_secret
+        self.agent_services_api_key = agent_services_api_key
 
     def to_dict(self):
         """Return a plain dict representation of this object (simple fields)."""
@@ -100,7 +103,8 @@ class dSIPAgent(Base):
             'status': self.status,
             'error': self.error,
             'image': self.image,
-            'webhook_secret': self.webhook_secret
+            'webhook_secret': self.webhook_secret,
+            'agent_services_api_key': self.agent_services_api_key
         }
 
 
