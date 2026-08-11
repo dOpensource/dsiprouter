@@ -80,6 +80,7 @@
     requestPayload.webhook_secret = modal_body.find("input#webhook_secret").val();
     requestPayload.tools = modal_body.find("select#toolchain").val();
     requestPayload.callback_email = modal_body.find("input#callback_email").val();
+    requestPayload.greeting_message = modal_body.find("input#greeting_message").val();
     requestPayload.instructions = modal_body.find("textarea#agent_instructions").val();
     
     
@@ -323,6 +324,7 @@ function deleteEntity(id) {
       edit_modal_body.find('select#predefined_instructions').val(data.instructions_id || '');
       edit_modal_body.find('select#toolchain').val(data.tools || []);
       edit_modal_body.find('input#callback_email').val(data.callback_email || '');
+      edit_modal_body.find('input#greeting_message').val(data.greeting_message || '');
       edit_modal_body.find('textarea#agent_instructions').val(data.instructions || '');
     });
 

@@ -102,7 +102,7 @@ class VoiceAgentContainer(dockerContainer):
             'OPENAI_WEBHOOK_SECRET': self.webhook_secret or '',
             'TOOLS_API_KEYS': self.tools_api_keys or '',
             'CALLBACK_EMAIL': self.callback_email or '',
-            'GREETING_MESSAGE': self.greeting_message or ''
+            'AGENT_GREETING_MESSAGE': self.greeting_message or ''
             }
 
         # Let Docker auto-assign an available host port for container port 9000/tcp.
