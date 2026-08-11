@@ -148,13 +148,19 @@ class VoiceAgentContainer(dockerContainer):
         # Placeholder for stopping the agent
         print(f"Stopping agent: {self.agent_name}")
         try:
-            super().stop()
-            
-            return True
+            return super().stop()
         except Exception as e:
             print(f"Error stopping agent {self.agent_name}: {e}")
             return False
-        # Here you would add the logic to gracefully stop the agent and clean up resources   
+        # Here you would add the logic to gracefully stop the agent and clean up resources
+
+    def remove(self):
+        print(f"Removing agent: {self.agent_name}")
+        try:
+            return super().remove()
+        except Exception as e:
+            print(f"Error removing agent {self.agent_name}: {e}")
+            return False
 
     
 
@@ -477,6 +483,15 @@ def delete_agent(agent_id):
         agent = db.query(dSIPAgent).filter(dSIPAgent.id == agent_id).first()
         if agent is None:
             raise http_exceptions.NotFound('Agent not found')
+
+        # Stop and remove the container before dropping the record, otherwise the agent
+        # keeps running and taking calls with nothing left in the GUI to manage it
+        print(f"Stopping agent before delete: {agent.name}")
+        va = VoiceAgentContainer(agent_name=agent.name, container_name=agent.container_name, image_name=agent.image_name, agent_instructions=agent.instructions, tools_api_keys=agent.tools, callback_email=agent.callback_email, greeting_message=agent.greeting_message)
+        if not va.stop():
+            raise http_exceptions.InternalServerError(f'Could not stop container for agent {agent.name}, agent not deleted')
+        if not va.remove():
+            raise http_exceptions.InternalServerError(f'Could not remove container for agent {agent.name}, agent not deleted')
 
         db.delete(agent)
         db.flush()

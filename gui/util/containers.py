@@ -39,10 +39,28 @@ class dockerContainer:
             container.stop()
             self.container = container
             print(f"Container '{self.container_name}' stopped successfully.")
+            return True
         except docker.errors.NotFound:
             print(f"Container '{self.container_name}' does not exist.")
+            return True
         except docker.errors.APIError as e:
             print(f"Error stopping container '{self.container_name}': {e}")
+            return False
+
+    def remove(self):
+        try:
+            container = self.container or self.client.containers.get(self.container_name)
+            container.remove(force=True)
+            self.container = None
+            print(f"Container '{self.container_name}' removed successfully.")
+            return True
+        except docker.errors.NotFound:
+            print(f"Container '{self.container_name}' does not exist.")
+            self.container = None
+            return True
+        except docker.errors.APIError as e:
+            print(f"Error removing container '{self.container_name}': {e}")
+            return False
 
     def restart(self):
         if self.container:
