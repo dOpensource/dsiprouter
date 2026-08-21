@@ -38,6 +38,44 @@ Revoking and replacing with your own lease ID
 
     curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X PUT "https://$DSIP_HOSTNAME:5000/api/v1/endpoint/lease/1/revoke"
 
+Executing Outbound Routes API
+-----------------------------
+
+List all outbound routes (both simple and LCR):
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X GET https://$DSIP_HOSTNAME:5000/api/v1/outboundroutes
+
+Create a simple outbound route (matches a To-Prefix to a carrier group):
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" \
+         -X POST -d '{"name":"My Route","prefix":"1","gwgroupid":"2"}' \
+         https://$DSIP_HOSTNAME:5000/api/v1/outboundroutes
+
+Create an LCR (From-Prefix) outbound route. The presence of ``from_prefix`` promotes the rule to LCR routing and auto-allocates a dynamic groupid in ``[FLT_LCR_MIN, FLT_FWD_MIN)``:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" \
+         -X POST -d '{"name":"313 to ATT","from_prefix":"313","prefix":"1","gwgroupid":"2"}' \
+         https://$DSIP_HOSTNAME:5000/api/v1/outboundroutes
+
+Update a route (any subset of fields). Sending ``"from_prefix": ""`` demotes an LCR route back to simple:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" \
+         -X PUT -d '{"priority":5}' https://$DSIP_HOSTNAME:5000/api/v1/outboundroutes/<ruleid>
+
+Delete a route (paired ``dsip_lcr`` row, if any, is removed automatically):
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X DELETE https://$DSIP_HOSTNAME:5000/api/v1/outboundroutes/<ruleid>
+
 Further Reading
 +++++++++++++++
 

@@ -451,6 +451,127 @@
 			]
 		},
 		{
+			"name": "outboundroutes",
+			"item": [
+				{
+					"name": "/api/v1/outboundroutes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/outboundroutes",
+							"protocol": "https",
+							"host": [ "{{DSIP_ADDR}}" ],
+							"port": "5000",
+							"path": [ "api", "v1", "outboundroutes" ]
+						},
+						"description": "List all outbound routes (simple and LCR)"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/outboundroutes/<int ruleid>",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/outboundroutes/1",
+							"protocol": "https",
+							"host": [ "{{DSIP_ADDR}}" ],
+							"port": "5000",
+							"path": [ "api", "v1", "outboundroutes", "1" ]
+						},
+						"description": "Get a single outbound route by ruleid"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/outboundroutes (simple)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My Outbound Route\",\n    \"prefix\": \"1\",\n    \"gwgroupid\": \"2\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/outboundroutes",
+							"protocol": "https",
+							"host": [ "{{DSIP_ADDR}}" ],
+							"port": "5000",
+							"path": [ "api", "v1", "outboundroutes" ]
+						},
+						"description": "Create a simple outbound route (no from_prefix); groupid=FLT_OUTBOUND (8000)"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/outboundroutes (LCR)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"313 to ATT\",\n    \"from_prefix\": \"313\",\n    \"prefix\": \"1\",\n    \"gwgroupid\": \"2\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/outboundroutes",
+							"protocol": "https",
+							"host": [ "{{DSIP_ADDR}}" ],
+							"port": "5000",
+							"path": [ "api", "v1", "outboundroutes" ]
+						},
+						"description": "Create an LCR outbound route (with from_prefix); allocates a dynamic groupid in [FLT_LCR_MIN, FLT_FWD_MIN) and writes a paired dsip_lcr row"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/outboundroutes/<int ruleid>",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"priority\": 5\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/outboundroutes/1",
+							"protocol": "https",
+							"host": [ "{{DSIP_ADDR}}" ],
+							"port": "5000",
+							"path": [ "api", "v1", "outboundroutes", "1" ]
+						},
+						"description": "Update an outbound route. Send 'from_prefix' to promote/update LCR; send empty 'from_prefix' to demote LCR -> simple."
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/outboundroutes/<int ruleid>",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/outboundroutes/1",
+							"protocol": "https",
+							"host": [ "{{DSIP_ADDR}}" ],
+							"port": "5000",
+							"path": [ "api", "v1", "outboundroutes", "1" ]
+						},
+						"description": "Delete an outbound route. Any paired dsip_lcr row is removed automatically."
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "leases",
 			"item": [
 				{

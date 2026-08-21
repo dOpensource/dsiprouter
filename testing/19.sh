@@ -174,6 +174,144 @@ validate() {
     [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${temp_token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping" -o /dev/null) -eq 200 ] && return 1
 
 
+    # =====================================================================
+    # Outbound Routes API tests (issue #686) -- 29 cases, exact-code checks
+    # =====================================================================
+    outbound_flag=$(getConfigAttrib 'FLT_OUTBOUND' ${DSIP_CONFIG_FILE})
+    lcr_min=$(getConfigAttrib 'FLT_LCR_MIN' ${DSIP_CONFIG_FILE})
+    lcr_max=$(getConfigAttrib 'FLT_FWD_MIN' ${DSIP_CONFIG_FILE})
+
+    # local helper functions to keep curl/mysql boilerplate readable
+    myql() {
+        mysql --user="${kam_db_user}" --password="${kam_db_pass}" \
+              --host="${kam_db_host}" --port="${kam_db_port}" \
+              --database="${kam_db_name}" -sN "$@"
+    }
+    curlc() {
+        curl -s --connect-timeout 3 -H "Authorization: Bearer ${temp_token}" \
+             -H 'Content-Type: application/json' -w '%{http_code}' -o /dev/null "$@"
+    }
+    curlb() {
+        curl -s --connect-timeout 3 -H "Authorization: Bearer ${temp_token}" \
+             -H 'Content-Type: application/json' "$@"
+    }
+
+    # discover a real carrier-group id; default seed (kamailio/defaults/dr_rules.csv)
+    # always ships gwgroupid=2 via dsiprouter.sh install
+    test_gwgroupid=$(myql -e "SELECT id FROM dr_gw_lists WHERE description REGEXP 'name:' LIMIT 1;")
+    [ -z "$test_gwgroupid" ] && test_gwgroupid=2
+
+    # ---------- Case 1: GET list (pre-seed): expect >=1 row (the default route)
+    default_count=$(curlb "$base_url/api/v1/outboundroutes" \
+        | python3 -c 'import sys,json;print(len(json.load(sys.stdin)["data"]))')
+    [ "$default_count" -lt 1 ] && return 1
+
+    # ---------- Seed: 1 simple test row + 1 LCR test row + paired dsip_lcr row
+    myql -e "INSERT INTO dr_rules VALUES (null,'$outbound_flag','55501','',0,'','#$test_gwgroupid','name:Test Outbound Simple Seed');" \
+         -e "INSERT INTO dr_rules VALUES (null,'$lcr_min','55502','',0,'','#$test_gwgroupid','name:Test Outbound LCR Seed');" \
+         -e "INSERT INTO dsip_lcr VALUES ('999313-55502','0','$lcr_min','0',0.00,'999313',0);"
+    simple_ruleid=$(myql -e "SELECT ruleid FROM dr_rules WHERE description='name:Test Outbound Simple Seed';")
+    lcr_ruleid=$(   myql -e "SELECT ruleid FROM dr_rules WHERE description='name:Test Outbound LCR Seed';")
+    if [ -z "$simple_ruleid" ] || [ -z "$lcr_ruleid" ]; then return 1; fi
+
+    # ---------- Case 2: GET list (post-seed): expect >=3 rows
+    post_count=$(curlb "$base_url/api/v1/outboundroutes" \
+        | python3 -c 'import sys,json;print(len(json.load(sys.stdin)["data"]))')
+    [ "$post_count" -lt 3 ] && return 1
+
+    # ---------- Cases 3-4: GET by path id (simple, LCR)
+    [ "$(curlc -X GET "$base_url/api/v1/outboundroutes/${simple_ruleid}")" -ne 200 ] && return 1
+    [ "$(curlc -X GET "$base_url/api/v1/outboundroutes/${lcr_ruleid}")"    -ne 200 ] && return 1
+    [ "$(curlb -X GET "$base_url/api/v1/outboundroutes/${lcr_ruleid}" \
+         | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"][0]["from_prefix"])')" != "999313" ] && return 1
+
+    # ---------- Case 5: GET by query id
+    [ "$(curlc -X GET "$base_url/api/v1/outboundroutes?ruleid=${simple_ruleid}")" -ne 200 ] && return 1
+
+    # ---------- Case 6: nonexistent -> 404
+    [ "$(curlc -X GET "$base_url/api/v1/outboundroutes/99999999")" -ne 404 ] && return 1
+
+    # ---------- Case 7: unknown query arg -> 400
+    [ "$(curlc -X GET "$base_url/api/v1/outboundroutes?doesntexist=1")" -ne 400 ] && return 1
+
+    # ---------- Case 8: POST simple route + DB asserts
+    new_simple_id=$(curlb -X POST "$base_url/api/v1/outboundroutes" \
+        -d "{\"name\":\"Test Outbound API Simple\",\"prefix\":\"55503\",\"gwgroupid\":\"${test_gwgroupid}\"}" \
+        | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"][0]["ruleid"])')
+    [ -z "$new_simple_id" ] && return 1
+    [ "$(myql -e "SELECT groupid FROM dr_rules WHERE ruleid=$new_simple_id;")" != "$outbound_flag" ] && return 1
+
+    # ---------- Case 9: POST LCR route + DB asserts
+    new_lcr_id=$(curlb -X POST "$base_url/api/v1/outboundroutes" \
+        -d "{\"name\":\"Test Outbound API LCR\",\"from_prefix\":\"999316\",\"prefix\":\"55504\",\"gwgroupid\":\"${test_gwgroupid}\"}" \
+        | python3 -c 'import sys,json;print(json.load(sys.stdin)["data"][0]["ruleid"])')
+    [ -z "$new_lcr_id" ] && return 1
+    db_lcr_groupid=$(myql -e "SELECT groupid FROM dr_rules WHERE ruleid=$new_lcr_id;")
+    [ "$db_lcr_groupid" -lt "$lcr_min" ] && return 1
+    [ "$db_lcr_groupid" -ge "$lcr_max" ] && return 1
+    [ "$(myql -e "SELECT COUNT(*) FROM dsip_lcr WHERE dr_groupid=$db_lcr_groupid AND from_prefix='999316' AND pattern='999316-55504';")" -ne 1 ] && return 1
+
+    # ---------- Cases 10-14: validation errors -> 400
+    [ "$(curlc -X POST "$base_url/api/v1/outboundroutes" -d '{"prefix":"1"}')"                                                                       -ne 400 ] && return 1
+    [ "$(curlc -X POST "$base_url/api/v1/outboundroutes" -d '{"prefix":"1","gwgroupid":"0"}')"                                                       -ne 400 ] && return 1
+    [ "$(curlc -X POST "$base_url/api/v1/outboundroutes" -d "{\"prefix\":\"1\",\"gwgroupid\":\"${test_gwgroupid}\",\"bogus\":1}")"                   -ne 400 ] && return 1
+    [ "$(curlc -X POST "$base_url/api/v1/outboundroutes" -d "{\"from_prefix\":\"313\",\"gwgroupid\":\"${test_gwgroupid}\"}")"                        -ne 400 ] && return 1
+    [ "$(curlc -X POST "$base_url/api/v1/outboundroutes" -d "{\"prefix\":\"abc\",\"gwgroupid\":\"${test_gwgroupid}\"}")"                             -ne 400 ] && return 1
+
+    # ---------- Case 15: PUT plain field update + DB assert (still simple)
+    [ "$(curlc -X PUT "$base_url/api/v1/outboundroutes/${new_simple_id}" -d '{"priority":5}')" -ne 200 ] && return 1
+    [ "$(myql -e "SELECT priority FROM dr_rules WHERE ruleid=$new_simple_id;")" != "5" ]                && return 1
+    [ "$(myql -e "SELECT groupid  FROM dr_rules WHERE ruleid=$new_simple_id;")" != "$outbound_flag" ]   && return 1
+
+    # ---------- Case 16: PUT promote simple->LCR + DB asserts
+    [ "$(curlc -X PUT "$base_url/api/v1/outboundroutes/${new_simple_id}" -d '{"from_prefix":"999317","prefix":"55503"}')" -ne 200 ] && return 1
+    promoted_groupid=$(myql -e "SELECT groupid FROM dr_rules WHERE ruleid=$new_simple_id;")
+    [ "$promoted_groupid" -lt "$lcr_min" ] && return 1
+    [ "$promoted_groupid" -ge "$lcr_max" ] && return 1
+    [ "$(myql -e "SELECT COUNT(*) FROM dsip_lcr WHERE dr_groupid=$promoted_groupid AND from_prefix='999317';")" -ne 1 ] && return 1
+
+    # ---------- Case 17: PUT demote LCR->simple + DB asserts
+    [ "$(curlc -X PUT "$base_url/api/v1/outboundroutes/${new_lcr_id}" -d '{"from_prefix":""}')" -ne 200 ] && return 1
+    [ "$(myql -e "SELECT groupid FROM dr_rules WHERE ruleid=$new_lcr_id;")" != "$outbound_flag" ]        && return 1
+    [ "$(myql -e "SELECT COUNT(*) FROM dsip_lcr WHERE dr_groupid=$db_lcr_groupid;")" -ne 0 ]             && return 1
+
+    # ---------- Case 18: PUT update LCR in place
+    [ "$(curlc -X PUT "$base_url/api/v1/outboundroutes/${new_simple_id}" -d '{"from_prefix":"999318","prefix":"55503"}')" -ne 200 ] && return 1
+    [ "$(myql -e "SELECT pattern     FROM dsip_lcr WHERE dr_groupid=$promoted_groupid;")" != "999318-55503" ]            && return 1
+    [ "$(myql -e "SELECT from_prefix FROM dsip_lcr WHERE dr_groupid=$promoted_groupid;")" != "999318" ]                  && return 1
+
+    # ---------- Cases 19-21: PUT error paths
+    [ "$(curlc -X PUT "$base_url/api/v1/outboundroutes/99999999"        -d '{"priority":5}')"     -ne 404 ] && return 1
+    [ "$(curlc -X PUT "$base_url/api/v1/outboundroutes/${new_simple_id}" -d '{"bogus":1}')"       -ne 400 ] && return 1
+    [ "$(curlc -X PUT "$base_url/api/v1/outboundroutes"                  -d '{"priority":5}')"    -ne 400 ] && return 1
+
+    # ---------- Cases 22-23: DELETE (path-style; new_simple_id is currently LCR after case 16/18)
+    [ "$(curlc -X DELETE "$base_url/api/v1/outboundroutes/${new_simple_id}")" -ne 200 ] && return 1
+    [ "$(myql -e "SELECT COUNT(*) FROM dr_rules WHERE ruleid=$new_simple_id;")"           -ne 0 ] && return 1
+    [ "$(myql -e "SELECT COUNT(*) FROM dsip_lcr WHERE dr_groupid=$promoted_groupid;")"    -ne 0 ] && return 1
+
+    # ---------- Case 24: DELETE via query string (new_lcr_id, now simple after case 17 demote)
+    [ "$(curlc -X DELETE "$base_url/api/v1/outboundroutes?ruleid=${new_lcr_id}")" -ne 200 ] && return 1
+    [ "$(myql -e "SELECT COUNT(*) FROM dr_rules WHERE ruleid=$new_lcr_id;")" -ne 0 ] && return 1
+
+    # ---------- Cases 25-26: DELETE error paths
+    [ "$(curlc -X DELETE "$base_url/api/v1/outboundroutes/99999999")" -ne 404 ] && return 1
+    [ "$(curlc -X DELETE "$base_url/api/v1/outboundroutes")"          -ne 400 ] && return 1
+
+    # ---------- Case 27: kamreload flag set after a mutation
+    kamreload=$(curlb -X POST "$base_url/api/v1/outboundroutes" \
+        -d "{\"name\":\"Test Outbound Reload Probe\",\"prefix\":\"55505\",\"gwgroupid\":\"${test_gwgroupid}\"}" \
+        | python3 -c 'import sys,json;print(json.load(sys.stdin)["kamreload"])')
+    [ "$kamreload" != "True" ] && return 1
+
+    # ---------- Cases 28-29: auth checks (no token / invalid token) -> 401
+    [ "$(curl -s --connect-timeout 3 -w '%{http_code}' -o /dev/null \
+           -X DELETE "$base_url/api/v1/outboundroutes/1")" -ne 401 ] && return 1
+    [ "$(curl -s --connect-timeout 3 -H 'Authorization: Bearer not_the_token' \
+           -w '%{http_code}' -o /dev/null \
+           -X DELETE "$base_url/api/v1/outboundroutes/1")" -ne 401 ] && return 1
+
+
     # if we made it this far all checks passed
     return 0
 }
@@ -182,7 +320,9 @@ validate() {
 cleanupHandler() {
     rm -f $cookie_file
     mysql --user="${kam_db_user}" --password="${kam_db_pass}" --host="${kam_db_host}" --port="${kam_db_port}" --database="${kam_db_name}" \
-        -e "delete from dr_rules where groupid='$inbound_flag' and (prefix='$prefix0' or prefix='$prefix1' or prefix='$prefix2' or prefix='$prefix3');"
+        -e "delete from dr_rules where groupid='$inbound_flag' and (prefix='$prefix0' or prefix='$prefix1' or prefix='$prefix2' or prefix='$prefix3');" \
+        -e "delete from dr_rules where description like 'name:Test Outbound %';" \
+        -e "delete from dsip_lcr where from_prefix like '999%';"
     kamcmd cfg.sets server api_token $old_api_token
     unsetLoginOverride
 }
