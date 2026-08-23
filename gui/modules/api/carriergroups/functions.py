@@ -401,7 +401,7 @@ def addUpdateCarriers(data=None):
         # Adding
         if len(gwid) <= 0:
             if len(gwgroup) > 0:
-		host_ip = hostToIP(host)
+                host_ip = hostToIP(host_addr)
                 Addr = Address(name, host_ip, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Addr)
                 db.flush()
@@ -421,7 +421,7 @@ def addUpdateCarriers(data=None):
                 dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, rweight=rweight, name=name, gwid=gwid)
                 db.add(dispatcher)
             else:
-		host_ip = hostToIP(host)
+                host_ip = hostToIP(host_addr)
                 Addr = Address(name, host_ip, 32, settings.FLT_CARRIER)
                 db.add(Addr)
                 db.flush()
