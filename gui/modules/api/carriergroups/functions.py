@@ -10,7 +10,7 @@ from shared import debugException, debugEndpoint, stripDictVals, strFieldsToDict
 from database import startSession, DummySession, Gateways, Address, UAC, GatewayGroups, Dispatcher, DsipGwgroup2LB, \
     OutboundRoutes
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
-from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort, encodeSipUser
+from util.networking import hostToIP, safeUriToHost, safeFormatSipUri, safeStripPort, encodeSipUser
 
 
 def displayCarrierGroups(gwgroup=None):
