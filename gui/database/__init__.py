@@ -572,7 +572,7 @@ class Dispatcher(object):
 
 class dSIPUser(object):
     """
-    Schema for the dSIPRouter User table (legacy, deprecated)
+    Schema for the dSIPROuter User table
     """
 
     def __init__(self, firstname, lastname, username, password, roles, domains, token, token_expiration):
@@ -584,44 +584,6 @@ class dSIPUser(object):
         self.domains = domains
         self.token = token
         self.token_expiration = token_expiration
-
-    pass
-
-
-class dSIPUserNew(object):
-    """
-    Schema for the dsip_users table (multi-user support)
-    """
-
-    def __init__(self, username, password=None, api_token='', auth_type='local'):
-        self.username = username
-        self.password = password
-        self.api_token = api_token
-        self.auth_type = auth_type
-
-    pass
-
-
-class dSIPGroup(object):
-    """
-    Schema for the dsip_groups table
-    """
-
-    def __init__(self, name, description=None):
-        self.name = name
-        self.description = description
-
-    pass
-
-
-class dSIPUserGroup(object):
-    """
-    Schema for the dsip_user_groups join table
-    """
-
-    def __init__(self, username, group_id):
-        self.username = username
-        self.group_id = group_id
 
     pass
 
@@ -782,9 +744,6 @@ def createSessionObjects():
     dsip_certificates = Table('dsip_certificates', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
     dsip_dnid_enrichment = Table('dsip_dnid_enrich_lnp', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
     dsip_user = Table('dsip_user', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
-    dsip_users = Table('dsip_users', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
-    dsip_groups = Table('dsip_groups', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
-    dsip_user_groups = Table('dsip_user_groups', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
     # TODO: this is temporary and will be refactored
     dsip_gwgroup2lb = Table('dsip_gwgroup2lb', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
    
@@ -853,9 +812,6 @@ def createSessionObjects():
     mapper.map_imperatively(dSIPCertificates, dsip_certificates)
     mapper.map_imperatively(dSIPDNIDEnrichment, dsip_dnid_enrichment)
     mapper.map_imperatively(dSIPUser, dsip_user)
-    mapper.map_imperatively(dSIPUserNew, dsip_users)
-    mapper.map_imperatively(dSIPGroup, dsip_groups)
-    mapper.map_imperatively(dSIPUserGroup, dsip_user_groups)
     ## map the dSIPAgent model if it was successfully imported
     #if dSIPAgent is not None:
     #    mapper.map_imperatively(dSIPAgent, dsip_agent)

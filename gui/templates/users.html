@@ -2,26 +2,6 @@
 
 {% block title %}Users{% endblock %}
 
-{% block custom_css %}
-  <style>
-    .token-display {
-      font-family: monospace;
-      background: #f8f9fa;
-      padding: 8px 12px;
-      border-radius: 4px;
-      border: 1px solid #dee2e6;
-      word-break: break-all;
-      cursor: pointer;
-    }
-    .token-display:hover {
-      background: #e9ecef;
-    }
-    .btn-copy {
-      margin-left: 8px;
-    }
-  </style>
-{% endblock %}
-
 {% block table_headers %}
   <div>
     <h3>Users</h3>
@@ -40,8 +20,8 @@
     <thead>
     <tr class='element-row'>
       <th>Username</th>
-      <th>Group</th>
-      <th>Auth Type</th>
+      <th>Name</th>
+      <th>Roles</th>
       <th>Actions</th>
     </tr>
     </thead>
@@ -49,16 +29,15 @@
     {% for user in users %}
       <tr class='element-row' data-username="{{ user.username }}">
         <td class='username'>{{ user.username }}</td>
-        <td class='groups'>{{ user.groups|join(', ') }}</td>
-        <td class='auth_type'>{{ user.auth_type }}</td>
+        <td class='name'>{{ user.firstname }} {{ user.lastname }}</td>
+        <td class='roles'>{{ user.roles|join(', ') }}</td>
         <td>
           <button class="btn btn-primary btn-sm open-Edit" data-bs-toggle="modal" data-bs-target="#edit"
-                  data-username="{{ user.username }}" data-groups="{{ user.groups|join(',') }}" data-auth_type="{{ user.auth_type }}"
+                  data-id="{{ user.id }}" data-username="{{ user.username }}" data-firstname="{{ user.firstname }}"
+                  data-lastname="{{ user.lastname }}" data-roles="{{ user.roles|join(',') }}"
                   title="Edit"><i class="ti ti-pencil"></i></button>
-          <button class="btn btn-info btn-sm open-Token" data-bs-toggle="modal" data-bs-target="#token-modal"
-                  data-username="{{ user.username }}" title="View Token"><i class="ti ti-key"></i></button>
           <button class="btn btn-danger btn-sm open-Delete" data-bs-toggle="modal" data-bs-target="#delete"
-                  data-username="{{ user.username }}" title="Delete"><i class="ti ti-trash"></i></button>
+                  data-id="{{ user.id }}" data-username="{{ user.username }}" title="Delete"><i class="ti ti-trash"></i></button>
         </td>
       </tr>
     {% endfor %}
@@ -76,26 +55,27 @@
     <form id="addUserForm" role="form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <div class="form-group">
+        <label for="add-firstname">First Name</label>
+        <input type="text" class="form-control" id="add-firstname" name="firstname" required>
+      </div>
+      <div class="form-group">
+        <label for="add-lastname">Last Name</label>
+        <input type="text" class="form-control" id="add-lastname" name="lastname">
+      </div>
+      <div class="form-group">
         <label for="add-username">Username</label>
         <input type="text" class="form-control" id="add-username" name="username" required>
       </div>
       <div class="form-group">
         <label for="add-password">Password</label>
-        <input type="password" class="form-control" id="add-password" name="password">
+        <input type="password" class="form-control" id="add-password" name="password" required>
       </div>
       <div class="form-group">
-        <label for="add-group">Group</label>
-        <select class="form-control" id="add-group" name="group" required>
+        <label for="add-roles">Roles</label>
+        <select class="form-control" id="add-roles" name="roles" required>
           <option value="dsip_guest">dsip_guest</option>
           <option value="dsip_engineer">dsip_engineer</option>
           <option value="dsip_admin">dsip_admin</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="add-auth_type">Auth Type</label>
-        <select class="form-control" id="add-auth_type" name="auth_type">
-          <option value="local">local</option>
-          <option value="ldap">ldap</option>
         </select>
       </div>
     </form>
@@ -115,24 +95,29 @@
   <div class="modal-body">
     <form id="editUserForm" role="form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-      <input type="hidden" id="edit-username" name="username">
+      <input type="hidden" id="edit-id" name="id">
+      <div class="form-group">
+        <label for="edit-username">Username</label>
+        <input type="text" class="form-control" id="edit-username" name="username" readonly>
+      </div>
+      <div class="form-group">
+        <label for="edit-firstname">First Name</label>
+        <input type="text" class="form-control" id="edit-firstname" name="firstname" required>
+      </div>
+      <div class="form-group">
+        <label for="edit-lastname">Last Name</label>
+        <input type="text" class="form-control" id="edit-lastname" name="lastname">
+      </div>
       <div class="form-group">
         <label for="edit-password">Password (leave blank to keep current)</label>
         <input type="password" class="form-control" id="edit-password" name="password">
       </div>
       <div class="form-group">
-        <label for="edit-group">Group</label>
-        <select class="form-control" id="edit-group" name="group" required>
+        <label for="edit-roles">Roles</label>
+        <select class="form-control" id="edit-roles" name="roles" required>
           <option value="dsip_guest">dsip_guest</option>
           <option value="dsip_engineer">dsip_engineer</option>
           <option value="dsip_admin">dsip_admin</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="edit-auth_type">Auth Type</label>
-        <select class="form-control" id="edit-auth_type" name="auth_type">
-          <option value="local">local</option>
-          <option value="ldap">ldap</option>
         </select>
       </div>
     </form>
@@ -151,41 +136,11 @@
   </div>
   <div class="modal-body">
     <p>Are you sure you want to delete user <strong id="delete-username-display"></strong>?</p>
-    <input type="hidden" id="delete-username">
+    <input type="hidden" id="delete-id">
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-danger" id="submitDeleteUser">Delete</button>
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-  </div>
-{% endblock %}
-
-
-{% block custom_modals %}
-  <!-- Token modal -->
-  <div class="modal fade" id="token-modal" tabindex="-1" role="dialog" aria-labelledby="Token" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i class="ti ti-x"></i></button>
-          <h4 class="modal-title">API Token</h4>
-        </div>
-        <div class="modal-body">
-          <p>User: <strong id="token-username-display"></strong></p>
-          <div class="form-group">
-            <label>Current Token</label>
-            <div class="input-group">
-              <span class="token-display" id="token-value">Click "Load" to fetch token</span>
-              <button class="btn btn-outline-secondary btn-copy" id="copy-token" title="Copy to clipboard"><i class="ti ti-copy"></i></button>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-info" id="load-token">Load Token</button>
-          <button type="button" class="btn btn-warning" id="regenerate-token">Regenerate Token</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
   </div>
 {% endblock %}
 
@@ -208,19 +163,21 @@
   // Add User
   $('#submitAddUser').click(function() {
     var data = {
+      firstname: $('#add-firstname').val(),
+      lastname: $('#add-lastname').val(),
       username: $('#add-username').val(),
       password: $('#add-password').val(),
-      group: $('#add-group').val(),
-      auth_type: $('#add-auth_type').val()
+      roles: [$('#add-roles').val()],
+      domains: []
     };
 
-    if (!data.username) {
-      alert('Username is required');
+    if (!data.username || !data.password) {
+      alert('Username and Password are required');
       return;
     }
 
     $.ajax({
-      url: API_BASE + 'users',
+      url: API_BASE + 'auth/user',
       type: 'POST',
       contentType: 'application/json',
       data: JSON.stringify(data),
@@ -229,7 +186,7 @@
         window.location.reload();
       },
       error: function(xhr) {
-        var msg = xhr.responseJSON ? xhr.responseJSON.msg : 'Error creating user';
+        var msg = xhr.responseJSON ? (xhr.responseJSON.data && xhr.responseJSON.data.message) || xhr.responseJSON.msg || xhr.responseJSON.error : 'Error creating user';
         alert(msg);
       }
     });
@@ -237,21 +194,23 @@
 
   // Edit User - populate modal
   $(document).on('click', '.open-Edit', function() {
-    var username = $(this).data('username');
-    var groups = $(this).data('groups');
-    var auth_type = $(this).data('auth_type');
-
-    $('#edit-username').val(username);
-    $('#edit-group').val(groups.split(',')[0]);
-    $('#edit-auth_type').val(auth_type);
+    var $btn = $(this);
+    $('#edit-id').val($btn.data('id'));
+    $('#edit-username').val($btn.data('username'));
+    $('#edit-firstname').val($btn.data('firstname'));
+    $('#edit-lastname').val($btn.data('lastname'));
+    $('#edit-roles').val($btn.data('roles').split(',')[0]);
   });
 
   // Submit Edit
   $('#submitEditUser').click(function() {
-    var username = $('#edit-username').val();
     var data = {
-      group: $('#edit-group').val(),
-      auth_type: $('#edit-auth_type').val()
+      id: $('#edit-id').val(),
+      firstname: $('#edit-firstname').val(),
+      lastname: $('#edit-lastname').val(),
+      username: $('#edit-username').val(),
+      roles: [$('#edit-roles').val()],
+      domains: []
     };
 
     var password = $('#edit-password').val();
@@ -260,7 +219,7 @@
     }
 
     $.ajax({
-      url: API_BASE + 'users?username=' + encodeURIComponent(username),
+      url: API_BASE + 'auth/user/' + data.id,
       type: 'PUT',
       contentType: 'application/json',
       data: JSON.stringify(data),
@@ -269,7 +228,7 @@
         window.location.reload();
       },
       error: function(xhr) {
-        var msg = xhr.responseJSON ? xhr.responseJSON.msg : 'Error updating user';
+        var msg = xhr.responseJSON ? xhr.responseJSON.msg || xhr.responseJSON.error : 'Error updating user';
         alert(msg);
       }
     });
@@ -277,82 +236,27 @@
 
   // Delete User - populate modal
   $(document).on('click', '.open-Delete', function() {
-    var username = $(this).data('username');
-    $('#delete-username').val(username);
-    $('#delete-username-display').text(username);
+    var $btn = $(this);
+    $('#delete-id').val($btn.data('id'));
+    $('#delete-username-display').text($btn.data('username'));
   });
 
   // Submit Delete
   $('#submitDeleteUser').click(function() {
-    var username = $('#delete-username').val();
+    var id = $('#delete-id').val();
 
     $.ajax({
-      url: API_BASE + 'users?username=' + encodeURIComponent(username),
+      url: API_BASE + 'auth/user/' + id,
       type: 'DELETE',
       headers: { 'Accept': 'application/json' },
       success: function(response) {
         window.location.reload();
       },
       error: function(xhr) {
-        var msg = xhr.responseJSON ? xhr.responseJSON.msg : 'Error deleting user';
+        var msg = xhr.responseJSON ? xhr.responseJSON.msg || xhr.responseJSON.error : 'Error deleting user';
         alert(msg);
       }
     });
-  });
-
-  // Token Modal
-  var currentTokenUsername = '';
-
-  $(document).on('click', '.open-Token', function() {
-    currentTokenUsername = $(this).data('username');
-    $('#token-username-display').text(currentTokenUsername);
-    $('#token-value').text('Click "Load" to fetch token');
-  });
-
-  // Load Token
-  $('#load-token').click(function() {
-    $.ajax({
-      url: API_BASE + 'users/' + encodeURIComponent(currentTokenUsername) + '/token',
-      type: 'GET',
-      headers: { 'Accept': 'application/json' },
-      success: function(response) {
-        $('#token-value').text(response.data.api_token);
-      },
-      error: function(xhr) {
-        var msg = xhr.responseJSON ? xhr.responseJSON.msg : 'Error loading token';
-        alert(msg);
-      }
-    });
-  });
-
-  // Regenerate Token
-  $('#regenerate-token').click(function() {
-    if (!confirm('Are you sure you want to regenerate the token? The old token will stop working immediately.')) {
-      return;
-    }
-
-    $.ajax({
-      url: API_BASE + 'users/' + encodeURIComponent(currentTokenUsername) + '/token',
-      type: 'POST',
-      headers: { 'Accept': 'application/json' },
-      success: function(response) {
-        $('#token-value').text(response.data.api_token);
-      },
-      error: function(xhr) {
-        var msg = xhr.responseJSON ? xhr.responseJSON.msg : 'Error regenerating token';
-        alert(msg);
-      }
-    });
-  });
-
-  // Copy Token to Clipboard
-  $('#copy-token').click(function() {
-    var tokenText = $('#token-value').text();
-    if (tokenText && tokenText !== 'Click "Load" to fetch token') {
-      navigator.clipboard.writeText(tokenText).then(function() {
-        alert('Token copied to clipboard');
-      });
-    }
   });
 </script>
 {% endblock %}

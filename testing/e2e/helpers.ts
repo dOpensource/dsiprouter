@@ -34,7 +34,7 @@ export async function loginAdmin(page: Page) {
  * Perform an API request carrying the current browser-context session cookie.
  *
  * This is the session-based path (what the GUI itself uses), so it works on
- * installs without a DSIP_CORE license. All /api/v1/users routes are
+ * installs without a DSIP_CORE license. The /api/v1/auth/user routes are
  * CSRF-exempt, so no token is required beyond the session.
  */
 export async function guiApiRequest(
@@ -88,25 +88,49 @@ export async function loginAPI(username: string, password: string): Promise<{ st
 }
 
 /**
- * Create a test user (as the currently logged-in admin session).
+ * Create a test user (as the currently logged-in admin session) via the
+ * existing /api/v1/auth/user API.
  */
 export async function createTestUser(
   page: Page,
   username: string,
   password: string,
-  group: string = 'dsip_guest'
+  role: string = 'dsip_guest'
 ): Promise<{ status: number; data: any }> {
-  return guiApiRequest(page, 'POST', '/users', { username, password, group });
+  return guiApiRequest(page, 'POST', '/auth/user', {
+    firstname: 'Test',
+    lastname: 'User',
+    username,
+    password,
+    roles: [role],
+    domains: [],
+  });
 }
 
 /**
- * Delete a test user (as the currently logged-in admin session).
+ * Look up a user's row id from the existing /api/v1/auth/user list.
+ */
+export async function findUserId(page: Page, username: string): Promise<number | null> {
+  const result = await guiApiRequest(page, 'GET', '/auth/user');
+  if (result.status !== 200 || !Array.isArray(result.data)) {
+    return null;
+  }
+  const found = result.data.find((u: any) => u.username === username);
+  return found ? found.id : null;
+}
+
+/**
+ * Delete a test user by id (as the currently logged-in admin session).
  */
 export async function deleteTestUser(
   page: Page,
   username: string
 ): Promise<{ status: number; data: any }> {
-  return guiApiRequest(page, 'DELETE', `/users?username=${encodeURIComponent(username)}`);
+  const id = await findUserId(page, username);
+  if (id === null) {
+    return { status: 404, data: {} };
+  }
+  return guiApiRequest(page, 'DELETE', `/auth/user/${id}`);
 }
 
 /**
