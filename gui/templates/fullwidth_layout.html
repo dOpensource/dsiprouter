@@ -162,6 +162,9 @@
             </div>
             <ul class="submenu"{% if request.path in ['/settings', '/backupandrestore', '/certificates', '/teleblock', '/transnexus', '/stirshaken', '/licensing', '/upgrade'] %} style="display:block"{% endif %}>
               <li><a class="navlink" href="/settings">Global Settings</a></li>
+              {% if 'dsip_admin' in user_groups %}
+              <li><a class="navlink" href="/users">Users</a></li>
+              {% endif %}
               <li><a href="/backupandrestore">Backup and Restore</a></li>
               <li><a href="/certificates">Certificates</a></li>
               <li><a href="/teleblock">Teleblock</a></li>

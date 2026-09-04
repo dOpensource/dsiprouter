@@ -31,7 +31,7 @@ from database import DummySession, createSessionObjects, startSession, settingsT
     DB_ENGINE_NAME, SESSION_LOADER_NAME, settingsToTableFormat, getDsipSettingsTableAsDict, \
     Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, UAC, GatewayGroups, \
     Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable, \
-    Dispatcher, DsipGwgroup2LB
+    Dispatcher, DsipGwgroup2LB, dSIPUserNew, dSIPGroup, dSIPUserGroup
 from modules.numbers.db.dsip_number import dSIPNumber
 from modules import flowroute
 from modules.domain.domain_routes import domains
@@ -45,6 +45,7 @@ from modules.api.licensemanager.functions import licenseDictToStateDict, getLice
 from modules.api.licensemanager.routes import license_manager
 from modules.api.outboundroutes.routes import outboundroutes
 from modules.api.auth.routes import user
+from modules.api.users.routes import users
 from modules.numbers import numbers
 from util.security import Credentials, urandomChars, AES_CTR
 from util.ipc import SETTINGS_SHMEM_NAME, STATE_SHMEM_NAME, createSharedMemoryDict, getSharedMemoryDict
@@ -81,6 +82,7 @@ app.register_blueprint(domains)
 app.register_blueprint(api)
 app.register_blueprint(carriergroups)
 app.register_blueprint(user)
+app.register_blueprint(users)
 app.register_blueprint(license_manager)
 app.register_blueprint(outboundroutes)
 app.register_blueprint(Blueprint('docs', 'docs', static_url_path='/docs', static_folder=settings.DSIP_DOCS_DIR))
@@ -88,6 +90,7 @@ csrf = CSRFProtect(app)
 csrf.exempt(api)
 csrf.exempt(carriergroups)
 csrf.exempt(user)
+csrf.exempt(users)
 csrf.exempt(license_manager)
 csrf.exempt(outboundroutes)
 
@@ -223,9 +226,17 @@ def ui_settings():
 
         if not session.get('logged_in'):
             return render_template('index.html', version=settings.VERSION)
-        else:
-            action = request.args.get('action')
-            return render_template('settings.html', show_add_onload=action, version=settings.VERSION)
+
+        # dsip_guest has no access to Global Settings (issue #360)
+        user_groups = session.get('groups', [])
+        if isinstance(user_groups, str):
+            user_groups = [g.strip() for g in user_groups.split(',') if g.strip()]
+        if not any(g in ('dsip_admin', 'dsip_engineer') for g in user_groups):
+            flash('Access denied')
+            return redirect(url_for('index'))
+
+        action = request.args.get('action')
+        return render_template('settings.html', show_add_onload=action, version=settings.VERSION)
 
 
     except http_exceptions.HTTPException as ex:
@@ -307,7 +318,7 @@ def login():
             settings.DSIP_USERNAME = os.getenv('DSIP_USERNAME', settings.DSIP_USERNAME)
             settings.DSIP_PASSWORD = os.getenv('DSIP_PASSWORD', settings.DSIP_PASSWORD)
 
-        # if username valid, hash password and compare with stored password
+        # 1. Check settings-based admin (deprecated, backward compat)
         if form['username'] == settings.DSIP_USERNAME:
             if isinstance(settings.DSIP_PASSWORD, bytes):
                 pwcheck = Credentials.hashCreds(form['password'], settings.DSIP_PASSWORD[-(Credentials.SALT_LEN * 2):])
@@ -315,15 +326,49 @@ def login():
                 pwcheck = form['password']
 
             if secrets.compare_digest(pwcheck, settings.DSIP_PASSWORD):
+                # ensure the settings-based admin exists in dsip_users with a
+                # per-user API token (mirrors the v0.792 upgrade migration)
+                try:
+                    db = DummySession()
+                    try:
+                        db = startSession()
+                        from modules.api.users.functions import getOrCreateAdminToken
+                        getOrCreateAdminToken(db)
+                    finally:
+                        db.close()
+                except Exception:
+                    pass
+
                 session['logged_in'] = True
                 session['username'] = form['username']
+                session['groups'] = ['dsip_admin']
                 return redirect(_sanitize_nextpage(form.get('nextpage')))
-       
-        # Check for user in other auth modules
+
+        # 2. Check dsip_users table
+        user_groups = _getUserGroups(form['username'])
+        if user_groups is not None:
+            db = DummySession()
+            try:
+                db = startSession()
+                from database import dSIPUserNew
+                dsip_user = db.query(dSIPUserNew).filter(dSIPUserNew.username == form['username']).first()
+                if dsip_user is not None and dsip_user.password is not None:
+                    if isinstance(dsip_user.password, bytes) and len(dsip_user.password) > 0:
+                        pwcheck = Credentials.hashCreds(form['password'], dsip_user.password[-(Credentials.SALT_LEN * 2):])
+                        if secrets.compare_digest(pwcheck, dsip_user.password):
+                            session['logged_in'] = True
+                            session['username'] = form['username']
+                            session['groups'] = user_groups
+                            return redirect(_sanitize_nextpage(form.get('nextpage')))
+            finally:
+                db.close()
+
+        # 3. Check for user in other auth modules (LDAP, etc.)
         for auth_mod in auth_modules:
             if auth_mod.authenticate(form['username'], form['password']):
                 session['logged_in'] = True
                 session['username'] = form['username']
+                session['groups'] = user_groups if user_groups is not None else ['dsip_guest']
                 return redirect(_sanitize_nextpage(form.get('nextpage')))
 
         # if we got here auth failed
@@ -339,6 +384,33 @@ def login():
         return showError(type=error)
 
 
+def _getUserGroups(username):
+    """
+    Look up a user's groups from dsip_user_groups + dsip_groups.
+
+    :param username:    the username to look up
+    :type username:     str
+    :return:            list of group names, or None if user not found
+    :rtype:             list|None
+    """
+    try:
+        db = DummySession()
+        try:
+            db = startSession()
+            from database import dSIPUserNew, dSIPUserGroup, dSIPGroup
+            user = db.query(dSIPUserNew).filter(dSIPUserNew.username == username).first()
+            if user is None:
+                return None
+            user_groups = db.query(dSIPGroup.name).join(
+                dSIPUserGroup, dSIPGroup.id == dSIPUserGroup.group_id
+            ).filter(dSIPUserGroup.username == username).all()
+            return [g[0] for g in user_groups]
+        finally:
+            db.close()
+    except Exception:
+        return None
+
+
 @app.route('/logout')
 def logout():
     try:
@@ -347,6 +419,7 @@ def logout():
 
         session.pop('logged_in', None)
         session.pop('username', None)
+        session.pop('groups', None)
         return redirect(url_for('index'))
 
     except http_exceptions.HTTPException as ex:
@@ -356,6 +429,38 @@ def logout():
         debugException(ex)
         error = "server"
         return showError(type=error)
+
+
+@app.route('/users')
+def displayUsers():
+    if not session.get('logged_in'):
+        return redirect(url_for('index'))
+
+    user_groups = session.get('groups', [])
+    if isinstance(user_groups, str):
+        user_groups = [g.strip() for g in user_groups.split(',') if g.strip()]
+    if 'dsip_admin' not in user_groups:
+        flash('Access denied')
+        return redirect(url_for('index'))
+
+    db = DummySession()
+    try:
+        db = startSession()
+        from database import dSIPUserNew, dSIPGroup, dSIPUserGroup
+        user_list = db.query(dSIPUserNew).all()
+        users_data = []
+        for u in user_list:
+            groups = db.query(dSIPGroup.name).join(
+                dSIPUserGroup, dSIPGroup.id == dSIPUserGroup.group_id
+            ).filter(dSIPUserGroup.username == u.username).all()
+            users_data.append({
+                'username': u.username,
+                'groups': [g[0] for g in groups],
+                'auth_type': u.auth_type,
+            })
+        return render_template('users.html', users=users_data, version=settings.VERSION)
+    finally:
+        db.close()
 
 
 app.add_url_rule('/carriergroups', view_func=displayCarrierGroups, methods=['GET'])
@@ -2349,11 +2454,15 @@ def imgFilter(name):
 @app.context_processor
 def injectGlobals():
     state = getSharedMemoryDict(STATE_SHMEM_NAME)
+    user_groups = session.get('groups', [])
+    if isinstance(user_groups, str):
+        user_groups = [g.strip() for g in user_groups.split(',') if g.strip()]
     return {
         'settings': settings,
         'state': state,
         'licenseValid': lambda tag: getLicenseStatusFromStateDict(state['dsip_license_store'], tag),
-        'dynamicModules': dynamicModules
+        'dynamicModules': dynamicModules,
+        'user_groups': user_groups
     }
 
 
