@@ -29,7 +29,7 @@
 
   <div class="tableAddButton">
     <button id='open-UserAdd' class='btn btn-success btn-md' data-title="Add" data-bs-toggle="modal"
-            data-bs-target="#add-user"> Add
+            data-bs-target="#add"> Add
     </button>
   </div>
 {% endblock %}
@@ -52,12 +52,12 @@
         <td class='groups'>{{ user.groups|join(', ') }}</td>
         <td class='auth_type'>{{ user.auth_type }}</td>
         <td>
-          <button class="btn btn-primary btn-sm open-Edit" data-bs-toggle="modal" data-bs-target="#edit-user"
+          <button class="btn btn-primary btn-sm open-Edit" data-bs-toggle="modal" data-bs-target="#edit"
                   data-username="{{ user.username }}" data-groups="{{ user.groups|join(',') }}" data-auth_type="{{ user.auth_type }}"
                   title="Edit"><i class="ti ti-pencil"></i></button>
           <button class="btn btn-info btn-sm open-Token" data-bs-toggle="modal" data-bs-target="#token-modal"
                   data-username="{{ user.username }}" title="View Token"><i class="ti ti-key"></i></button>
-          <button class="btn btn-danger btn-sm open-Delete" data-bs-toggle="modal" data-bs-target="#delete-user"
+          <button class="btn btn-danger btn-sm open-Delete" data-bs-toggle="modal" data-bs-target="#delete"
                   data-username="{{ user.username }}" title="Delete"><i class="ti ti-trash"></i></button>
         </td>
       </tr>

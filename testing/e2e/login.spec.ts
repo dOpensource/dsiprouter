@@ -8,7 +8,7 @@ test.describe('Login Flow', () => {
     await expectDashboard(page);
   });
 
-  test('table-based user login succeeds', async ({ page }) => {
+  test('table-based user login succeeds', async ({ page, browser }) => {
     // Admin creates a test user first
     await loginAdmin(page);
     const testUser = `e2e_login_test_${Date.now()}`;
@@ -17,10 +17,12 @@ test.describe('Login Flow', () => {
       const created = await createTestUser(page, testUser, 'testpass123', 'dsip_engineer');
       expect(created.status).toBe(200);
 
-      // Login as the table-based user (fresh context)
-      const ctx = await page.context().newPage();
-      await loginGUI(ctx, testUser, 'testpass123');
-      await expectDashboard(ctx);
+      // Login as the table-based user from a fresh context so the admin
+      // session cookie does not carry over
+      const ctx = await browser.newContext();
+      const loginPage = await ctx.newPage();
+      await loginGUI(loginPage, testUser, 'testpass123');
+      await expectDashboard(loginPage);
       await ctx.close();
     } finally {
       await deleteTestUser(page, testUser);
@@ -34,7 +36,7 @@ test.describe('Login Flow', () => {
     await page.click('button[type="submit"]');
 
     // Should stay on login page and show flash message
-    await expect(page.locator('.alert-danger')).toBeVisible();
+    await expect(page.locator('ul.alert-danger')).toBeVisible();
   });
 
   test('empty credentials shows error', async ({ page }) => {

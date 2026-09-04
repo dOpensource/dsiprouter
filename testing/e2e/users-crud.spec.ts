@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAdmin, createTestUser, deleteTestUser } from './helpers';
+import { loginAdmin, createTestUser, deleteTestUser, filterUsersTable } from './helpers';
 
 test.describe('User CRUD - Admin', () => {
 
@@ -17,12 +17,16 @@ test.describe('User CRUD - Admin', () => {
     const testUser = `e2e_crud_${Date.now()}`;
     try {
       await page.click('#open-UserAdd');
-      await expect(page.locator('#add-user')).toBeVisible();
+      await expect(page.locator('#add')).toBeVisible();
       await page.fill('#add-username', testUser);
       await page.fill('#add-password', 'testpass123');
       await page.selectOption('#add-group', 'dsip_engineer');
       await page.click('#submitAddUser');
 
+      // the submit handler reloads the page on success; let the navigation land
+      // before filtering or the reload wipes the search input mid-assertion
+      await page.waitForLoadState('load').catch(() => {});
+      await filterUsersTable(page, testUser);
       await expect(page.locator(`tr[data-username="${testUser}"]`)).toBeVisible({ timeout: 10000 });
     } finally {
       await page.reload();
@@ -37,12 +41,14 @@ test.describe('User CRUD - Admin', () => {
     const testUser = `e2e_guest_${Date.now()}`;
     try {
       await page.click('#open-UserAdd');
-      await expect(page.locator('#add-user')).toBeVisible();
+      await expect(page.locator('#add')).toBeVisible();
       await page.fill('#add-username', testUser);
       await page.fill('#add-password', 'testpass123');
       await page.selectOption('#add-group', 'dsip_guest');
       await page.click('#submitAddUser');
 
+      await page.waitForLoadState('load').catch(() => {});
+      await filterUsersTable(page, testUser);
       await expect(page.locator(`tr[data-username="${testUser}"]`)).toBeVisible({ timeout: 10000 });
     } finally {
       await page.reload();
@@ -60,10 +66,11 @@ test.describe('User CRUD - Admin', () => {
       const created = await createTestUser(page, testUser, 'testpass123', 'dsip_guest');
       expect(created.status).toBe(200);
       await page.reload();
+      await filterUsersTable(page, testUser);
 
       // Click edit button
       await page.click(`tr[data-username="${testUser}"] .open-Edit`);
-      await expect(page.locator('#edit-user')).toBeVisible();
+      await expect(page.locator('#edit')).toBeVisible();
       const groupSelect = page.locator('#edit-group');
       await groupSelect.selectOption('dsip_engineer');
       await page.click('#submitEditUser');
@@ -85,10 +92,11 @@ test.describe('User CRUD - Admin', () => {
     const created = await createTestUser(page, testUser, 'testpass123', 'dsip_guest');
     expect(created.status).toBe(200);
     await page.reload();
+    await filterUsersTable(page, testUser);
 
     // Click delete button
     await page.click(`tr[data-username="${testUser}"] .open-Delete`);
-    await expect(page.locator('#delete-user')).toBeVisible();
+    await expect(page.locator('#delete')).toBeVisible();
     await expect(page.locator('#delete-username-display')).toHaveText(testUser);
     await page.click('#submitDeleteUser');
 
@@ -104,8 +112,9 @@ test.describe('User CRUD - Admin', () => {
       expect(created.status).toBe(200);
 
       await page.goto('/users');
+      await filterUsersTable(page, testUser);
       await page.click('#open-UserAdd');
-      await expect(page.locator('#add-user')).toBeVisible();
+      await expect(page.locator('#add')).toBeVisible();
       await page.fill('#add-username', testUser);
       await page.fill('#add-password', 'testpass123');
       await page.selectOption('#add-group', 'dsip_guest');
@@ -115,6 +124,7 @@ test.describe('User CRUD - Admin', () => {
       await page.click('#submitAddUser');
       await page.waitForTimeout(1000);
 
+      await filterUsersTable(page, testUser);
       await expect(page.locator(`tr[data-username="${testUser}"]`)).toHaveCount(1);
     } finally {
       await page.reload();
@@ -147,6 +157,7 @@ test.describe('User CRUD - Admin', () => {
       const created = await createTestUser(page, testUser, 'testpass123', 'dsip_guest');
       expect(created.status).toBe(200);
       await page.reload();
+      await filterUsersTable(page, testUser);
 
       // Click token button for the test user
       await page.click(`tr[data-username="${testUser}"] .open-Token`);

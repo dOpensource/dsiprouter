@@ -13,7 +13,7 @@ test.describe('Role-Based Access Control', () => {
 
       // Settings
       await page.goto('/settings');
-      await expect(page.locator('h3:has-text("Global Settings")')).toBeVisible();
+      await expect(page.locator('h3:has-text("Settings")')).toBeVisible();
 
       // Users
       await page.goto('/users');
@@ -29,30 +29,37 @@ test.describe('Role-Based Access Control', () => {
 
   test.describe('dsip_engineer role', () => {
 
-    test('engineer can access dashboard and settings', async ({ page }) => {
+    // non-admin pages must use a FRESH browser context so the admin session
+    // cookie does not carry over (page.context() would share it)
+    const freshContext = async (browser: any) => {
+      const ctx = await browser.newContext();
+      return { ctx, page: await ctx.newPage() };
+    };
+
+    test('engineer can access dashboard and settings', async ({ page, browser }) => {
       const engineerUser = `e2e_eng_${Date.now()}`;
       await loginAdmin(page);
       await createTestUser(page, engineerUser, 'testpass123', 'dsip_engineer');
 
-      const engPage = await page.context().newPage();
+      const { ctx, page: engPage } = await freshContext(browser);
       try {
         await loginGUI(engPage, engineerUser, 'testpass123');
         await expect(engPage.locator('.dashboard-container')).toBeVisible();
 
         await engPage.goto('/settings');
-        await expect(engPage.locator('h3:has-text("Global Settings")')).toBeVisible();
+        await expect(engPage.locator('h3:has-text("Settings")')).toBeVisible();
       } finally {
-        await engPage.close();
+        await ctx.close();
         await deleteTestUser(page, engineerUser);
       }
     });
 
-    test('engineer cannot access users page', async ({ page }) => {
+    test('engineer cannot access users page', async ({ page, browser }) => {
       const engineerUser = `e2e_eng_${Date.now()}`;
       await loginAdmin(page);
       await createTestUser(page, engineerUser, 'testpass123', 'dsip_engineer');
 
-      const engPage = await page.context().newPage();
+      const { ctx, page: engPage } = await freshContext(browser);
       try {
         await loginGUI(engPage, engineerUser, 'testpass123');
         await engPage.goto('/users');
@@ -60,23 +67,23 @@ test.describe('Role-Based Access Control', () => {
         // Should be redirected away from /users
         await expect(engPage).not.toHaveURL(/.*\/users/);
       } finally {
-        await engPage.close();
+        await ctx.close();
         await deleteTestUser(page, engineerUser);
       }
     });
 
-    test('engineer API call to /api/v1/users returns 403', async ({ page }) => {
+    test('engineer API call to /api/v1/users returns 403', async ({ page, browser }) => {
       const engineerUser = `e2e_eng_${Date.now()}`;
       await loginAdmin(page);
       await createTestUser(page, engineerUser, 'testpass123', 'dsip_engineer');
 
-      const engPage = await page.context().newPage();
+      const { ctx, page: engPage } = await freshContext(browser);
       try {
         await loginGUI(engPage, engineerUser, 'testpass123');
         const result = await guiApiRequest(engPage, 'GET', '/users');
         expect(result.status).toBe(403);
       } finally {
-        await engPage.close();
+        await ctx.close();
         await deleteTestUser(page, engineerUser);
       }
     });
@@ -84,43 +91,48 @@ test.describe('Role-Based Access Control', () => {
 
   test.describe('dsip_guest role', () => {
 
-    test('guest can access dashboard', async ({ page }) => {
+    const freshContext = async (browser: any) => {
+      const ctx = await browser.newContext();
+      return { ctx, page: await ctx.newPage() };
+    };
+
+    test('guest can access dashboard', async ({ page, browser }) => {
       const guestUser = `e2e_guest_${Date.now()}`;
       await loginAdmin(page);
       await createTestUser(page, guestUser, 'testpass123', 'dsip_guest');
 
-      const guestPage = await page.context().newPage();
+      const { ctx, page: guestPage } = await freshContext(browser);
       try {
         await loginGUI(guestPage, guestUser, 'testpass123');
         await expect(guestPage.locator('.dashboard-container')).toBeVisible();
       } finally {
-        await guestPage.close();
+        await ctx.close();
         await deleteTestUser(page, guestUser);
       }
     });
 
-    test('guest cannot access users page', async ({ page }) => {
+    test('guest cannot access users page', async ({ page, browser }) => {
       const guestUser = `e2e_guest_${Date.now()}`;
       await loginAdmin(page);
       await createTestUser(page, guestUser, 'testpass123', 'dsip_guest');
 
-      const guestPage = await page.context().newPage();
+      const { ctx, page: guestPage } = await freshContext(browser);
       try {
         await loginGUI(guestPage, guestUser, 'testpass123');
         await guestPage.goto('/users');
         await expect(guestPage).not.toHaveURL(/.*\/users/);
       } finally {
-        await guestPage.close();
+        await ctx.close();
         await deleteTestUser(page, guestUser);
       }
     });
 
-    test('guest cannot access settings page', async ({ page }) => {
+    test('guest cannot access settings page', async ({ page, browser }) => {
       const guestUser = `e2e_guest_${Date.now()}`;
       await loginAdmin(page);
       await createTestUser(page, guestUser, 'testpass123', 'dsip_guest');
 
-      const guestPage = await page.context().newPage();
+      const { ctx, page: guestPage } = await freshContext(browser);
       try {
         await loginGUI(guestPage, guestUser, 'testpass123');
         await guestPage.goto('/settings');
@@ -128,23 +140,23 @@ test.describe('Role-Based Access Control', () => {
         // Should be redirected away from /settings
         await expect(guestPage).not.toHaveURL(/.*\/settings/);
       } finally {
-        await guestPage.close();
+        await ctx.close();
         await deleteTestUser(page, guestUser);
       }
     });
 
-    test('guest API call to /api/v1/users returns 403', async ({ page }) => {
+    test('guest API call to /api/v1/users returns 403', async ({ page, browser }) => {
       const guestUser = `e2e_guest_${Date.now()}`;
       await loginAdmin(page);
       await createTestUser(page, guestUser, 'testpass123', 'dsip_guest');
 
-      const guestPage = await page.context().newPage();
+      const { ctx, page: guestPage } = await freshContext(browser);
       try {
         await loginGUI(guestPage, guestUser, 'testpass123');
         const result = await guiApiRequest(guestPage, 'GET', '/users');
         expect(result.status).toBe(403);
       } finally {
-        await guestPage.close();
+        await ctx.close();
         await deleteTestUser(page, guestUser);
       }
     });

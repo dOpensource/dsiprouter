@@ -1,5 +1,10 @@
 import { Page, expect } from '@playwright/test';
 
+// Node's fetch (used by loginAPI) rejects self-signed test-instance certs;
+// relax TLS trust only for API probes. Browser contexts keep their own
+// ignoreHTTPSErrors handling via playwright.config.ts.
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const BASE_URL = process.env.DSIP_BASE_URL || 'https://localhost:5000';
 const API_BASE = `${BASE_URL}/api/v1`;
 const ADMIN_USER = process.env.DSIP_TEST_ADMIN_USER || 'admin';
@@ -79,7 +84,7 @@ export async function loginAPI(username: string, password: string): Promise<{ st
   } catch (e) {
     // ignore parse errors
   }
-  return { status: response.status(), token: data.token };
+  return { status: response.status, token: data.token };
 }
 
 /**
@@ -116,6 +121,16 @@ export async function expectLoginPage(page: Page) {
  */
 export async function expectDashboard(page: Page) {
   await expect(page.locator('.dashboard-container')).toBeVisible();
+}
+
+/**
+ * Filter the users DataTable to a specific username so its single row is on
+ * the visible page (the table is client-side paginated at 25 rows/page).
+ * DataTables 2 renders the search box as the sole input[type=search].
+ */
+export async function filterUsersTable(page: Page, query: string) {
+  await page.fill('input[type="search"]', query);
+  await page.waitForTimeout(400);
 }
 
 export { ADMIN_USER, ADMIN_PASS };

@@ -122,25 +122,34 @@ test.describe('Users API', () => {
     }
   });
 
-  test('non-admin API call returns 403', async ({ page }) => {
+  test('non-admin API call returns 403', async ({ browser }) => {
+    const adminCtx = await browser.newContext();
+    const page = await adminCtx.newPage();
+    await loginAdmin(page);
+
     const testUser = `e2e_api_403_${Date.now()}`;
-    const created = await guiApiRequest(page, 'POST', '/users', {
-      username: testUser,
-      password: 'testpass123',
-      group: 'dsip_guest',
-    });
-    expect(created.status).toBe(200);
-
-    // Login as the guest via GUI in a fresh page (own session)
-    const guestPage = await page.context().newPage();
     try {
-      await loginGUI(guestPage, testUser, 'testpass123');
+      const created = await guiApiRequest(page, 'POST', '/users', {
+        username: testUser,
+        password: 'testpass123',
+        group: 'dsip_guest',
+      });
+      expect(created.status).toBe(200);
 
-      const result = await guiApiRequest(guestPage, 'GET', '/users');
-      expect(result.status).toBe(403);
+      // Login as the guest via GUI in a fresh context (own session)
+      const guestCtx = await browser.newContext();
+      const guestPage = await guestCtx.newPage();
+      try {
+        await loginGUI(guestPage, testUser, 'testpass123');
+
+        const result = await guiApiRequest(guestPage, 'GET', '/users');
+        expect(result.status).toBe(403);
+      } finally {
+        await guestCtx.close();
+      }
     } finally {
-      await guestPage.close();
       await guiApiRequest(page, 'DELETE', `/users?username=${encodeURIComponent(testUser)}`);
+      await adminCtx.close();
     }
   });
 
