@@ -110,14 +110,39 @@ def api_security(func):
                     msg='Unauthorized - Core Subscription Required. Purchase from https://dopensource.com/product/dsiprouter-core/',
                     status_code=StatusCodes.HTTP_UNAUTHORIZED
                 )
-            # Check if token is valid
-            if not apiToken.isValid():
-                return createApiResponse(
-                    error='http',
-                    msg='Unauthorized',
-                    status_code=StatusCodes.HTTP_UNAUTHORIZED
-                )
-            # checks succeeded allow the request
-            return func(*args, **kwargs)
+            # Check if token is valid (global API token or per-user token)
+            if apiToken.isValid():
+                return func(*args, **kwargs)
+            if _isValidUserToken(apiToken.token):
+                return func(*args, **kwargs)
+            return createApiResponse(
+                error='http',
+                msg='Unauthorized',
+                status_code=StatusCodes.HTTP_UNAUTHORIZED
+            )
 
     return wrapper
+
+
+def _isValidUserToken(token):
+    """
+    Check if the given token matches a per-user API token in dsip_users.
+
+    :param token:   the API token to validate
+    :type token:    str
+    :return:        True if token matches a user
+    :rtype:         bool
+    """
+    if not token:
+        return False
+    try:
+        from database import startSession, DummySession, dSIPUserNew
+        db = DummySession()
+        try:
+            db = startSession()
+            user = db.query(dSIPUserNew).filter(dSIPUserNew.api_token == token).first()
+            return user is not None
+        finally:
+            db.close()
+    except Exception:
+        return False

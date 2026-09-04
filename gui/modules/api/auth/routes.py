@@ -4,13 +4,14 @@ import sys
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import datetime, uuid
+import datetime, uuid, secrets
 from flask import Blueprint, jsonify
-from util.security import AES_CTR
+from util.security import AES_CTR, Credentials
 from shared import debugEndpoint, StatusCodes, getRequestData
-from database import DummySession, startSession, dSIPUser
+from database import DummySession, startSession, dSIPUser, dSIPUserNew
 from modules.api.api_functions import showApiError, createApiResponse, api_security
 from modules.api.auth.functions import addDSIPUser
+from modules.api.users.functions import getOrCreateAdminToken
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 import settings
 
@@ -24,9 +25,6 @@ user = Blueprint('user', __name__)
 @user.route('/api/v1/auth/login', methods=['POST'])
 # @api_security
 def login():
-    # use a whitelist to avoid possible buffer overflow vulns or crashes
-    VALID_REQUEST_DATA_ARGS = {"username": str, "password": str}
-
     # ensure requred args are provided
     REQUIRED_ARGS = {'username', 'password'}
 
@@ -42,16 +40,52 @@ def login():
         # get request data
         request_data = getRequestData()
 
+        if not set(REQUIRED_ARGS).issubset(request_data.keys()):
+            response_payload['msg'] = 'Missing required arguments: ' + ', '.join(REQUIRED_ARGS - set(request_data.keys()))
+            return jsonify(response_payload), StatusCodes.HTTP_BAD_REQUEST
+
         db = startSession()
 
-        # Check for existing user
+        # 1. settings-based admin (deprecated, backward compat)
+        if request_data['username'] == settings.DSIP_USERNAME:
+            valid = False
+            if isinstance(settings.DSIP_PASSWORD, bytes):
+                # DSIP_PASSWORD stored as hashed hex bytes
+                pwcheck = Credentials.hashCreds(request_data['password'], settings.DSIP_PASSWORD[-(Credentials.SALT_LEN * 2):])
+                valid = secrets.compare_digest(pwcheck, settings.DSIP_PASSWORD)
+            elif isinstance(settings.DSIP_PASSWORD, str):
+                # plaintext fallback for legacy installations
+                valid = secrets.compare_digest(request_data['password'], settings.DSIP_PASSWORD)
+
+            if valid:
+                token = getOrCreateAdminToken(db)
+                response_payload = {
+                    'message': 'Login successful',
+                    'token': token,
+                }
+                return jsonify(response_payload), StatusCodes.HTTP_OK
+
+        # 2. dsip_users table (multi-user support)
+        dsip_user = db.query(dSIPUserNew).filter(dSIPUserNew.username == request_data['username']).first()
+        if dsip_user is not None and dsip_user.password is not None:
+            if isinstance(dsip_user.password, bytes) and len(dsip_user.password) > 0:
+                pwcheck = Credentials.hashCreds(request_data['password'], dsip_user.password[-(Credentials.SALT_LEN * 2):])
+                if secrets.compare_digest(pwcheck, dsip_user.password):
+                    token = dsip_user.api_token
+                    if not token:
+                        token = str(uuid.uuid4())
+                        dsip_user.api_token = token
+                        db.commit()
+                    response_payload = {
+                        'message': 'Login successful',
+                        'token': token,
+                    }
+                    return jsonify(response_payload), StatusCodes.HTTP_OK
+
+        # 3. legacy dSIPUser table (deprecated, backward compat)
         existing_user = db.query(dSIPUser).filter(dSIPUser.username == (request_data['username'])).first()
 
         if existing_user:
-            print("Saved Password: ", existing_user.password)
-            print("Decrypted: ", AES_CTR.decrypt(existing_user.password))
-            print("Provided: ", request_data['password'])
-
             if str(request_data['password']) == AES_CTR.decrypt(existing_user.password):
                 if (not existing_user.token) or (datetime.datetime.now() > existing_user.token_expiration):
                     existing_user.token = uuid.uuid4()
@@ -65,21 +99,13 @@ def login():
                 }
 
                 return jsonify(response_payload), StatusCodes.HTTP_OK
-            else:
-                response_payload = {
-                    "message": 'Invalid credentials',
-                    'payload': request_data
-                }
 
-                return jsonify(response_payload), StatusCodes.HTTP_UNAUTHORIZED
-        else:
-            # If user does not exist  return an invalid credentials message
-            response_payload['data'] = {
-                "message": 'Invalid credentials',
-                'payload': request_data
-            }
-
-            return jsonify(response_payload), StatusCodes.HTTP_UNAUTHORIZED
+        # if we got here auth failed
+        response_payload['data'] = {
+            "message": 'Invalid credentials',
+            'payload': request_data
+        }
+        return jsonify(response_payload), StatusCodes.HTTP_UNAUTHORIZED
 
     except Exception as ex:
         return showApiError(ex)

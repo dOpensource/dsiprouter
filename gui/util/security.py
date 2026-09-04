@@ -241,6 +241,91 @@ class APIToken:
             return False
 
 
+def login_required(func):
+    """
+    Decorator that checks if a user is logged in via session.
+    Redirects to login page if not authenticated.
+    """
+    from functools import wraps
+    from flask import session, redirect, url_for, request
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('index', nextpage=request.url))
+        return func(*args, **kwargs)
+    return wrapper
+
+
+def _groupsForToken(token):
+    """
+    Look up the group names for the user owning the given API token.
+
+    Falls back to an empty list when the token is invalid or the database
+    is unavailable, so callers can treat it as a hard authorization failure.
+
+    :param token:   the API token to look up
+    :type token:    str
+    :return:        list of group names the user belongs to
+    :rtype:         list[str]
+    """
+    if not token:
+        return []
+    try:
+        from database import startSession, DummySession, dSIPUserNew, dSIPUserGroup, dSIPGroup
+        db = DummySession()
+        try:
+            db = startSession()
+            user = db.query(dSIPUserNew).filter(dSIPUserNew.api_token == token).first()
+            if user is None:
+                return []
+            groups = db.query(dSIPGroup.name).join(
+                dSIPUserGroup, dSIPGroup.id == dSIPUserGroup.group_id
+            ).filter(dSIPUserGroup.username == user.username).all()
+            return [g[0] for g in groups]
+        finally:
+            db.close()
+    except Exception:
+        return []
+
+
+def role_required(*allowed_groups):
+    """
+    Decorator that checks if the logged-in user belongs to one of the allowed groups.
+    Returns 403 Forbidden if not authorized.
+
+    Authorization is resolved in this order:
+        1. GUI session groups (set at login)
+        2. Groups of the user owning the API token in the request
+
+    Usage:
+        @role_required('dsip_admin')
+        @role_required('dsip_admin', 'dsip_engineer')
+    """
+    from functools import wraps
+    from flask import session, request, jsonify
+    from shared import StatusCodes
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            user_groups = session.get('groups', [])
+            if isinstance(user_groups, str):
+                user_groups = [g.strip() for g in user_groups.split(',') if g.strip()]
+
+            # API token requests have no session; resolve groups from the token
+            if not user_groups:
+                api_token = APIToken(request)
+                if api_token.token:
+                    user_groups = _groupsForToken(api_token.token)
+
+            if not any(g in allowed_groups for g in user_groups):
+                return jsonify({'error': 'http', 'msg': 'Forbidden', 'data': {}}), StatusCodes.HTTP_FORBIDDEN
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 class CryptoLibInfo():
     """
     Wrapper class to standardize and simplify gathering info about the system crypto libraries
