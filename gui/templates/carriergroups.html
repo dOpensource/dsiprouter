@@ -48,7 +48,9 @@
         <td class='gwlist'>{{ row.gwlist|noneFilter() }}</td>
         <td class='authtype hide'>{{ row.r_username|noneFilter() }}</td>
         <td class='r_username hide'>{{ row.r_username|noneFilter() }}</td>
+        {% if 'dsip_admin' in user_groups %}
         <td class='auth_password hide'>{{ row.auth_password|noneFilter() }}</td>
+        {% endif %}
         <td class='auth_domain hide'>{{ row.r_domain|noneFilter() }}</td>
         <td class='auth_username hide'>{{ row.auth_username|noneFilter() }}</td>
         <td class='auth_proxy hide'>{{ row.auth_proxy|noneFilter() }}</td>
@@ -278,10 +280,12 @@
                   <input class="form-control r_username" type="text" name="r_username"
                          placeholder="Username" autofocus="autofocus">
                 </div>
+                {% if 'dsip_admin' in user_groups %}
                 <div class="form-group">
                   <input class="form-control auth_password" type="password" name="auth_password"
                          placeholder="Auth Password">
                 </div>
+                {% endif %}
                 <div class="form-group">
                   <input class="form-control auth_domain" type="text" name="auth_domain"
                          placeholder="Registration Server or Domain">
@@ -405,10 +409,12 @@
                 <input class="form-control r_username" type="text" name="r_username"
                        placeholder="Username" autofocus="autofocus">
               </div>
+              {% if 'dsip_admin' in user_groups %}
               <div class="form-group">
                 <input class="form-control auth_password" type="password" name="auth_password"
                        placeholder="Auth Password">
               </div>
+              {% endif %}
               <div class="form-group">
                 <input class="form-control auth_domain" type="text" name="auth_domain"
                        placeholder="Registration Server or Domain">
