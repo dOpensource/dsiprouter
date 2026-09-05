@@ -118,11 +118,13 @@
               <input class="auth_username form-control" type="text" name="auth_username"
                      placeholder="Auth Username">
             </div>
+            {% if 'dsip_admin' in user_groups %}
             <div class="form-group wrapper-fieldicon-right">
               <input id="auth_password2" class="form-control" type="password" name="auth_password"
                      placeholder="Auth Password">
               <i toggle="#auth_password2" class="field-icon toggle-password ti ti-eye-off"></i>
             </div>
+            {% endif %}
             <div class="form-group">
               <input class="auth_domain form-control" type="text" name="auth_domain"
                      placeholder="Auth Domain (optional)">
@@ -389,11 +391,13 @@ systemctl restart fail2ban</code></pre>
               <input class="auth_username form-control" type="text" name="auth_username"
                      placeholder="Auth Username">
             </div>
+            {% if 'dsip_admin' in user_groups %}
             <div class="form-group wrapper-fieldicon-right">
               <input id="auth_password" class="form-control" type="password" name="auth_password"
                      placeholder="Auth Password">
               <i toggle="#auth_password" class="field-icon toggle-password ti ti-eye-off"></i>
             </div>
+            {% endif %}
             <div class="form-group">
               <input class="auth_domain form-control" typead="text" name="auth_domain"
                      placeholder="Auth Domain (optional)">
