@@ -1,0 +1,20 @@
+{
+  "name": "dsiprouter-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "E2E tests for dSIPRouter using Playwright",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:login": "npx playwright test login",
+    "test:users-crud": "npx playwright test users-crud",
+    "test:rbac": "npx playwright test rbac",
+    "test:password-visibility": "npx playwright test password-visibility",
+    "test:users-api": "npx playwright test users-api",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --debug",
+    "install:browsers": "npx playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

@@ -338,10 +338,25 @@ Now that domains have been synced in dSIPRouter you are able to register a endpo
     :align: center
 
 3. Configuring the Provisioning Server section of the phone. Enter the appropriate information into the fields.
-    a) Server Type (dSIPRouter uses HTTP/s by default)
+    a) Server Type (dSIPRouter uses HTTPS by default)
     b) Server Address (dSIPRouter Address*)
     c) Server Username (device provisioning server name)
     d) Server Password
+
+* If the phone does not support HTTPS,  You will need to change /opt/dsiprouter/gui/modules/fusionpbx/dsiprouter-provisioner.tpl to accept 
+HTTP provisioning requests if your phone does not support HTTPS.
+
+Add the following line before listen 443
+
+```
+listen 80;
+```
+
+You don't need to restart dSIPRouter after making this change because it will automatically pick up the new configuration within a minute.  Also, 
+note, that port 80 might need to be enabled on your external Firewall.  It's already enabled by default on dSIPRouter, but we don't have any process 
+listening on it unless you make the above change.  We leave it open for Let’s Encrypt HTTP validation.  So, Let's Encrypt will not be able to validate
+the domain after you enable HTTP provisioning.
+
 
 4. Click Save 
 

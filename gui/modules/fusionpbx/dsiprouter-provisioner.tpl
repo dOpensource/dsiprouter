@@ -6,6 +6,7 @@ upstream fusionpbx {
 # handle the https requests
 server {
     # by default we listen on all interfaces
+    listen 80;
     listen 443 ssl http2 so_keepalive=on; 
     listen [::]:443 ssl http2 so_keepalive=on;  
     server_name _;
@@ -21,8 +22,8 @@ server {
     }
 	
     location / {
-
-        error_page 404  /404.html;
+        # phone provisioning-only site: phone provisioning files are only served
+        return 404;
 
     }
 

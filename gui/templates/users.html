@@ -1,0 +1,262 @@
+{% extends 'table_layout.html' %}
+
+{% block title %}Users{% endblock %}
+
+{% block table_headers %}
+  <div>
+    <h3>Users</h3>
+  </div>
+
+  <div class="tableAddButton">
+    <button id='open-UserAdd' class='btn btn-success btn-md' data-title="Add" data-bs-toggle="modal"
+            data-bs-target="#add"> Add
+    </button>
+  </div>
+{% endblock %}
+
+
+{% block table %}
+  <table id="users-table" class="table table-striped table-centered" style="width: 100%;">
+    <thead>
+    <tr class='element-row'>
+      <th>Username</th>
+      <th>Name</th>
+      <th>Roles</th>
+      <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for user in users %}
+      <tr class='element-row' data-username="{{ user.username }}">
+        <td class='username'>{{ user.username }}</td>
+        <td class='name'>{{ user.firstname }} {{ user.lastname }}</td>
+        <td class='roles'>{{ user.roles|join(', ') }}</td>
+        <td>
+          <button class="btn btn-primary btn-sm open-Edit" data-bs-toggle="modal" data-bs-target="#edit"
+                  data-id="{{ user.id }}" data-username="{{ user.username }}" data-firstname="{{ user.firstname }}"
+                  data-lastname="{{ user.lastname }}" data-roles="{{ user.roles|join(',') }}"
+                  title="Edit"><i class="ti ti-pencil"></i></button>
+          <button class="btn btn-danger btn-sm open-Delete" data-bs-toggle="modal" data-bs-target="#delete"
+                  data-id="{{ user.id }}" data-username="{{ user.username }}" title="Delete"><i class="ti ti-trash"></i></button>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+
+
+{% block add_modal %}
+  <div class="modal-header">
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i class="ti ti-x"></i></button>
+    <h4 class="modal-title">Add User</h4>
+  </div>
+  <div class="modal-body">
+    <form id="addUserForm" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="form-group">
+        <label for="add-firstname">First Name</label>
+        <input type="text" class="form-control" id="add-firstname" name="firstname" required>
+      </div>
+      <div class="form-group">
+        <label for="add-lastname">Last Name</label>
+        <input type="text" class="form-control" id="add-lastname" name="lastname">
+      </div>
+      <div class="form-group">
+        <label for="add-username">Username</label>
+        <input type="text" class="form-control" id="add-username" name="username" required>
+      </div>
+      <div class="form-group">
+        <label for="add-password">Password</label>
+        <input type="password" class="form-control" id="add-password" name="password" required>
+      </div>
+      <div class="form-group">
+        <label for="add-roles">Roles</label>
+        <select class="form-control" id="add-roles" name="roles" required>
+          <option value="dsip_guest">dsip_guest</option>
+          <option value="dsip_engineer">dsip_engineer</option>
+          <option value="dsip_admin">dsip_admin</option>
+        </select>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-success" id="submitAddUser">Add User</button>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+  </div>
+{% endblock %}
+
+
+{% block edit_modal %}
+  <div class="modal-header">
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i class="ti ti-x"></i></button>
+    <h4 class="modal-title">Edit User</h4>
+  </div>
+  <div class="modal-body">
+    <form id="editUserForm" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" id="edit-id" name="id">
+      <div class="form-group">
+        <label for="edit-username">Username</label>
+        <input type="text" class="form-control" id="edit-username" name="username" readonly>
+      </div>
+      <div class="form-group">
+        <label for="edit-firstname">First Name</label>
+        <input type="text" class="form-control" id="edit-firstname" name="firstname" required>
+      </div>
+      <div class="form-group">
+        <label for="edit-lastname">Last Name</label>
+        <input type="text" class="form-control" id="edit-lastname" name="lastname">
+      </div>
+      <div class="form-group">
+        <label for="edit-password">Password (leave blank to keep current)</label>
+        <input type="password" class="form-control" id="edit-password" name="password">
+      </div>
+      <div class="form-group">
+        <label for="edit-roles">Roles</label>
+        <select class="form-control" id="edit-roles" name="roles" required>
+          <option value="dsip_guest">dsip_guest</option>
+          <option value="dsip_engineer">dsip_engineer</option>
+          <option value="dsip_admin">dsip_admin</option>
+        </select>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-primary" id="submitEditUser">Save Changes</button>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+  </div>
+{% endblock %}
+
+
+{% block delete_modal %}
+  <div class="modal-header">
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i class="ti ti-x"></i></button>
+    <h4 class="modal-title">Delete User</h4>
+  </div>
+  <div class="modal-body">
+    <p>Are you sure you want to delete user <strong id="delete-username-display"></strong>?</p>
+    <input type="hidden" id="delete-id">
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-danger" id="submitDeleteUser">Delete</button>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+  </div>
+{% endblock %}
+
+
+{% block custom_js %}
+<script type="text/javascript">
+  var API_BASE = window.API_BASE_URL;
+
+  // Initialize DataTable
+  $(document).ready(function() {
+    $('#users-table').DataTable({
+      "order": [[ 0, "asc" ]],
+      "pageLength": 25,
+      "language": {
+        "emptyTable": "No users found"
+      }
+    });
+  });
+
+  // Add User
+  $('#submitAddUser').click(function() {
+    var data = {
+      firstname: $('#add-firstname').val(),
+      lastname: $('#add-lastname').val(),
+      username: $('#add-username').val(),
+      password: $('#add-password').val(),
+      roles: [$('#add-roles').val()],
+      domains: []
+    };
+
+    if (!data.username || !data.password) {
+      alert('Username and Password are required');
+      return;
+    }
+
+    $.ajax({
+      url: API_BASE + 'auth/user',
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(data),
+      headers: { 'Accept': 'application/json' },
+      success: function(response) {
+        window.location.reload();
+      },
+      error: function(xhr) {
+        var msg = xhr.responseJSON ? (xhr.responseJSON.data && xhr.responseJSON.data.message) || xhr.responseJSON.msg || xhr.responseJSON.error : 'Error creating user';
+        alert(msg);
+      }
+    });
+  });
+
+  // Edit User - populate modal
+  $(document).on('click', '.open-Edit', function() {
+    var $btn = $(this);
+    $('#edit-id').val($btn.data('id'));
+    $('#edit-username').val($btn.data('username'));
+    $('#edit-firstname').val($btn.data('firstname'));
+    $('#edit-lastname').val($btn.data('lastname'));
+    $('#edit-roles').val($btn.data('roles').split(',')[0]);
+  });
+
+  // Submit Edit
+  $('#submitEditUser').click(function() {
+    var data = {
+      id: $('#edit-id').val(),
+      firstname: $('#edit-firstname').val(),
+      lastname: $('#edit-lastname').val(),
+      username: $('#edit-username').val(),
+      roles: [$('#edit-roles').val()],
+      domains: []
+    };
+
+    var password = $('#edit-password').val();
+    if (password) {
+      data.password = password;
+    }
+
+    $.ajax({
+      url: API_BASE + 'auth/user/' + data.id,
+      type: 'PUT',
+      contentType: 'application/json',
+      data: JSON.stringify(data),
+      headers: { 'Accept': 'application/json' },
+      success: function(response) {
+        window.location.reload();
+      },
+      error: function(xhr) {
+        var msg = xhr.responseJSON ? xhr.responseJSON.msg || xhr.responseJSON.error : 'Error updating user';
+        alert(msg);
+      }
+    });
+  });
+
+  // Delete User - populate modal
+  $(document).on('click', '.open-Delete', function() {
+    var $btn = $(this);
+    $('#delete-id').val($btn.data('id'));
+    $('#delete-username-display').text($btn.data('username'));
+  });
+
+  // Submit Delete
+  $('#submitDeleteUser').click(function() {
+    var id = $('#delete-id').val();
+
+    $.ajax({
+      url: API_BASE + 'auth/user/' + id,
+      type: 'DELETE',
+      headers: { 'Accept': 'application/json' },
+      success: function(response) {
+        window.location.reload();
+      },
+      error: function(xhr) {
+        var msg = xhr.responseJSON ? xhr.responseJSON.msg || xhr.responseJSON.error : 'Error deleting user';
+        alert(msg);
+      }
+    });
+  });
+</script>
+{% endblock %}

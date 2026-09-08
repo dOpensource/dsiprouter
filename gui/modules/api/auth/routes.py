@@ -10,7 +10,7 @@ from util.security import AES_CTR
 from shared import debugEndpoint, StatusCodes, getRequestData
 from database import DummySession, startSession, dSIPUser
 from modules.api.api_functions import showApiError, createApiResponse, api_security
-from modules.api.auth.functions import addDSIPUser
+from modules.api.auth.functions import addDSIPUser, formatRoleString, getUserRoles
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 import settings
 
@@ -158,7 +158,7 @@ def listUsers():
                     "username": the_user.username,
                     "firstname": the_user.firstname,
                     "lastname": the_user.lastname,
-                    "roles": [],
+                    "roles": getUserRoles(the_user.username),
                     "domains": []
                 }
             )
@@ -200,10 +200,11 @@ def getUser(id=None):
         existing_user = db.query(dSIPUser).get(id)
         if (existing_user):
             response_payload = {
+                "id": existing_user.id,
                 "username": existing_user.username,
                 "firstname": existing_user.firstname,
                 "lastname": existing_user.lastname,
-                "roles": [],
+                "roles": getUserRoles(existing_user.username),
                 "domains": []
             }
             return jsonify(response_payload), StatusCodes.HTTP_OK
@@ -251,19 +252,22 @@ def updateUser(id=None):
         existing_user = db.query(dSIPUser).get(id)
         if existing_user:
 
-            existing_user.firstname = request_data['firstname']
-            existing_user.lastname = request_data['lastname']
-            existing_user.username = request_data['username']
-            existing_user.password = AES_CTR.encrypt(request_data['password'])
-            existing_user.roles = ''
-            existing_user.domains = ''
+            existing_user.firstname = request_data.get('firstname', existing_user.firstname)
+            existing_user.lastname = request_data.get('lastname', existing_user.lastname)
+            existing_user.username = request_data.get('username', existing_user.username)
+            # only update the password if one was provided
+            if request_data.get('password'):
+                existing_user.password = AES_CTR.encrypt(request_data['password'])
+            existing_user.roles = formatRoleString(request_data.get('roles'))
+            existing_user.domains = formatRoleString(request_data.get('domains'))
             db.commit()
 
             response_payload = {"message": 'User updated successfully', 'data': {
+                "id": existing_user.id,
                 "username": existing_user.username,
                 "firstname": existing_user.firstname,
                 "lastname": existing_user.lastname,
-                "roles": [],
+                "roles": getUserRoles(existing_user.username),
                 "domains": []
             }}
 

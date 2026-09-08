@@ -2280,7 +2280,7 @@ function installModules() {
     # Install / Uninstall dSIPModules
     for dir in ${DSIP_PROJECT_DIR}/gui/modules/*; do
         if [[ -e ${dir}/install.sh ]]; then
-            ${dir}/install.sh
+            bash ${dir}/install.sh
         fi
     done
 

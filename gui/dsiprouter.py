@@ -11,6 +11,7 @@ import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, sec
 import importlib.util
 from ansi2html import Ansi2HTMLConverter
 from copy import copy
+from functools import wraps
 from importlib import reload
 from flask import Flask, render_template, request, redirect, flash, session, url_for, send_from_directory, Blueprint, Response
 from flask_wtf.csrf import CSRFProtect
@@ -31,7 +32,7 @@ from database import DummySession, createSessionObjects, startSession, settingsT
     DB_ENGINE_NAME, SESSION_LOADER_NAME, settingsToTableFormat, getDsipSettingsTableAsDict, \
     Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, UAC, GatewayGroups, \
     Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable, \
-    Dispatcher, DsipGwgroup2LB
+    Dispatcher, DsipGwgroup2LB, dSIPUser
 from modules.numbers.db.dsip_number import dSIPNumber
 from modules import flowroute
 from modules.domain.domain_routes import domains
@@ -45,6 +46,7 @@ from modules.api.licensemanager.functions import licenseDictToStateDict, getLice
 from modules.api.licensemanager.routes import license_manager
 from modules.api.outboundroutes.routes import outboundroutes
 from modules.api.auth.routes import user
+from modules.api.auth.functions import getUserRoles
 from modules.numbers import numbers
 from util.security import Credentials, urandomChars, AES_CTR
 from util.ipc import SETTINGS_SHMEM_NAME, STATE_SHMEM_NAME, createSharedMemoryDict, getSharedMemoryDict
@@ -215,18 +217,37 @@ def backupandrestore():
         return showError(type=error)
 
 
+def require_permissions(required_groups):
+    """
+    Deny access to a route unless the session user has one of the given roles.
+
+    :param required_groups:     list of role names that may access the route
+    :type required_groups:      list
+    :return:                    decorated route handler
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if not session.get('logged_in'):
+                return render_template('index.html', version=settings.VERSION)
+            user_groups = set(session.get('user_groups', []) or [])
+            if not user_groups.intersection(required_groups):
+                flash('You do not have permission to access this page')
+                return redirect(url_for('index'))
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 @app.route('/settings')
+@require_permissions(['dsip_admin', 'dsip_engineer'])
 def ui_settings():
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        if not session.get('logged_in'):
-            return render_template('index.html', version=settings.VERSION)
-        else:
-            action = request.args.get('action')
-            return render_template('settings.html', show_add_onload=action, version=settings.VERSION)
-
+        action = request.args.get('action')
+        return render_template('settings.html', show_add_onload=action, version=settings.VERSION)
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
@@ -317,6 +338,7 @@ def login():
             if secrets.compare_digest(pwcheck, settings.DSIP_PASSWORD):
                 session['logged_in'] = True
                 session['username'] = form['username']
+                session['user_groups'] = ['dsip_admin']
                 return redirect(_sanitize_nextpage(form.get('nextpage')))
        
         # Check for user in other auth modules
@@ -324,7 +346,26 @@ def login():
             if auth_mod.authenticate(form['username'], form['password']):
                 session['logged_in'] = True
                 session['username'] = form['username']
+                session['user_groups'] = getUserRoles(form['username'])
                 return redirect(_sanitize_nextpage(form.get('nextpage')))
+
+        # Authenticate against the dsip_user table (multi-user support)
+        # Passwords are AES-CTR encrypted (same scheme as /api/v1/auth/login)
+        db = startSession()
+        try:
+            db_user = db.query(dSIPUser).filter(dSIPUser.username == form['username']).first()
+            if db_user is not None and db_user.password:
+                try:
+                    decrypted = AES_CTR.decrypt(db_user.password)
+                except Exception:
+                    decrypted = None
+                if decrypted and secrets.compare_digest(decrypted, form['password']):
+                    session['logged_in'] = True
+                    session['username'] = form['username']
+                    session['user_groups'] = getUserRoles(form['username'])
+                    return redirect(_sanitize_nextpage(form.get('nextpage')))
+        finally:
+            db.close()
 
         # if we got here auth failed
         flash('Wrong Username or Password')
@@ -347,6 +388,7 @@ def logout():
 
         session.pop('logged_in', None)
         session.pop('username', None)
+        session.pop('user_groups', None)
         return redirect(url_for('index'))
 
     except http_exceptions.HTTPException as ex:
@@ -354,6 +396,43 @@ def logout():
         return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+
+@app.route('/users')
+@require_permissions(['dsip_admin'])
+def users():
+    """
+    Display the multi-user management page (admin only).
+
+    Users come from the existing dsip_user table; the GUI creates/updates/
+    deletes users through the existing /api/v1/auth/user API.
+    """
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        db = startSession()
+        try:
+            rows = db.query(dSIPUser).all()
+            users_data = [{
+                'id': user.id,
+                'username': user.username,
+                'firstname': user.firstname or '',
+                'lastname': user.lastname or '',
+                'roles': getUserRoles(user.username),
+            } for user in rows]
+        finally:
+            db.close()
+
+        return render_template('users.html', users=users_data, version=settings.VERSION)
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        return showError(type='http', code=ex.code, msg=ex.description)
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
         return showError(type=error)
 
@@ -2353,7 +2432,8 @@ def injectGlobals():
         'settings': settings,
         'state': state,
         'licenseValid': lambda tag: getLicenseStatusFromStateDict(state['dsip_license_store'], tag),
-        'dynamicModules': dynamicModules
+        'dynamicModules': dynamicModules,
+        'user_groups': session.get('user_groups', [])
     }
 
 

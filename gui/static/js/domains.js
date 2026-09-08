@@ -113,7 +113,7 @@
       .DataTable({
       "columnDefs": [
         {"orderable": true, "targets": [1, 2, 3, 4, 5, 6, 7]},
-        {"orderable": false, "targets": [0, 8, 9]},
+        {"orderable": false, "targets": [0, 8, 9, 10]},
       ],
       "order": [[1, 'asc']]
     });
