@@ -1,0 +1,127 @@
+{% extends 'fullwidth_layout.html' %}
+
+{% block title %}Security Settings{% endblock %}
+
+{% block custom_css %}
+  {{ link_tag('security_settings', 'security_settings') }}
+{% endblock %}
+
+{% block body %}
+  <div class="col-md-12 ps-4 pe-4">
+    <div class="security-settings-header">
+      <h3>Security Settings</h3>
+      <button id="save-pipelimit" class="btn btn-success btn-md" type="button">Save Rate Limiting</button>
+    </div>
+
+    <ul class="nav nav-tabs" id="security-settings-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="rate-limiting-tab" data-bs-toggle="tab" data-bs-target="#rate-limiting" type="button" role="tab" aria-controls="rate-limiting" aria-selected="true">
+          Rate Limiting
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="future-tab" data-bs-toggle="tab" data-bs-target="#future-security" type="button" role="tab" aria-controls="future-security" aria-selected="false">
+          More Security Controls
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content security-settings-content" id="security-settings-content">
+      <div class="tab-pane fade show active" id="rate-limiting" role="tabpanel" aria-labelledby="rate-limiting-tab">
+        <div class="table-responsive">
+          <table class="table table-striped table-centered" id="pipelimit-settings-table">
+            <thead>
+              <tr class="element-row">
+                <th>Setting</th>
+                <th>Value</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>hash_size</td>
+                <td><input class="form-control" id="PIPELIMIT_HASH_SIZE" type="number" min="0" value="{{ pipelimit['PIPELIMIT_HASH_SIZE'] }}"></td>
+                <td>Power of two for pipe hash slots (slots = 2^hash_size).</td>
+              </tr>
+              <tr>
+                <td>db_url</td>
+                <td><input class="form-control" id="PIPELIMIT_DB_URL" type="text" value="{{ pipelimit['PIPELIMIT_DB_URL'] }}"></td>
+                <td>Database URL used by pipelimit for pipe definitions.</td>
+              </tr>
+              <tr>
+                <td>plp_table_name</td>
+                <td><input class="form-control" id="PIPELIMIT_PLP_TABLE_NAME" type="text" value="{{ pipelimit['PIPELIMIT_PLP_TABLE_NAME'] }}"></td>
+                <td>Table storing pipe definitions.</td>
+              </tr>
+              <tr>
+                <td>plp_pipeid_column</td>
+                <td><input class="form-control" id="PIPELIMIT_PLP_PIPEID_COLUMN" type="text" value="{{ pipelimit['PIPELIMIT_PLP_PIPEID_COLUMN'] }}"></td>
+                <td>Column name for pipe identifier.</td>
+              </tr>
+              <tr>
+                <td>plp_limit_column</td>
+                <td><input class="form-control" id="PIPELIMIT_PLP_LIMIT_COLUMN" type="text" value="{{ pipelimit['PIPELIMIT_PLP_LIMIT_COLUMN'] }}"></td>
+                <td>Column name for per-pipe limit value.</td>
+              </tr>
+              <tr>
+                <td>plp_algorithm_column</td>
+                <td><input class="form-control" id="PIPELIMIT_PLP_ALGORITHM_COLUMN" type="text" value="{{ pipelimit['PIPELIMIT_PLP_ALGORITHM_COLUMN'] }}"></td>
+                <td>Column name for rate-limit algorithm.</td>
+              </tr>
+              <tr>
+                <td>timer_interval</td>
+                <td><input class="form-control" id="PIPELIMIT_TIMER_INTERVAL" type="number" min="1" value="{{ pipelimit['PIPELIMIT_TIMER_INTERVAL'] }}"></td>
+                <td>Timer interval in seconds for counters and load calculations.</td>
+              </tr>
+              <tr>
+                <td>timer_mode</td>
+                <td>
+                  <select class="form-control" id="PIPELIMIT_TIMER_MODE">
+                    <option value="0" {% if pipelimit['PIPELIMIT_TIMER_MODE'] == 0 %}selected{% endif %}>0 - main fast timer</option>
+                    <option value="1" {% if pipelimit['PIPELIMIT_TIMER_MODE'] == 1 %}selected{% endif %}>1 - secondary wheel timer</option>
+                  </select>
+                </td>
+                <td>Select the timer process used by pipelimit.</td>
+              </tr>
+              <tr>
+                <td>load_fetch</td>
+                <td>
+                  <select class="form-control" id="PIPELIMIT_LOAD_FETCH">
+                    <option value="0" {% if pipelimit['PIPELIMIT_LOAD_FETCH'] == 0 %}selected{% endif %}>0 - disabled</option>
+                    <option value="1" {% if pipelimit['PIPELIMIT_LOAD_FETCH'] == 1 %}selected{% endif %}>1 - enabled</option>
+                  </select>
+                </td>
+                <td>Enable or disable CPU/network load sampling each interval.</td>
+              </tr>
+              <tr>
+                <td>reply_code</td>
+                <td><input class="form-control" id="PIPELIMIT_REPLY_CODE" type="number" min="100" max="699" value="{{ pipelimit['PIPELIMIT_REPLY_CODE'] }}"></td>
+                <td>SIP reply code sent when requests are rate limited.</td>
+              </tr>
+              <tr>
+                <td>reply_reason</td>
+                <td><input class="form-control" id="PIPELIMIT_REPLY_REASON" type="text" value="{{ pipelimit['PIPELIMIT_REPLY_REASON'] }}"></td>
+                <td>SIP reply reason phrase for throttled requests.</td>
+              </tr>
+              <tr>
+                <td>clean_unused</td>
+                <td><input class="form-control" id="PIPELIMIT_CLEAN_UNUSED" type="number" min="0" value="{{ pipelimit['PIPELIMIT_CLEAN_UNUSED'] }}"></td>
+                <td>Cleanup threshold in timer intervals for unused pipes (0 disables cleanup).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="future-security" role="tabpanel" aria-labelledby="future-tab">
+        <div class="module-placeholder-panel">
+          Additional security tabs can be added here.
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block custom_js %}
+  {{ script_tag('security_settings', 'security_settings') }}
+{% endblock %}
