@@ -1,0 +1,96 @@
+{% extends 'table_layout.html' %}
+
+{% block title %}Rate Limiting{% endblock %}
+
+{% block custom_css %}
+  {{ link_tag('rate_limiting', 'rate_limiting') }}
+{% endblock %}
+
+{% block table_headers %}
+  <div>
+    <h3>Rate Limiting</h3>
+  </div>
+
+  <div class="tableAddButton">
+    <div class="btn-group mr-2">
+      <button id="save-pike" class="btn btn-success btn-md" type="button">Save</button>
+    </div>
+  </div>
+{% endblock %}
+
+{% block table %}
+  <ul class="nav nav-tabs" id="rate-limiting-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <a class="nav-link active" id="rate-limiting-tab" href="#rate-limiting" data-bs-toggle="tab" role="tab" aria-controls="rate-limiting" aria-selected="true">
+        Flood Mitigation
+      </a>
+    </li>
+    <li class="nav-item" role="presentation">
+      <a class="nav-link" id="banned-hosts-tab" href="#banned-hosts" data-bs-toggle="tab" role="tab" aria-controls="banned-hosts" aria-selected="false">
+        Banned Hosts
+      </a>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="rate-limiting-content">
+    <div class="tab-pane fade show active" id="rate-limiting" role="tabpanel" aria-labelledby="rate-limiting-tab">
+      <div class="table-responsive">
+        <table class="table table-striped table-centered" id="pike-settings-table">
+          <thead>
+            <tr class="element-row">
+              <th>Setting</th>
+              <th>Value</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>sampling_time_unit</td>
+              <td><input class="form-control" id="PIKE_SAMPLING_TIME_UNIT" type="number" min="1" value="{{ pike['PIKE_SAMPLING_TIME_UNIT'] }}"></td>
+              <td>Time unit in seconds used by pike to sample the number of requests from an IP address.</td>
+            </tr>
+            <tr>
+              <td>reqs_density_per_unit</td>
+              <td><input class="form-control" id="PIKE_REQS_DENSITY_PER_UNIT" type="number" min="1" value="{{ pike['PIKE_REQS_DENSITY_PER_UNIT'] }}"></td>
+              <td>Number of requests per sampling time unit allowed from an IP address before it is flagged as a flood.</td>
+            </tr>
+            <tr>
+              <td>remove_latency</td>
+              <td><input class="form-control" id="PIKE_REMOVE_LATENCY" type="number" min="1" value="{{ pike['PIKE_REMOVE_LATENCY'] }}"></td>
+              <td>Time in seconds an IP address is kept in the pike tree after its request rate drops back to normal.</td>
+            </tr>
+            <tr>
+              <td>ipban_period</td>
+              <td><input class="form-control" id="PIKE_IPBAN_PERIOD" type="number" min="1" value="{{ pike['PIKE_IPBAN_PERIOD'] }}"></td>
+              <td>The period of time (seconds) an IP address is banned once it triggers pike's flood limit.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-pane fade" id="banned-hosts" role="tabpanel" aria-labelledby="banned-hosts-tab">
+      <div class="table-responsive">
+        <table class="table table-striped table-centered" id="banned-hosts-table">
+          <thead>
+            <tr class="element-row">
+              <th>IP Address</th>
+              <th>Banned Until</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div id="banned-hosts-empty" class="module-placeholder-panel" style="display: none;">
+          No banned hosts.
+        </div>
+        <div id="banned-hosts-error" class="module-placeholder-panel" style="display: none;">
+          Unable to load banned hosts.
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block custom_js %}
+  {{ script_tag('rate_limiting', 'rate_limiting') }}
+{% endblock %}

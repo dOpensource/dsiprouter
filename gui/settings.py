@@ -234,5 +234,11 @@ GIT_RELEASE_URL = 'https://api.github.com/repos/dOpensource/dsiprouter/releases'
 AUTH_MODULES = {}
 
 VOICEAI_OPENAI_KEY = ''
-VOICEAI_AGENT_IMAGE = 'dopensource/dsiprouter-voice-agents:latest' 
+VOICEAI_AGENT_IMAGE = 'dopensource/dsiprouter-voice-agents:latest'
+
+# Pike (Rate Limiting) Settings
+PIKE_SAMPLING_TIME_UNIT = 2
+PIKE_REQS_DENSITY_PER_UNIT = 50
+PIKE_REMOVE_LATENCY = 30
+PIKE_IPBAN_PERIOD = 300
 ############### End Local-Only Settings ##################

@@ -1,5 +1,6 @@
 # dSIPRouter Project Specific Ignored Files
 .idea
+.junie
 /resources/terraform/do/*.tfstate
 /resources/terraform/do/*.backup
 /resources/terraform/do/.terraform
@@ -14,17 +15,12 @@
 *.db
 *.sqlite
 venv/
+.venv/
 # TODO: these following files could be generated elsewhere
 # adding them to python path where needed to cleanup project dir
 docs/build/
 gui/modules/fusionpbx/certs/cert.key
 gui/modules/fusionpbx/certs/cert_combined.crt
-*.pyc
-*.pyo
-*.pyd
-*.db
-*.sqlite3
-*.log
 *.pot
 *.mo
 *.swp

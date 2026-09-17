@@ -121,6 +121,8 @@ def reloadKamailio():
             rpc_args.append(('127.0.0.1', 'domain.reload'))
         if 'WITH_TELEBLOCK' in features_enabled:
             rpc_args.append(('127.0.0.1', 'cfg.sets', ['teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)]))
+        if 'WITH_ANTIFLOOD' in features_enabled:
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['rate_limiting', 'ipban_period', str(settings.PIKE_IPBAN_PERIOD)]))
         if 'WITH_LCR' in features_enabled:
             rpc_args.append(('127.0.0.1', 'htable.reload', ['tofromprefix']))
         #if 'WITH_TLS' in features_enabled:
