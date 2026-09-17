@@ -1,0 +1,486 @@
+Subject: [PATCH] pike: add runtime-configurable parameters and cleanup
+
+- Introduced pike_config module for runtime configuration adjustments
+  (e.g., sampling_time_unit and remove_latency).
+- Updated timers and internal logic to use cfg framework values.
+- Added runtime-updatable max hits and related helper functions.
+- Refactored outdated parameter handling for better modularity.
+- Enhanced documentation with relevant configuration details.
+---
+Index: .gitignore
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.gitignore b/.gitignore
+--- a/.gitignore	(revision 38aa36f7e9de771a0be43104e46f605ec8868470)
++++ b/.gitignore	(date 1789654378604)
+@@ -55,3 +55,14 @@
+ # compiling tools files
+ .clangd
+ compile_commands.json
++CMakeLists.txt.user
++CMakeCache.txt
++CMakeFiles
++CMakeScripts
++Testing
++Makefile
++cmake_install.cmake
++install_manifest.txt
++CTestTestfile.cmake
++_deps
++CMakeUserPresets.json
+Index: src/modules/pike/ip_tree.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/modules/pike/ip_tree.h b/src/modules/pike/ip_tree.h
+--- a/src/modules/pike/ip_tree.h	(revision 38aa36f7e9de771a0be43104e46f605ec8868470)
++++ b/src/modules/pike/ip_tree.h	(date 1789659449020)
+@@ -68,7 +68,6 @@
+ 		pike_ip_node_t *node;
+ 		int lock_idx;
+ 	} entries[MAX_IP_BRANCHES];
+-	unsigned short max_hits;
+ 	gen_lock_set_t *entry_lock_set;
+ } pike_ip_tree_t;
+ 
+@@ -78,7 +77,7 @@
+ 						- (unsigned long)(&((pike_ip_node_t *)0)->timer_ll)))
+ 
+ 
+-int init_ip_tree(int);
++int init_ip_tree(void);
+ void destroy_ip_tree(void);
+ pike_ip_node_t *mark_node(unsigned char *ip, int ip_len,
+ 		pike_ip_node_t **father, unsigned char *flag);
+Index: src/modules/pike/pike_funcs.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/modules/pike/pike_funcs.c b/src/modules/pike/pike_funcs.c
+--- a/src/modules/pike/pike_funcs.c	(revision 38aa36f7e9de771a0be43104e46f605ec8868470)
++++ b/src/modules/pike/pike_funcs.c	(date 1789657735826)
+@@ -36,12 +36,12 @@
+ #include "../../core/mod_fix.h"
+ #include "ip_tree.h"
+ #include "pike_funcs.h"
++#include "pike_config.h"
+ #include "timer.h"
+ 
+ 
+ extern gen_lock_t *pike_timer_lock;
+ extern pike_list_link_t *pike_timer;
+-extern int pike_timeout;
+ extern int pike_log_level;
+ 
+ counter_handle_t blocked;
+@@ -80,7 +80,7 @@
+ 	if(flags & NEW_NODE) {
+ 		/* put this node into the timer list and remove its
+ 		 * father only if this has one kid and is not a LEAF_NODE*/
+-		node->expires = get_ticks() + pike_timeout;
++		node->expires = get_ticks() + cfg_get(pike, pike_cfg, remove_latency);
+ 		append_to_timer(pike_timer, &(node->timer_ll));
+ 		node->flags |= NODE_INTIMER_FLAG;
+ 		if(father) {
+@@ -113,7 +113,8 @@
+ 			/* if node expired, ignore the current hit and let is
+ 			 * expire in timer process */
+ 			if(!(flags & NO_UPDATE) && !(node->flags & NODE_EXPIRED_FLAG)) {
+-				node->expires = get_ticks() + pike_timeout;
++				node->expires =
++						get_ticks() + cfg_get(pike, pike_cfg, remove_latency);
+ 				update_in_timer(pike_timer, &(node->timer_ll));
+ 			}
+ 		} else {
+@@ -271,8 +272,8 @@
+ 				node->flags &= ~NODE_IPLEAF_FLAG;
+ 				node->leaf_hits[CURR_POS] = 0;
+ 			} else {
+-				/* if the node has no prev, means it is a top branch node -> just
+-				 * removed and destroy it */
++				/* if the node has no prev, means it is a top branch node
++				 * -> just removed and destroy it */
+ 				if(node->prev != 0) {
+ 					/* if this is the last kid, we have to put the father
+ 					 * into timer list */
+@@ -283,7 +284,9 @@
+ 						 * (in this case, it's already there) */
+ 						if(!(dad->flags & NODE_IPLEAF_FLAG)) {
+ 							lock_get(pike_timer_lock);
+-							dad->expires = get_ticks() + pike_timeout;
++							dad->expires =
++									get_ticks()
++									+ cfg_get(pike, pike_cfg, remove_latency);
+ 							assert(!has_timer_set(&(dad->timer_ll)));
+ 							append_to_timer(pike_timer, &(dad->timer_ll));
+ 							dad->flags |= NODE_INTIMER_FLAG;
+@@ -324,15 +327,40 @@
+ {
+ 	pike_ip_node_t *node;
+ 	int i;
++	int stu;
++	static unsigned int swap_last_run = 0;
++	static int swap_initialized = 0;
++
++	/* the timer is registered with a fixed 1-tick base interval; track
++	 * elapsed ticks internally so that the sampling window
++	 * (sampling_time_unit) can be changed at runtime without having to
++	 * re-register the core timer */
++	stu = cfg_get(pike, pike_cfg, sampling_time_unit);
++	if(stu < 1)
++		stu = 1;
++
++	if(!swap_initialized) {
++		/* first run - just record the reference tick, avoid an immediate
++		 * refresh right after startup */
++		swap_last_run = ticks;
++		swap_initialized = 1;
++		return;
++	}
++
++	if((ticks - swap_last_run) < (unsigned int)stu) {
++		return;
++	}
+ 
+-	/* LM_DBG("entering \n"); */
++	swap_last_run = ticks;
++
+ 	for(i = 0; i < MAX_IP_BRANCHES; i++) {
+ 		node = get_tree_branch(i);
+ 		if(node) {
+ 			lock_tree_branch(i);
+ 			node = get_tree_branch(i); /* again, to avoid races */
+-			if(node)
++			if(node) {
+ 				refresh_node(node);
++			}
+ 			unlock_tree_branch(i);
+ 		}
+ 	}
+Index: src/modules/pike/doc/pike_admin.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>ISO-8859-1
+===================================================================
+diff --git a/src/modules/pike/doc/pike_admin.xml b/src/modules/pike/doc/pike_admin.xml
+--- a/src/modules/pike/doc/pike_admin.xml	(revision 38aa36f7e9de771a0be43104e46f605ec8868470)
++++ b/src/modules/pike/doc/pike_admin.xml	(date 1789657493087)
+@@ -76,6 +76,11 @@
+ 			Default value is <quote>2</quote>.
+ 		</emphasis>
+ 		</para>
++        <para>
++        This parameter is runtime-changeable using <command>kamcmd cfg.seti pike sampling_time_unit &lt;value&gt;
++        </command> and can be inspected via <command>kamcmd cfg.get pike sampling_time_unit</command>. Changes take
++        effect on subsequent refresh decisions, not retroactively.
++        </para>
+ 		<example>
+ 		<title>Set <varname>sampling_time_unit</varname> parameter</title>
+ 		<programlisting format="linespecific">
+@@ -97,6 +102,10 @@
+ 		<emphasis>
+ 			Default value is 30.
+ 		</emphasis>
++        </para>
++        <para>
++        This parameter is runtime-changeable using <command>kamcmd cfg.seti pike reqs_density_per_unit &lt;value&gt;
++        </command> and can be inspected via <command>kamcmd cfg.get pike reqs_density_per_unit</command>.
+ 		</para>
+ 		<example>
+ 		<title>Set <varname>reqs_density_per_unit</varname> parameter</title>
+@@ -122,6 +131,10 @@
+ 		<emphasis>
+ 			Default value is 120.
+ 		</emphasis>
++        </para>
++        <para>
++        This parameter is runtime-changeable using <command>kamcmd cfg.seti pike remove_latency &lt;value&gt;</command>
++        and can be inspected via <command>kamcmd cfg.get pike remove_latency</command>.
+ 		</para>
+ 		<example>
+ 		<title>Set <varname>remove_latency</varname> parameter</title>
+Index: src/modules/pike/ip_tree.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/modules/pike/ip_tree.c b/src/modules/pike/ip_tree.c
+--- a/src/modules/pike/ip_tree.c	(revision 38aa36f7e9de771a0be43104e46f605ec8868470)
++++ b/src/modules/pike/ip_tree.c	(date 1789659443142)
+@@ -31,6 +31,7 @@
+ #include "../../core/dprint.h"
+ #include "../../core/mem/shm_mem.h"
+ #include "ip_tree.h"
++#include "pike_config.h"
+ 
+ 
+ static pike_ip_tree_t *pike_root = 0;
+@@ -105,7 +106,7 @@
+ 
+ 
+ /* Builds and Inits a new IP tree */
+-int init_ip_tree(int maximum_hits)
++int init_ip_tree(void)
+ {
+ 	int size;
+ 	int i;
+@@ -131,8 +132,6 @@
+ 		pike_root->entries[i].lock_idx = i % size;
+ 	}
+ 
+-	pike_root->max_hits = maximum_hits;
+-
+ 	return 0;
+ error:
+ 	if(pike_root) {
+@@ -144,7 +143,7 @@
+ 
+ unsigned int get_max_hits()
+ {
+-	return (pike_root != 0) ? pike_root->max_hits : -1;
++	return (pike_root != 0) ? cfg_get(pike, pike_cfg, reqs_density_per_unit) : -1;
+ }
+ 
+ /* destroy an ip_node and all nodes under it; the nodes must be first removed
+@@ -233,21 +232,25 @@
+ }
+ 
+ 
+-#define is_hot_non_leaf(_node)                                            \
+-	((_node)->hits[PREV_POS] >= pike_root->max_hits >> 2                  \
+-			|| (_node)->hits[CURR_POS] >= pike_root->max_hits >> 2        \
+-			|| (((_node)->hits[PREV_POS] + (_node)->hits[CURR_POS]) >> 1) \
+-					   >= pike_root->max_hits >> 2)
++#define is_hot_non_leaf(_node)                                              \
++	((_node)->hits[PREV_POS] >= cfg_get(pike, pike_cfg, reqs_density_per_unit) >> 2   \
++			|| (_node)->hits[CURR_POS]                                      \
++					   >= cfg_get(pike, pike_cfg, reqs_density_per_unit) >> 2 \
++			|| (((_node)->hits[PREV_POS] + (_node)->hits[CURR_POS]) >> 1)   \
++					   >= cfg_get(pike, pike_cfg, reqs_density_per_unit) >> 2)
+ 
+ #define is_hot_leaf(_node)                                                    \
+-	((_node)->leaf_hits[PREV_POS] >= pike_root->max_hits                      \
+-			|| (_node)->leaf_hits[CURR_POS] >= pike_root->max_hits            \
++	((_node)->leaf_hits[PREV_POS]                                             \
++					>= cfg_get(pike, pike_cfg, reqs_density_per_unit)         \
++			|| (_node)->leaf_hits[CURR_POS]                                   \
++					   >= cfg_get(pike, pike_cfg, reqs_density_per_unit)      \
+ 			|| (((_node)->leaf_hits[PREV_POS] + (_node)->leaf_hits[CURR_POS]) \
+ 					   >> 1)                                                  \
+-					   >= pike_root->max_hits)
++					   >= cfg_get(pike, pike_cfg, reqs_density_per_unit))
+ 
+-#define is_warm_leaf(_node) \
+-	((_node)->hits[CURR_POS] >= pike_root->max_hits >> 2)
++#define is_warm_leaf(_node)                                          \
++	((_node)->hits[CURR_POS]                                        \
++			>= cfg_get(pike, pike_cfg, reqs_density_per_unit) >> 2)
+ 
+ #define MAX_TYPE_VAL(_x) \
+ 	(((1 << (8 * sizeof(_x) - 1)) - 1) | ((1 << (8 * sizeof(_x) - 1))))
+Index: src/modules/pike/pike_config.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/modules/pike/pike_config.c b/src/modules/pike/pike_config.c
+new file mode 100644
+--- /dev/null	(date 1789659434932)
++++ b/src/modules/pike/pike_config.c	(date 1789659434932)
+@@ -0,0 +1,56 @@
++/*
++ * PIKE module
++ *
++ * Copyright (C) 2001-2003 FhG Fokus
++ *
++ * This file is part of Kamailio, a free SIP server.
++ *
++ * SPDX-License-Identifier: GPL-2.0-or-later
++ *
++ * Kamailio is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version
++ *
++ * Kamailio is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
++ *
++ */
++
++/*!
++ * \file
++ * \brief PIKE :: Configuration
++ * \ingroup pike
++ */
++
++
++#include "../../core/cfg/cfg.h"
++
++#include "pike_config.h"
++#include "ip_tree.h"
++
++/* clang-format off */
++struct cfg_group_pike default_pike_cfg = {
++	2,	/* sampling_time_unit */
++	30,	/* reqs_density_per_unit */
++	120	/* remove_latency */
++};
++
++void *pike_cfg = &default_pike_cfg;
++
++cfg_def_t pike_cfg_def[] = {
++	{"sampling_time_unit",    CFG_VAR_INT | CFG_ATOMIC, 0, 0, 0, 0,
++		"Time unit (in seconds) used for sampling the incoming hits."},
++	{"reqs_density_per_unit", CFG_VAR_INT | CFG_ATOMIC, 0, 0, 0, 0,
++		"Number of requests per sampling time unit that triggers the HOT/WARM state."},
++	{"remove_latency",        CFG_VAR_INT | CFG_ATOMIC, 0, 0, 0, 0,
++		"Time (in seconds) after which an unused leaf/node is removed from the tree."},
++	{0, 0, 0, 0, 0, 0}
++};
++/* clang-format on */
+Index: src/modules/pike/pike_config.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/modules/pike/pike_config.h b/src/modules/pike/pike_config.h
+new file mode 100644
+--- /dev/null	(date 1789644007175)
++++ b/src/modules/pike/pike_config.h	(date 1789644007175)
+@@ -0,0 +1,49 @@
++/*
++ * PIKE module
++ *
++ * Copyright (C) 2001-2003 FhG Fokus
++ *
++ * This file is part of Kamailio, a free SIP server.
++ *
++ * SPDX-License-Identifier: GPL-2.0-or-later
++ *
++ * Kamailio is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version
++ *
++ * Kamailio is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
++ *
++ */
++
++/*!
++ * \file
++ * \brief PIKE :: Configuration
++ * \ingroup pike
++ */
++
++
++#ifndef _PIKE_CONFIG_H
++#define _PIKE_CONFIG_H
++
++#include "../../core/cfg/cfg.h"
++
++struct cfg_group_pike
++{
++	int sampling_time_unit;
++	int reqs_density_per_unit;
++	int remove_latency;
++};
++
++extern struct cfg_group_pike default_pike_cfg;
++extern void *pike_cfg;
++extern cfg_def_t pike_cfg_def[];
++
++#endif
+Index: src/modules/pike/pike.c
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/modules/pike/pike.c b/src/modules/pike/pike.c
+--- a/src/modules/pike/pike.c	(revision 38aa36f7e9de771a0be43104e46f605ec8868470)
++++ b/src/modules/pike/pike.c	(date 1789659452186)
+@@ -39,9 +39,11 @@
+ #include "../../core/locking.h"
+ #include "../../core/kemi.h"
+ #include "../../core/mod_fix.h"
++#include "../../core/cfg/cfg.h"
+ #include "ip_tree.h"
+ #include "timer.h"
+ #include "pike_funcs.h"
++#include "pike_config.h"
+ #include "../../core/rpc_lookup.h"
+ #include "pike_rpc.h"
+ 
+@@ -53,9 +55,6 @@
+ 
+ 
+ /* parameters */
+-static int pike_time_unit = 2;
+-static int pike_max_reqs = 30;
+-int pike_timeout = 120;
+ int pike_log_level = L_WARN;
+ 
+ /* global variables */
+@@ -72,9 +71,9 @@
+ };
+ 
+ static param_export_t params[] = {
+-	{"sampling_time_unit", PARAM_INT, &pike_time_unit},
+-	{"reqs_density_per_unit", PARAM_INT, &pike_max_reqs},
+-	{"remove_latency", PARAM_INT, &pike_timeout},
++	{"sampling_time_unit", PARAM_INT, &default_pike_cfg.sampling_time_unit},
++	{"reqs_density_per_unit", PARAM_INT, &default_pike_cfg.reqs_density_per_unit},
++	{"remove_latency", PARAM_INT, &default_pike_cfg.remove_latency},
+ 	{"pike_log_level", PARAM_INT, &pike_log_level},
+ 	{0, 0, 0}
+ };
+@@ -97,6 +96,12 @@
+ {
+ 	LOG(L_INFO, "PIKE - initializing\n");
+ 
++	if(cfg_declare("pike", pike_cfg_def, &default_pike_cfg, cfg_sizeof(pike),
++			   &pike_cfg)) {
++		LM_ERR("failed to declare the configuration\n");
++		return -1;
++	}
++
+ 	if(rpc_register_array(pike_rpc_methods) != 0) {
+ 		LM_ERR("failed to register RPC commands\n");
+ 		return -1;
+@@ -115,7 +120,7 @@
+ 	}
+ 
+ 	/* init the IP tree */
+-	if(init_ip_tree(pike_max_reqs) != 0) {
++	if(init_ip_tree() != 0) {
+ 		LM_ERR(" ip_tree creation failed!\n");
+ 		goto error2;
+ 	}
+@@ -130,7 +135,10 @@
+ 
+ 	/* registering timing functions  */
+ 	register_timer(clean_routine, 0, 1);
+-	register_timer(swap_routine, 0, pike_time_unit);
++	/* swap_routine is registered with a fixed base interval; the actual
++	 * sampling window is tracked internally against the live
++	 * sampling_time_unit cfg value, so it can be changed at runtime */
++	register_timer(swap_routine, 0, 1);
+ 
+ 	/* Register counter */
+ 	pike_counter_init();
