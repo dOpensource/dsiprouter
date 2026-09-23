@@ -4139,9 +4139,6 @@ function processCMD() {
 
                         PUBLIC_IFACE=$(echo "$TMP" | cut -d ',' -f 1)
                         PRIVATE_IFACE=$(echo "$TMP" | cut -d ',' -f 2)
-			echo $PUBLIC_IFACE
-			echo $PRIVATE_IFACE
-			exit
                         ;;
                     -netm|--network-mode=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then
