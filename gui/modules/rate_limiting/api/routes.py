@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, re
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
@@ -7,7 +7,8 @@ from flask import Blueprint, jsonify, render_template, request, session
 from modules.api.api_functions import createApiResponse, showApiError, api_security
 from modules.api.kamailio.functions import sendJsonRpcCmd
 from modules.api.kamailio.errors import KamailioError
-from shared import getRequestData, updateConfig, showError, debugException, debugEndpoint
+from shared import getRequestData, updateConfig, showError, debugException, debugEndpoint, IO
+from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from werkzeug import exceptions as http_exceptions
 import settings
 
@@ -55,27 +56,43 @@ def _coerce_pike_payload(payload):
     return fields
 
 
-def _apply_pike_runtime(fields):
+def _persist_pike_to_kamcfg(fields):
     """
-    Push changed pike settings to the running Kamailio instance at runtime,
-    using the cfg framework added by kamailio/pike.patch (no reload required).
+    Persist changed pike/rate_limiting settings directly into the Kamailio config file
+    on disk, so the values are correctly loaded the next time Kamailio (re)starts.
+
+    Pike settings (sampling_time_unit, reqs_density_per_unit, remove_latency) are set
+    via modparam() and are only ever read at Kamailio startup, while ipban_period is a
+    plain global cfg param. Neither of these are updated by settings.py alone, and the
+    RPC based hot reload only changes the running process' in-memory value, not what is
+    on disk, so without this the settings would revert on the next Kamailio restart.
 
     :param fields: dict of PIKE_* setting names to their new int values
     :type fields:  dict
-    :return:       error message if the live-apply failed, otherwise None
-    :rtype:        str|None
     """
-    for key, value in fields.items():
-        cfg_group = PIKE_FIELDS[key]['cfg_group']
-        cfg_name = PIKE_FIELDS[key]['cfg_name']
-        try:
-            sendJsonRpcCmd('127.0.0.1', 'cfg.set_now_int', [cfg_group, cfg_name, value])
-        except requests.exceptions.RequestException as ex:
-            return f'Failed to apply pike setting "{cfg_name}" to Kamailio: {str(ex)}'
-        except KamailioError as ex:
-            return f'Failed to apply pike setting "{cfg_name}" to Kamailio: {str(ex)}'
+    with open(settings.KAM_CFG_PATH, 'r+') as kamcfg:
+        kamcfg_str = kamcfg.read()
 
-    return None
+        for key, value in fields.items():
+            cfg_group = PIKE_FIELDS[key]['cfg_group']
+            cfg_name = PIKE_FIELDS[key]['cfg_name']
+
+            if cfg_group == 'pike':
+                # pike settings are configured via modparam(), e.g.:
+                # modparam("pike", "sampling_time_unit", 2)
+                regex = r'(modparam\(\s*[\'"]pike[\'"]\s*,\s*[\'"]' + re.escape(cfg_name) + \
+                        r'[\'"]\s*,\s*)\d+(\s*\))'
+            else:
+                # other settings are plain global cfg params, e.g.:
+                # rate_limiting.ipban_period = 300 desc "..."
+                regex = r'^(' + re.escape(f'{cfg_group}.{cfg_name}') + r'[ \t]*=[ \t]*)\d+([ \t]+desc[ \t]+.*)?$'
+
+            replace_str = r'\g<1>' + str(value) + r'\g<2>'
+            kamcfg_str = re.sub(regex, replace_str, kamcfg_str, flags=re.MULTILINE)
+
+        kamcfg.seek(0)
+        kamcfg.write(kamcfg_str)
+        kamcfg.truncate()
 
 
 def _get_banned_hosts():
@@ -156,21 +173,21 @@ def update_pike_settings():
 
         updateConfig(settings, fields, hot_reload=True)
 
-        live_apply_error = _apply_pike_runtime(fields)
-        response_data = _current_pike_settings()
-        if live_apply_error is not None:
-            response_data['live_apply_failed'] = True
-            response_data['live_apply_msg'] = live_apply_error
-            return createApiResponse(
-                msg='Pike settings saved, but could not be applied to the running Kamailio instance. '
-                    'A manual Kamailio reload/restart may be required.',
-                data=[response_data]
+        try:
+            _persist_pike_to_kamcfg(fields)
+        except Exception as ex:
+            IO.logerr(f'Problem updating the {settings.KAM_CFG_PATH} configuration file: {str(ex)}')
+            raise http_exceptions.InternalServerError(
+                'Pike settings saved, but failed to persist them to the Kamailio config file. '
+                'They may not take effect after a Kamailio restart.'
             )
 
-        response_data['live_apply_failed'] = False
-        response_data['live_apply_msg'] = ''
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+
+        response_data = _current_pike_settings()
         return createApiResponse(
-            msg='Pike settings updated and applied to the running Kamailio instance',
+            msg='Pike settings saved. A Kamailio reload is required for the changes to take effect.',
+            kamreload=True,
             data=[response_data]
         )
     except Exception as ex:

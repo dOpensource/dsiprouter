@@ -75,18 +75,12 @@
       success: function(response) {
         var result = (response && response.data && response.data.length > 0) ? response.data[0] : {};
 
-        // changes are applied live via the pike cfg framework, no reload needed
-        reloadKamRequired(false);
+        fillForm(result);
 
-        if (result.live_apply_failed) {
-          showNotification(
-            'Rate limiting settings saved, but could not be applied to the running Kamailio instance: ' +
-            result.live_apply_msg + '. A manual Kamailio reload/restart may be required.',
-            true
-          );
-        } else {
-          showNotification('Rate limiting settings saved and applied immediately');
-        }
+        // changes are written to the config file, a Kamailio reload is required to apply them
+        reloadKamRequired(true);
+
+        showNotification('Rate limiting settings saved. A Kamailio reload is required for the changes to take effect.');
       },
       error: function(jqXHR) {
         var responseText = {};

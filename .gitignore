@@ -27,3 +27,5 @@ gui/modules/fusionpbx/certs/cert_combined.crt
 *.swo
 .DS_Store   
 .env
+pnpm-lock.yaml
+node_modules/
