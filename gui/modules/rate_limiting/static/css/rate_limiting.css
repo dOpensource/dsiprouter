@@ -1,0 +1,68 @@
+/* page-level tabs aren't inside a modal, so the shared .modal-body nav-tabs
+   fix (see gui/static/css/main.css) doesn't apply here -- mirror the same
+   tab look used by the carriergroups edit modal (see carriergroups.css's
+   .navbar / .current-navlink rules), scoped to this page's tabs instead */
+#rate-limiting-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: #FFFFFF;
+    border-bottom: none;
+    margin-bottom: 1rem;
+}
+
+#rate-limiting-tabs .nav-item {
+    white-space: nowrap;
+    margin: 0 2px;
+}
+
+#rate-limiting-tabs .nav-link {
+    display: block;
+    padding: 0.5rem 1rem;
+    color: #495057;
+    text-decoration: none;
+    -webkit-transition: all 0.2s ease;
+    -moz-transition: all 0.2s ease;
+    -o-transition: all 0.2s ease;
+    transition: all 0.2s ease;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+#rate-limiting-tabs .nav-link:hover {
+    border: 2px solid rgba(255, 129, 0, 0.8);
+    color: #0fafff;
+}
+
+#rate-limiting-tabs .nav-link.active {
+    border-top: 2px solid transparent;
+    border-right: 2px solid transparent;
+    border-bottom: 2px solid rgba(255, 129, 0, 1.0);
+    border-left: 2px solid transparent;
+    color: #3355ff;
+    background: rgba(255, 255, 255, 1.0);
+}
+
+#rate-limiting-content {
+    padding-top: 1rem;
+}
+
+#pike-settings-table td {
+    vertical-align: middle;
+}
+
+#banned-hosts-table td {
+    vertical-align: middle;
+}
+
+.module-placeholder-panel {
+    border: 1px dashed #b7b7b7;
+    border-radius: 6px;
+    padding: 18px;
+    margin-top: 12px;
+    color: #6e6e6e;
+}
