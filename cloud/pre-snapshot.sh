@@ -199,10 +199,13 @@ function cleanKeys() {
     chmod 600 /etc/ssh/revoked_keys
 }
 
-# let cloud-init write these on boot
+# remove only cloud-init's build-time network configs, cloud-init rewrites them on first boot
+# dsiprouter owned configs (98-docker.network, 99-dsiprouter.network) must survive in the image
 function cleanNetworkConfigs() {
-    rm -f /etc/systemd/network/*
-    rm -f /etc/netplan/*
+    rm -f /etc/systemd/network/*-cloud-init-* \
+        /etc/netplan/*-cloud-init* \
+        /etc/network/interfaces.d/*-cloud-init* \
+        2>/dev/null
 }
 
 function cleanSourceFiles() {
@@ -215,8 +218,7 @@ function cleanRuntimeFiles() {
         shopt -s globstar
         rm -rf /opt/dsiprouter/**/__pycache__/
     )
-    rm -rf /run/*
-    rm -rf /tmp/* /var/tmp/*
+    rm -rf /run/* /tmp/* /var/tmp/*
 }
 
 # remove logs and any information from build process
