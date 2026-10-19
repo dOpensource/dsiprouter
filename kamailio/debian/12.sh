@@ -247,6 +247,20 @@ EOF
         return 1
     }
 
+    # patch pike module to support runtime updates
+    # TODO: commit upstream (https://github.com/kamailio/kamailio.git)
+    (
+        cd ${SRC_DIR}/kamailio &&
+        patch -p1 -N <${DSIP_PROJECT_DIR}/kamailio/pike.patch
+        (( $? > 1 )) && exit 1
+        cd ${SRC_DIR}/kamailio/src/modules/pike &&
+        make -j $NPROC &&
+        cp -f ${SRC_DIR}/kamailio/src/modules/pike/pike.so ${KAM_MODULES_DIR}/
+    ) || {
+        printerr 'Failed to patch pike module'
+        return 1
+    }
+
     return 0
 }
 
