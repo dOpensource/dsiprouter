@@ -1514,16 +1514,16 @@ function installScriptRequirements() {
 
     case "$DISTRO" in
     rocky|almalinux)
-        dnf install -y curl wget gawk perl sed git bind-utils openssl python3.11 jq vim-common coreutils
+        dnf install -y curl wget gawk perl sed git bind-utils openssl python3.11 jq vim-common coreutils glibc-locale-source glibc-langpack-en
         ;;
     *)
         if cmdExists 'apt-get'; then
             apt-get update -y &&
-            apt-get install -y curl wget gawk perl sed git dnsutils openssl python3 jq xxd coreutils
+            apt-get install -y curl wget gawk perl sed git dnsutils openssl python3 jq xxd coreutils locales
         elif cmdExists 'dnf'; then
-            dnf install -y curl wget gawk perl sed git bind-utils openssl python3 jq vim-common coreutils
+            dnf install -y curl wget gawk perl sed git bind-utils openssl python3 jq vim-common coreutils glibc-locale-source glibc-langpack-en
         elif cmdExists 'yum'; then
-            yum install -y curl wget gawk perl sed git bind-utils openssl python3 jq vim-common coreutils
+            yum install -y curl wget gawk perl sed git bind-utils openssl python3 jq vim-common coreutils glibc-common
         fi
         ;;
     esac
@@ -1533,12 +1533,72 @@ function installScriptRequirements() {
         exit 1
     fi
 
+    # make sure english UTF-8 locale is installed
+    if ! locale -a 2>/dev/null | grep -qiE 'en_US\.(utf8|utf-8)'; then
+        localedef -i en_US -f UTF-8 en_US.UTF-8
+    fi
+
     # initialize the openssl rnd generator
     dd if=/dev/urandom of="${HOME}/.rnd" bs=1024 count=1 2>/dev/null
+
+    if cmdExists 'apt-get'; then
+        fixCloudInitFirewalldConflict || {
+            printerr 'Could not rebuild cloud-init without the firewalld conflict'
+            exit 1
+        }
+    fi
 
     printdbg 'One-time script requirements installed'
     touch ${DSIP_SYSTEM_CONFIG_DIR}/.requirementsinstalled
     return 0
+}
+
+# Debian 13+ cloud-init declares "Conflicts: firewalld" (debian bug #1025618) because of the sysinit.target ordering cycle
+# we patch that cycle out of the cloud-init units in createInitService() so the conflict does not apply to us
+# without this installing firewalld silently removes cloud-init and cloud images boot without ssh keys / network config
+# the package is rebuilt without the conflict and held so an upgrade can not pull the stock package back in
+function fixCloudInitFirewalldConflict() {
+    local TMP_DIR ORIG_DEB NEW_DEB
+
+    if ! dpkg-query -W -f '${db:Status-Status}' cloud-init 2>/dev/null | grep -q '^installed$'; then
+        return 0
+    fi
+    if ! dpkg-query -W -f '${Conflicts}' cloud-init 2>/dev/null | grep -qw 'firewalld'; then
+        return 0
+    fi
+
+    printdbg 'Rebuilding cloud-init without the firewalld conflict'
+
+    TMP_DIR=$(mktemp -d) &&
+    chmod 755 "$TMP_DIR" &&
+    (
+        cd "$TMP_DIR" &&
+        apt-get download cloud-init &&
+        ORIG_DEB=$(ls -1 cloud-init_*.deb | head -n 1) &&
+        [[ -n "$ORIG_DEB" ]] &&
+        dpkg-deb -R "$ORIG_DEB" pkg &&
+        perl -i -ne '
+            if (/^Conflicts:/) {
+                s/,?\s*\bfirewalld\b//;
+                s/:\s*,\s*/: /;
+                s/\s+$//;
+                print "$_\n" unless /^Conflicts:\s*$/;
+            } elsif (/^Version:/) {
+                s/\s+$//;
+                print "$_+dsip1\n";
+            } else {
+                print;
+            }
+        ' pkg/DEBIAN/control &&
+        NEW_DEB="${ORIG_DEB%.deb}+dsip1.deb" &&
+        dpkg-deb -b pkg "$NEW_DEB" &&
+        dpkg -i "$NEW_DEB" &&
+        apt-mark hold cloud-init
+    )
+    local RC=$?
+
+    rm -rf "$TMP_DIR"
+    return $RC
 }
 
 # Any setup that needs to be done before the script can run properly
@@ -1638,7 +1698,6 @@ EOF
         # comment out cdrom in sources as it can halt install
         sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.list
 
-        apt-get install -y apt-transport-https
         mv -f ${APT_OFFICIAL_SOURCES} ${APT_OFFICIAL_SOURCES_BAK}
         mv -f ${APT_OFFICIAL_PREFS} ${APT_OFFICIAL_PREFS_BAK} 2>/dev/null
         cp -f ${DSIP_PROJECT_DIR}/resources/apt/${DISTRO}/${DISTRO_VER}/official-releases.list ${APT_OFFICIAL_SOURCES}
@@ -1692,6 +1751,10 @@ function revertSystemRepos() {
     fi
     if [[ -f "$APT_DSIP_CONFIG" ]]; then
         rm -f "$APT_DSIP_CONFIG"
+    fi
+    # release the hold placed by fixCloudInitFirewalldConflict() so the stock package can be upgraded again
+    if cmdExists 'apt-mark' && apt-mark showhold 2>/dev/null | grep -q '^cloud-init$'; then
+        apt-mark unhold cloud-init
     fi
     rm -rf ${DSIP_SYSTEM_CONFIG_DIR}
 }
@@ -3107,10 +3170,16 @@ function createInitService() {
         cp -f ${DSIP_PROJECT_DIR}/cloud/cloud-init/templates/hosts.${DISTRO}.tmpl $(${DSIP_PROJECT_DIR}/cloud/find_hosts_tmpl.sh)
 
         # patch for cloud-init.service circular ordering dependency
+        # cloud-init >= 24.3 renamed cloud-init.service to cloud-init-network.service
         # TODO: commit this upstream to cloud-init project
         case "$DISTRO" in
             debian|ubuntu)
-                perl -i -pe 's%(Before\=sysinit\.target)%#\1%' /lib/systemd/system/cloud-init.service
+                local CLOUD_INIT_UNIT
+                for CLOUD_INIT_UNIT in /lib/systemd/system/cloud-init.service /lib/systemd/system/cloud-init-network.service; do
+                    if [[ -f "$CLOUD_INIT_UNIT" ]]; then
+                        perl -i -pe 's%^(Before\=sysinit\.target)%#\1%' "$CLOUD_INIT_UNIT"
+                    fi
+                done
                 systemctl daemon-reload
                 ;;
         esac
