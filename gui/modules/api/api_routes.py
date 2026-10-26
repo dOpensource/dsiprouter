@@ -14,7 +14,7 @@ from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from database import startSession, DummySession, Address, dSIPNotification, dSIPMultiDomainMapping, Gateways, \
     GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, dSIPCallSettings, InboundMapping, dSIPCDRInfo, \
-    dSIPCertificates, Dispatcher, dSIPDNIDEnrichment, getDsipSettingsTableAsDict, updateDsipSettingsTable
+    dSIPCertificates, Dispatcher, dSIPDNIDEnrichment, getDsipSettingsTableAsDict, updateDsipSettingsTable, dSIPHardFwd
 from modules.numbers.db.dsip_number import dSIPNumber
 from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, debugEndpoint, StatusCodes, \
     strFieldsToDict, getRequestData, IO, objToDict, getAllowedSettings,updateDsipLocalSettingsFromDict, \
@@ -490,7 +490,7 @@ def handleInboundMapping():
     VALID_REQUEST_ARGS = {'ruleid', 'did'}
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
-    VALID_REQUEST_DATA_ARGS = {'did', 'servers', 'name'}
+    VALID_REQUEST_DATA_ARGS = {'did', 'servers', 'name', 'hard-forward'}
 
     payload = {'data': []}
 
@@ -520,6 +520,18 @@ def handleInboundMapping():
                             'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(
                                 data['description']) else '',
                             'servers': data['gwlist'].split(',')}
+                    hfwd = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(data['ruleid'])).first()
+                    if hfwd:
+                        hf_carrier_group = None
+                        if str(hfwd.dr_groupid) != str(settings.FLT_OUTBOUND):
+                            fwd_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hfwd.dr_groupid).first()
+                            if fwd_rule and fwd_rule.gwlist:
+                                gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == fwd_rule.gwlist.lstrip('#')).first()
+                                if gwgroup:
+                                    hf_carrier_group = strFieldsToDict(gwgroup.description).get('name', '')
+                        data['hard-forward'] = {'did': hfwd.did, 'carrier_group': hf_carrier_group}
+                    else:
+                        data['hard-forward'] = None
                     payload['data'].append(data)
                     payload['msg'] = 'Rule Found'
                 else:
@@ -538,6 +550,18 @@ def handleInboundMapping():
                                 'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(
                                     data['description']) else '',
                                 'servers': data['gwlist'].split(',')}
+                        hfwd = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(data['ruleid'])).first()
+                        if hfwd:
+                            hf_carrier_group = None
+                            if str(hfwd.dr_groupid) != str(settings.FLT_OUTBOUND):
+                                fwd_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hfwd.dr_groupid).first()
+                                if fwd_rule and fwd_rule.gwlist:
+                                    gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == fwd_rule.gwlist.lstrip('#')).first()
+                                    if gwgroup:
+                                        hf_carrier_group = strFieldsToDict(gwgroup.description).get('name', '')
+                            data['hard-forward'] = {'did': hfwd.did, 'carrier_group': hf_carrier_group}
+                        else:
+                            data['hard-forward'] = None
                         payload['data'].append(data)
                         payload['msg'] = 'DID Found'
                     else:
@@ -554,6 +578,18 @@ def handleInboundMapping():
                                     'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(
                                         data['description']) else '',
                                     'servers': data['gwlist'].split(',')}
+                            hfwd = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(data['ruleid'])).first()
+                            if hfwd:
+                                hf_carrier_group = None
+                                if str(hfwd.dr_groupid) != str(settings.FLT_OUTBOUND):
+                                    fwd_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hfwd.dr_groupid).first()
+                                    if fwd_rule and fwd_rule.gwlist:
+                                        gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == fwd_rule.gwlist.lstrip('#')).first()
+                                        if gwgroup:
+                                            hf_carrier_group = strFieldsToDict(gwgroup.description).get('name', '')
+                                data['hard-forward'] = {'did': hfwd.did, 'carrier_group': hf_carrier_group}
+                            else:
+                                data['hard-forward'] = None
                             payload['data'].append(data)
                         payload['msg'] = 'Rules Found'
                     else:
@@ -602,7 +638,28 @@ def handleInboundMapping():
                 raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
             db.add(IMap)
+            db.flush()
             _sync_number_status_from_inbound_route(db, prefix, gwlist)
+
+            if data.get('hard-forward'):
+                hf = data['hard-forward']
+                hf_did = hf.get('did', '')
+                hf_carrier_group = hf.get('carrier_group', '')
+                fwdgroupid = settings.FLT_OUTBOUND
+                hf_inserts = []
+                if hf_carrier_group:
+                    gwgroup = next((g for g in db.query(GatewayGroups).filter(
+                        GatewayGroups.description.regexp_match(GatewayGroups.FILTER.ENDPOINT_OR_CARRIER.value)
+                    ).all() if strFieldsToDict(g.description).get('name') == hf_carrier_group), None)
+                    if gwgroup is None:
+                        raise http_exceptions.BadRequest(f"Carrier group not found: {hf_carrier_group}")
+                    lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(
+                        InboundMapping.groupid.desc()).first()
+                    fwdgroupid = settings.FLT_FWD_MIN if lastfwd is None else int(lastfwd.groupid) + 1
+                    hf_inserts.append(InboundMapping(fwdgroupid, '', '#{}'.format(gwgroup.id),
+                        'name:Hard Forward from {} to DID {}'.format(prefix, hf_did)))
+                hf_inserts.append(dSIPHardFwd(IMap.ruleid, hf_did, fwdgroupid))
+                db.add_all(hf_inserts)
 
             db.commit()
             getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
@@ -627,7 +684,7 @@ def handleInboundMapping():
                 if arg not in VALID_REQUEST_DATA_ARGS:
                     raise http_exceptions.BadRequest("Request data argument not recognized")
 
-            if 'did' not in data and 'servers' not in data and 'name' not in data:
+            if 'did' not in data and 'servers' not in data and 'name' not in data and 'hard-forward' not in data:
                 raise http_exceptions.BadRequest("No data args supplied, {did, and servers} is required")
             # TODO: we should be checking dr_gateways table to make sure the servers exist
             if 'servers' in data:
@@ -693,6 +750,64 @@ def handleInboundMapping():
             if route_row is not None:
                 _sync_number_status_from_inbound_route(db, route_row.prefix, route_row.gwlist)
 
+            if 'hard-forward' in data:
+                effective_ruleid = rule_id if rule_id is not None else (str(route_row.ruleid) if route_row else None)
+                if effective_ruleid:
+                    hf = data['hard-forward']
+                    hf_entry = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == effective_ruleid).first()
+                    hardfwd_exists = hf_entry is not None
+
+                    if not hf:
+                        if hardfwd_exists:
+                            if str(hf_entry.dr_groupid) != str(settings.FLT_OUTBOUND):
+                                db.query(InboundMapping).filter(InboundMapping.groupid == hf_entry.dr_groupid).delete(synchronize_session=False)
+                            db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == effective_ruleid).delete(synchronize_session=False)
+                    else:
+                        hf_did = hf.get('did', '')
+                        hf_carrier_group = hf.get('carrier_group', '')
+                        hf_gwgroupid = None
+                        if hf_carrier_group:
+                            gwgroup = next((g for g in db.query(GatewayGroups).filter(
+                                GatewayGroups.description.regexp_match(GatewayGroups.FILTER.ENDPOINT_OR_CARRIER.value)
+                            ).all() if strFieldsToDict(g.description).get('name') == hf_carrier_group), None)
+                            if gwgroup is None:
+                                raise http_exceptions.BadRequest(f"Carrier group not found: {hf_carrier_group}")
+                            hf_gwgroupid = str(gwgroup.id)
+
+                        curr_prefix = updates.get('prefix') or (route_row.prefix if route_row else '')
+                        fwdgroupid = settings.FLT_OUTBOUND
+
+                        if not hardfwd_exists:
+                            hf_inserts = []
+                            if hf_gwgroupid:
+                                lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(
+                                    InboundMapping.groupid.desc()).first()
+                                fwdgroupid = settings.FLT_FWD_MIN if lastfwd is None else int(lastfwd.groupid) + 1
+                                hf_inserts.append(InboundMapping(fwdgroupid, '', '#{}'.format(hf_gwgroupid),
+                                    'name:Hard Forward from {} to DID {}'.format(curr_prefix, hf_did)))
+                            hf_inserts.append(dSIPHardFwd(effective_ruleid, hf_did, fwdgroupid))
+                            db.add_all(hf_inserts)
+                        else:
+                            existing_groupid = str(hf_entry.dr_groupid)
+                            if existing_groupid != str(settings.FLT_OUTBOUND):
+                                if hf_gwgroupid:
+                                    db.query(InboundMapping).filter(InboundMapping.groupid == existing_groupid).update(
+                                        {'gwlist': '#{}'.format(hf_gwgroupid),
+                                         'description': 'name:Hard Forward from {} to DID {}'.format(curr_prefix, hf_did)},
+                                        synchronize_session=False)
+                                    fwdgroupid = int(existing_groupid)
+                                else:
+                                    db.query(InboundMapping).filter(InboundMapping.groupid == existing_groupid).delete(synchronize_session=False)
+                            else:
+                                if hf_gwgroupid:
+                                    lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(
+                                        InboundMapping.groupid.desc()).first()
+                                    fwdgroupid = settings.FLT_FWD_MIN if lastfwd is None else int(lastfwd.groupid) + 1
+                                    db.add(InboundMapping(fwdgroupid, '', '#{}'.format(hf_gwgroupid),
+                                        'name:Hard Forward from {} to DID {}'.format(curr_prefix, hf_did)))
+                            db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == effective_ruleid).update(
+                                {'did': hf_did, 'dr_groupid': fwdgroupid}, synchronize_session=False)
+
             db.commit()
             getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
             payload['kamreload'] = getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required']
@@ -718,6 +833,11 @@ def handleInboundMapping():
                     payload['status_code'] = StatusCodes.HTTP_NOT_FOUND
                 elif rule_row is not None:
                     _sync_number_status_from_inbound_route(db, rule_row.prefix, '')
+                    hf_entry = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(rule_row.ruleid)).first()
+                    if hf_entry:
+                        if str(hf_entry.dr_groupid) != str(settings.FLT_OUTBOUND):
+                            db.query(InboundMapping).filter(InboundMapping.groupid == hf_entry.dr_groupid).delete(synchronize_session=False)
+                        db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(rule_row.ruleid)).delete(synchronize_session=False)
 
             # delete single rule by did
             else:
@@ -731,6 +851,11 @@ def handleInboundMapping():
                         payload['status_code'] = StatusCodes.HTTP_NOT_FOUND
                     elif rule_row is not None:
                         _sync_number_status_from_inbound_route(db, rule_row.prefix, '')
+                        hf_entry = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(rule_row.ruleid)).first()
+                        if hf_entry:
+                            if str(hf_entry.dr_groupid) != str(settings.FLT_OUTBOUND):
+                                db.query(InboundMapping).filter(InboundMapping.groupid == hf_entry.dr_groupid).delete(synchronize_session=False)
+                            db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(rule_row.ruleid)).delete(synchronize_session=False)
 
                 # no other options
                 else:
