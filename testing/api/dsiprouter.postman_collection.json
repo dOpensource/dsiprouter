@@ -572,6 +572,235 @@
 			]
 		},
 		{
+			"name": "domains",
+			"item": [
+				{
+					"name": "/api/v1/domains",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains"
+							]
+						},
+						"description": "List all domains. Optional ?type=passthru|msteams|local|realtime"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains/<int id>",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains/1",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains",
+								"1"
+							]
+						},
+						"description": "Get a single domain by id"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains (passthru)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"domain\": \"pbx.example.com\",\n    \"type\": \"passthru\",\n    \"pbxs\": [\n        1\n    ],\n    \"notes\": \"Pass-thru to PBX\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains"
+							]
+						},
+						"description": "Create a pass-thru domain; registrations are passed to exactly one PBX endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains (local)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"domain\": [\n        \"a.example.com\",\n        \"b.example.com\"\n    ],\n    \"type\": \"local\",\n    \"pbxs\": [\n        1,\n        2\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains"
+							]
+						},
+						"description": "Create domains that authenticate against the local subscriber table; domain can be a string or a list"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains (realtime)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"domain\": \"rt.example.com\",\n    \"type\": \"realtime\",\n    \"pbxs\": [\n        1,\n        2\n    ],\n    \"dispatcher_alg\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains"
+							]
+						},
+						"description": "Create a domain that authenticates against an Asterisk Realtime DB"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains (msteams)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"domain\": \"teams.example.com\",\n    \"type\": \"msteams\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains"
+							]
+						},
+						"description": "Create a Microsoft Teams Direct Routing domain (requires a DSIP_MSTEAMS license)"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains/<int id>",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"notes\": \"updated\",\n    \"pbxs\": [\n        2\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains/1",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains",
+								"1"
+							]
+						},
+						"description": "Update any subset of fields; the domain id is kept"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains/<int id>",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains/1",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains",
+								"1"
+							]
+						},
+						"description": "Delete a domain, its attributes, dispatcher set and (MSTeams) endpoint group"
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "leases",
 			"item": [
 				{
@@ -1008,6 +1237,198 @@
 								"54"
 							]
 						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "cdr settings",
+			"item": [
+				{
+					"name": "/api/v1/settings/cdr",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/settings/cdr",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"settings",
+								"cdr"
+							]
+						},
+						"description": "Get the CDR retention and S3 archive settings. The secret key is never returned, CDR_S3_SECRET_KEY_SET says whether one is saved."
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/settings/cdr",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/settings/cdr",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"settings",
+								"cdr"
+							]
+						},
+						"description": "Change any subset of the CDR settings. CDR_RETENTION_DAYS 0 keeps CDRs forever. Leave out CDR_S3_SECRET_KEY to keep the saved one, send null to clear it.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"CDR_RETENTION_DAYS\": 90,\n    \"CDR_ARCHIVE_ENABLED\": true,\n    \"CDR_S3_BUCKET\": \"my-cdr-archive\",\n    \"CDR_S3_PREFIX\": \"cdrs/\",\n    \"CDR_S3_REGION\": \"us-east-1\",\n    \"CDR_S3_ENDPOINT\": \"\",\n    \"CDR_S3_ACCESS_KEY\": \"<access key>\",\n    \"CDR_S3_SECRET_KEY\": \"<secret key>\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/settings/cdr/test-s3",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/settings/cdr/test-s3",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"settings",
+								"cdr",
+								"test-s3"
+							]
+						},
+						"description": "Write and delete a small object in the bucket. Unsaved CDR_S3_* values in the body are tested without saving them.",
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/settings/cdr/run",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/settings/cdr/run",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"settings",
+								"cdr",
+								"run"
+							]
+						},
+						"description": "Run the retention / archive job now (the cron job runs it daily at 02:30). Returns 502 when an S3 upload failed, nothing unarchived is deleted then."
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/settings/cdr/test-webhook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/settings/cdr/test-webhook",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"settings",
+								"cdr",
+								"test-webhook"
+							]
+						},
+						"description": "Send an empty JSON array (X-DSIP-Event: test) to the webhook. Unsaved CDR_WEBHOOK_* values in the body are tested without saving them.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"CDR_WEBHOOK_URL\": \"https://example.com/cdrs\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/settings/cdr/run-webhook",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/settings/cdr/run-webhook",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"settings",
+								"cdr",
+								"run-webhook"
+							]
+						},
+						"description": "Send the CDRs written since the last delivery now (the cron job runs it every minute). Returns 502 when the webhook failed, the CDRs are sent again on the next run."
 					},
 					"response": []
 				}

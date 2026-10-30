@@ -2,6 +2,7 @@ UltraDict
 acme
 ansi2html
 bjoern
+boto3
 bson
 cron_descriptor
 cryptography

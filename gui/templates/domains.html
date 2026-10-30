@@ -11,22 +11,21 @@
     <h3>List of Domain(s)</h3>
   </div>
 
-  <div class="tableAddButton">
-    <button id='open-DomainAdd' class='btn btn-success btn-md' data-title="Add" data-bs-toggle="modal" data-bs-target="#add">
-      Add
-    </button>
-  </div>
+  {% if can_edit %}
+    <div class="tableAddButton">
+      <button id='open-DomainAdd' class='btn btn-success btn-md' data-title="Add" data-bs-toggle="modal" data-bs-target="#add">
+        Add
+      </button>
+    </div>
+  {% endif %}
 {% endblock %}
 
 
 {% block table %}
 
-  <table id="domains" class="table table-striped table-centered">
-
+  <table id="domains" class="table table-striped table-centered" data-can-edit="{{ 'true' if can_edit else 'false' }}">
     <thead>
     <tr class='element-row'>
-      <!--<th><input class="checkall" type="checkbox"/></th>-->
-      <th></th>
       <th data-field="domain_id">Domain ID</th>
       <th data-field="domain_name">Domain Name</th>
       <th data-field="domain_type">Domain Type</th>
@@ -35,63 +34,14 @@
       <th data-field="pbx_list">Mapped Endpoints</th>
       <th data-field="notes">Notes</th>
       <th></th>
-      <th></th>
-      <th></th>
     </tr>
     </thead>
     <tbody>
-    {% for row in rows %}
-      <tr class='element-row'>
-        <td><input type="checkbox" class="checkthis" value="1"/></td>
-        <td class='domain_id'>{{ row.id }}</td>
-        <td class='domain_name'>{{ row.domain }}</td>
-        <td class='domain_type'>{{ row.type|domainTypeFilter() }}</td>
-        {% if row.type|domainTypeFilter() == "Dynamic" %}
-          <td class='pbx_name'><a
-              href="/endpointgroups?id={{ pbxlookup[row.domain]['pbx_list'] }}">{{ pbxlookup[row.domain]['name'] }}</a>
-          </td>
-        {% else %}
-          <td class='pbx_name'>Manually Created</td>
-        {% endif %}
-        <td class='authtype'>{{ pbxlookup[row.domain]['domain_auth'] }}</td>
-        <td class='pbx_list'>{{ pbxlookup[row.domain]['pbx_list'] }}</td>
-        <td class='notes'>{{ pbxlookup[row.domain]['notes'] }}</td>
-
-        {% if row.type|domainTypeFilter() != "Dynamic" %}
-          <td>
-            <p data-bs-placement="top" data-bs-toggle="tooltip" title="Edit">
-              <button id="open-Update" class="open-Update btn btn-primary btn-sm" data-title="Edit" data-bs-toggle="modal"
-                      data-bs-target="#edit"><i class="ti ti-pencil"></i>
-              </button>
-            </p>
-          </td>
-          <td>
-            {% if pbxlookup[row.domain]['domain_auth'] == "msteams" %}
-              <p data-bs-placement="top" data-bs-toggle="tooltip" title="Test MSTeams Connectivity">
-                <button id="open-Test" class="open-Test btn btn-warning btn-sm" data-title="Test MSTeams Connectivity"
-                        data-bs-toggle="modal"
-                        onclick="window.location='domains/msteams/{{ row.id }}'">
-                  <i class="ti ti-plane"></i></button>
-              </p>
-            {% endif %}
-          </td>
-          <td>
-            <p data-bs-placement="top" data-bs-toggle="tooltip" title="Delete">
-              <button id="open-Delete" class="open-Delete btn btn-danger btn-sm" data-title="Delete" data-bs-toggle="modal"
-                      data-bs-target="#delete"><i class="ti ti-trash"></i></button>
-            </p>
-          </td>
-        {% else %}
-          <td></td>
-          <td></td>
-          <td></td>
-        {% endif %}
-      </tr>
-    {% endfor %}
     </tbody>
   </table>
 
 {% endblock %}
+
 
 
 {% block edit_modal %}
@@ -99,60 +49,12 @@
   <div class="modal-header">
     <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
         class="ti ti-x" aria-hidden="true"></i></button>
-    <h4 class="modal-title custom_align" id="Heading">Edit Your Domain Detail</h4>
+    <h4 class="modal-title custom_align">Edit Your Domain Detail</h4>
   </div>
 
   <div class="modal-body">
-    <form id="updateDomainForm" action="/domains" method="POST" role="form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-      <input class="domain_id" type="hidden" name="domain_id">
-
-      <div class="form-group">
-        <input class="domain_name form-control" type="text" name="domainlist"
-               placeholder="domainA.com,domainB.com">
-      </div>
-
-
-      <div class="form-group">
-        <div class="domainauthoptions radio">
-          <select class="authtype form-control" name="authtype">
-            <option value="">Select Domain Type</option>
-            <option value="passthru">Pass Thru to PBX</option>
-            {% if licenseValid('DSIP_MSTEAMS') == False %}(Subscription Required)
-              <option value="msteams-nosub">Microsoft Teams Direct Routing (Subscription Required)</option>
-            {% else %}
-              <option value="msteams">Microsoft Teams Direct Routing</option>
-            {% endif %}
-
-            <option value="local">Local Subscriber Table</option>
-            <option value="realtime">Real Time DB</option>
-          </select>
-          <!--
-             <label><input class="authtype " type="radio" data-toggle="realtime" name="authtype" value="realtime" checked>&nbsp;
-                  Realtime DB (aka Asterisk Realtime)</label>
-                <label><input class="authtype " type="radio" data-toggle="local" name="authtype" value="local">&nbsp;
-                  Local Subscriber Table</label>
-                <label><input class="authtype " type="radio" data-toggle="passthru" name="authtype" value="passthru">&nbsp;
-            Pass Thru to PBX</label>-->
-        </div>
-      </div>
-
-      <div class="form-group">
-        <input class="pbx_list form-control" type="text" name="pbx_list"
-               placeholder="List of backend PBX ID's ">
-      </div>
-
-      <div class="form-group">
-        <input class="notes form-control" type="text" name="notes"
-               placeholder="Notes">
-      </div>
-
-      <div class="modal-footer ">
-        <button type="submit" class="btn btn-warning btn-lg" style="width: 100%;"><i
-            class="ti ti-circle-check"></i> Update
-        </button>
-      </div>
-    </form>
+    {% from 'includes/domain_form.html' import domain_form with context %}
+    {{ domain_form('update', 'Update', 'btn-warning') }}
   </div>
 
 {% endblock %}
@@ -163,53 +65,12 @@
   <div class="modal-header">
     <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
         class="ti ti-x" aria-hidden="true"></i></button>
-    <h4 class="modal-title custom_align" id="Heading">Add New Domain</h4>
+    <h4 class="modal-title custom_align">Add New Domain</h4>
   </div>
 
   <div class="modal-body">
-    <form id="addDomainForm" action="/domains" method="POST" role="form">
-      <input class="domain_id" type="hidden" name="domain_id">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-      <div class="form-group">
-        <input class="domain_name form-control" type="text" name="domainlist" autofocus="autofocus"
-               placeholder="domainA.com,domainB.com">
-      </div>
-
-
-      <div class="form-group">
-        <div class="domainauthoptions radio">
-
-          <select class="authtype form-control" name="authtype">
-            <option value="">Select Domain Type</option>
-            <option value="passthru">Pass Thru to PBX</option>
-            {% if licenseValid('DSIP_MSTEAMS') == False %}
-              <option value="msteams-nosub">Microsoft Teams Direct Routing (Subscription Required)</option>
-            {% else %}
-              <option value="msteams">Microsoft Teams Direct Routing</option>
-            {% endif %}
-            <option value="local">Local Subscriber Table</option>
-            <option value="realtime">Real Time DB</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <input class="pbx_list form-control" type="text" name="pbx_list"
-               placeholder="List of backend PBX ID's ">
-      </div>
-
-      <div class="form-group">
-        <input class="notes form-control" type="text" name="notes"
-               placeholder="Notes">
-      </div>
-
-      <div class="modal-footer ">
-        <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><i
-            class="ti ti-circle-check"></i> Add
-        </button>
-      </div>
-    </form>
+    {% from 'includes/domain_form.html' import domain_form with context %}
+    {{ domain_form('add', 'Add', 'btn-success') }}
   </div>
 
 {% endblock %}
@@ -220,23 +81,18 @@
   <div class="modal-header">
     <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
         class="ti ti-x" aria-hidden="true"></i></button>
-    <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
+    <h4 class="modal-title custom_align">Delete this entry</h4>
   </div>
 
   <div class="modal-body">
-    <form action="/domainsdelete" method="POST" role="form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-      <div class="form-group">
-        <input class="domain_id form-control" type="hidden" name="domain_id">
-        <input class="domain_name form-control" type="hidden" name="domain_name">
-      </div>
+    <form id="deleteDomainForm" role="form">
+      <input class="domain_id" type="hidden" name="domain_id">
 
       <div class="alert alert-danger"><i class="ti ti-alert-triangle"></i> Are you sure you want
-        to delete this Record?
+        to delete <strong class="domain_name"></strong>?
       </div>
 
-      <div class="modal-footer ">
+      <div class="modal-footer">
         <button type="submit" class="btn btn-success"><i class="ti ti-circle-check"></i> Yes</button>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
             class="ti ti-x"></i> No
