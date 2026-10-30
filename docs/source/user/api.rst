@@ -76,6 +76,56 @@ Delete a route (paired ``dsip_lcr`` row, if any, is removed automatically):
 
     curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X DELETE https://$DSIP_HOSTNAME:5000/api/v1/outboundroutes/<ruleid>
 
+Executing Domains API
+---------------------
+
+Every domain has a ``type``:
+
+- ``passthru``: registrations are passed through to a single PBX, ``pbxs`` holds exactly one endpoint id
+- ``msteams``: Microsoft Teams Direct Routing, requires a DSIP_MSTEAMS license, ``pbxs`` is ignored
+- ``local``: users authenticate against the local subscriber table, calls are sent to the ``pbxs`` endpoints
+- ``realtime``: users authenticate against an Asterisk Realtime DB, calls are sent to the ``pbxs`` endpoints
+
+``pbxs`` are endpoint ids (the IDs shown on the endpoint group page). Changes require a Kamailio reload.
+Domains created by an endpoint group (FusionPBX sync) are listed with ``"editable": false`` and can not be
+changed through this API.
+
+List all domains, or only one type:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X GET https://$DSIP_HOSTNAME:5000/api/v1/domains
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X GET "https://$DSIP_HOSTNAME:5000/api/v1/domains?type=local"
+
+Create a pass-thru domain:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" \
+         -X POST -d '{"domain":"pbx.example.com","type":"passthru","pbxs":[12],"notes":"Main PBX"}' \
+         https://$DSIP_HOSTNAME:5000/api/v1/domains
+
+Create several domains at once (all or none are created):
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" \
+         -X POST -d '{"domain":["a.example.com","b.example.com"],"type":"local","pbxs":[12,13]}' \
+         https://$DSIP_HOSTNAME:5000/api/v1/domains
+
+Update a domain (any subset of ``domain``, ``type``, ``pbxs``, ``notes``, ``dispatcher_alg``), the id is kept:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" \
+         -X PUT -d '{"pbxs":[13],"notes":"moved"}' https://$DSIP_HOSTNAME:5000/api/v1/domains/<id>
+
+Delete a domain (its dispatcher set and, for MSTeams, its endpoint group are removed too):
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X DELETE https://$DSIP_HOSTNAME:5000/api/v1/domains/<id>
+
 Further Reading
 +++++++++++++++
 

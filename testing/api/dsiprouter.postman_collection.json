@@ -572,6 +572,235 @@
 			]
 		},
 		{
+			"name": "domains",
+			"item": [
+				{
+					"name": "/api/v1/domains",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains"
+							]
+						},
+						"description": "List all domains. Optional ?type=passthru|msteams|local|realtime"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains/<int id>",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains/1",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains",
+								"1"
+							]
+						},
+						"description": "Get a single domain by id"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains (passthru)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"domain\": \"pbx.example.com\",\n    \"type\": \"passthru\",\n    \"pbxs\": [\n        1\n    ],\n    \"notes\": \"Pass-thru to PBX\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains"
+							]
+						},
+						"description": "Create a pass-thru domain; registrations are passed to exactly one PBX endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains (local)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"domain\": [\n        \"a.example.com\",\n        \"b.example.com\"\n    ],\n    \"type\": \"local\",\n    \"pbxs\": [\n        1,\n        2\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains"
+							]
+						},
+						"description": "Create domains that authenticate against the local subscriber table; domain can be a string or a list"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains (realtime)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"domain\": \"rt.example.com\",\n    \"type\": \"realtime\",\n    \"pbxs\": [\n        1,\n        2\n    ],\n    \"dispatcher_alg\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains"
+							]
+						},
+						"description": "Create a domain that authenticates against an Asterisk Realtime DB"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains (msteams)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"domain\": \"teams.example.com\",\n    \"type\": \"msteams\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains"
+							]
+						},
+						"description": "Create a Microsoft Teams Direct Routing domain (requires a DSIP_MSTEAMS license)"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains/<int id>",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"notes\": \"updated\",\n    \"pbxs\": [\n        2\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains/1",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains",
+								"1"
+							]
+						},
+						"description": "Update any subset of fields; the domain id is kept"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/domains/<int id>",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/domains/1",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"domains",
+								"1"
+							]
+						},
+						"description": "Delete a domain, its attributes, dispatcher set and (MSTeams) endpoint group"
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "leases",
 			"item": [
 				{
