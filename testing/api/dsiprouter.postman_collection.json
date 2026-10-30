@@ -1241,6 +1241,135 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "cdr settings",
+			"item": [
+				{
+					"name": "/api/v1/settings/cdr",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/settings/cdr",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"settings",
+								"cdr"
+							]
+						},
+						"description": "Get the CDR retention and S3 archive settings. The secret key is never returned, CDR_S3_SECRET_KEY_SET says whether one is saved."
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/settings/cdr",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/settings/cdr",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"settings",
+								"cdr"
+							]
+						},
+						"description": "Change any subset of the CDR settings. CDR_RETENTION_DAYS 0 keeps CDRs forever. Leave out CDR_S3_SECRET_KEY to keep the saved one, send null to clear it.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"CDR_RETENTION_DAYS\": 90,\n    \"CDR_ARCHIVE_ENABLED\": true,\n    \"CDR_S3_BUCKET\": \"my-cdr-archive\",\n    \"CDR_S3_PREFIX\": \"cdrs/\",\n    \"CDR_S3_REGION\": \"us-east-1\",\n    \"CDR_S3_ENDPOINT\": \"\",\n    \"CDR_S3_ACCESS_KEY\": \"<access key>\",\n    \"CDR_S3_SECRET_KEY\": \"<secret key>\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/settings/cdr/test-s3",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/settings/cdr/test-s3",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"settings",
+								"cdr",
+								"test-s3"
+							]
+						},
+						"description": "Write and delete a small object in the bucket. Unsaved CDR_S3_* values in the body are tested without saving them.",
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/settings/cdr/run",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/settings/cdr/run",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"settings",
+								"cdr",
+								"run"
+							]
+						},
+						"description": "Run the retention / archive job now (the cron job runs it daily at 02:30). Returns 502 when an S3 upload failed, nothing unarchived is deleted then."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {

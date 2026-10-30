@@ -1,8 +1,9 @@
 import { request } from '@playwright/test';
+import { SHELL_ENABLED, dbQuery } from './helpers';
 
 /**
- * Remove data left behind by aborted test runs: domains named e2e-* and endpoint groups named e2e_*.
- * Uses the API as the admin user so it works without shell access.
+ * Remove data left behind by aborted test runs: domains named e2e-* and endpoint groups named e2e_*
+ * through the API as the admin user, and (with shell access) CDR rows whose call-id starts with e2e-.
  */
 export default async function globalTeardown() {
   const baseURL = process.env.DSIP_BASE_URL || 'https://localhost:5000';
@@ -33,6 +34,13 @@ export default async function globalTeardown() {
       if (/^e2e_/.test(group.name)) {
         await ctx.delete(`/api/v1/endpointgroups/${group.gwgroupid}`, { headers });
       }
+    }
+
+    if (SHELL_ENABLED) {
+      dbQuery(
+        "DELETE FROM cdrs WHERE sip_call_id LIKE 'e2e-%'; DELETE FROM acc WHERE callid LIKE 'e2e-%'; " +
+        "DELETE FROM missed_calls WHERE callid LIKE 'e2e-%'"
+      );
     }
   } catch (e) {
     console.warn(`global teardown cleanup failed: ${e}`);

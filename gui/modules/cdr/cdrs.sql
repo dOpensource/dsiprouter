@@ -42,7 +42,8 @@ CREATE TABLE `acc` (
   `src_gwgroupid` varchar(10)      NOT NULL DEFAULT '',
   `dst_gwgroupid` varchar(10)      NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
-  KEY `acc_callid` (`callid`)
+  KEY `acc_callid` (`callid`),
+  KEY `acc_time` (`time`)
   );
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -73,9 +74,33 @@ CREATE TABLE `cdrs` (
   `fraud`           bool             NOT NULL DEFAULT '0',
   `src_gwgroupid`   varchar(10)      NOT NULL DEFAULT '',
   `dst_gwgroupid`   varchar(10)      NOT NULL DEFAULT '',
-  PRIMARY KEY (`cdr_id`)
+  PRIMARY KEY (`cdr_id`),
+  KEY `cdrs_call_start_time` (`call_start_time`)
   );
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `dsip_cdr_settings`
+-- one row (id = 1) holding the CDR retention / S3 archive settings,
+-- kept in the DB because every node sharing this DB shares the CDR tables
+-- created only when missing so the settings survive a reinstall of this module
+--
+
+CREATE TABLE IF NOT EXISTS `dsip_cdr_settings` (
+  `id`              tinyint(3) UNSIGNED NOT NULL DEFAULT '1',
+  `retention_days`  int(10) UNSIGNED    NOT NULL DEFAULT '0',
+  `archive_enabled` tinyint(1)          NOT NULL DEFAULT '0',
+  `s3_bucket`       varchar(255)        NOT NULL DEFAULT '',
+  `s3_prefix`       varchar(255)        NOT NULL DEFAULT 'cdrs/',
+  `s3_region`       varchar(64)         NOT NULL DEFAULT '',
+  `s3_endpoint`     varchar(255)        NOT NULL DEFAULT '',
+  `s3_access_key`   varchar(255)        NOT NULL DEFAULT '',
+  `s3_secret_key`   varbinary(1024)     NOT NULL DEFAULT '',
+  `last_run_at`     datetime                     DEFAULT NULL,
+  `last_run_result` varchar(2048)       NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+  );
+INSERT IGNORE INTO `dsip_cdr_settings` (`id`) VALUES (1);
 
 --
 -- Dumping routines for database 'kamailio'

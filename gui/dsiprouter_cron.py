@@ -12,6 +12,7 @@
 #   api         -   cleanleases
 #               -   synclicenses
 #   cdr         -   sendreport <gwgroupid>
+#               -   purge
 #   fusionpbx   -   sync
 #
 
@@ -41,6 +42,9 @@ if __name__ == '__main__':
             gwgroupid = args[0]
             sendCdrReport(gwgroupid)
             sys.exit(0)
+        elif cmd == 'purge':
+            from modules.cdr.cron_functions import purgeCdrs
+            sys.exit(0 if purgeCdrs() else 1)
 
     elif mod == 'fusionpbx':
         if cmd == 'sync':

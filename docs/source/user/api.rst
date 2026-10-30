@@ -126,6 +126,44 @@ Delete a domain (its dispatcher set and, for MSTeams, its endpoint group are rem
 
     curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X DELETE https://$DSIP_HOSTNAME:5000/api/v1/domains/<id>
 
+Executing CDR Retention API
+---------------------------
+
+CDRs (the ``cdrs``, ``acc`` and ``missed_calls`` tables) older than ``CDR_RETENTION_DAYS`` are deleted by a cron job
+every night at 02:30. ``0`` (the default) keeps CDRs forever. Whole days are kept: with 7 days, everything from
+7 days ago at midnight (DB time) onward stays. The settings are stored in the database, so every node sharing it
+uses the same values, and only one node runs the job at a time. They can also be changed on the
+Settings page, in the "CDR Retention & Archive" tab.
+
+With ``CDR_ARCHIVE_ENABLED`` each expired day is first uploaded to an S3 bucket (AWS or any S3 compatible service,
+such as DigitalOcean Spaces, through ``CDR_S3_ENDPOINT``) as gzipped CSV files named
+``<prefix>YYYY/MM/<table>-YYYY-MM-DD.csv.gz``. Rows are only deleted after their upload succeeded; when an upload
+fails the remaining CDRs are kept for the next run. A second file for the same day gets a ``.2``, ``.3``, ... suffix
+so earlier archives are never overwritten. The secret key is stored encrypted and is never returned by the API.
+
+Show the settings:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X GET https://$DSIP_HOSTNAME:5000/api/v1/settings/cdr
+
+Keep 90 days of CDRs and archive older ones to S3:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" \
+         -X PUT -d '{"CDR_RETENTION_DAYS":90,"CDR_ARCHIVE_ENABLED":true,"CDR_S3_BUCKET":"my-cdr-archive","CDR_S3_REGION":"us-east-1","CDR_S3_ACCESS_KEY":"<key>","CDR_S3_SECRET_KEY":"<secret>"}' \
+         https://$DSIP_HOSTNAME:5000/api/v1/settings/cdr
+
+Check the bucket (writes and deletes a small object), then run the job right away instead of waiting for cron:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X POST https://$DSIP_HOSTNAME:5000/api/v1/settings/cdr/test-s3
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X POST https://$DSIP_HOSTNAME:5000/api/v1/settings/cdr/run
+
+The job can also be run from the shell: ``sudo -u dsiprouter /opt/dsiprouter/venv/bin/python /opt/dsiprouter/gui/dsiprouter_cron.py cdr purge``
+
 Further Reading
 +++++++++++++++
 

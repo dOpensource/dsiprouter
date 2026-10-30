@@ -11,6 +11,7 @@
     "test:password-visibility": "npx playwright test password-visibility",
     "test:users-api": "npx playwright test users-api",
     "test:domains": "npx playwright test domains-",
+    "test:cdr": "npx playwright test cdr-",
     "test:full": "DSIP_TEST_SHELL=1 npx playwright test",
     "test:headed": "npx playwright test --headed",
     "test:debug": "npx playwright test --debug",

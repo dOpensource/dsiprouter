@@ -1,5 +1,5 @@
 from datetime import datetime
-from shared import debugException
+from shared import debugException, IO
 from database import startSession, DummySession, dSIPCDRInfo
 from modules.api.api_routes import generateCDRS
 
@@ -21,3 +21,18 @@ def sendCdrReport(gwgroupid):
         db.flush()
     finally:
         db.close()
+
+
+def purgeCdrs():
+    """Run the CDR retention / S3 archive job, returns False when it failed"""
+    from modules.cdr.retention import runRetention
+    from sysloginit import initSyslogLogger
+
+    initSyslogLogger()
+    try:
+        result = runRetention(trigger='cron')
+        return result['error'] is None
+    except Exception as ex:
+        IO.logerr('CDR retention failed: {}'.format(ex))
+        debugException(ex)
+        return False
