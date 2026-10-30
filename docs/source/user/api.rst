@@ -133,7 +133,7 @@ CDRs (the ``cdrs``, ``acc`` and ``missed_calls`` tables) older than ``CDR_RETENT
 every night at 02:30. ``0`` (the default) keeps CDRs forever. Whole days are kept: with 7 days, everything from
 7 days ago at midnight (DB time) onward stays. The settings are stored in the database, so every node sharing it
 uses the same values, and only one node runs the job at a time. They can also be changed on the
-Settings page, in the "CDR Retention & Archive" tab.
+Settings page, in the "CDR Retention & Webhook" tab.
 
 With ``CDR_ARCHIVE_ENABLED`` each expired day is first uploaded to an S3 bucket (AWS or any S3 compatible service,
 such as DigitalOcean Spaces, through ``CDR_S3_ENDPOINT``) as gzipped CSV files named
@@ -163,6 +163,51 @@ Check the bucket (writes and deletes a small object), then run the job right awa
     curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X POST https://$DSIP_HOSTNAME:5000/api/v1/settings/cdr/run
 
 The job can also be run from the shell: ``sudo -u dsiprouter /opt/dsiprouter/venv/bin/python /opt/dsiprouter/gui/dsiprouter_cron.py cdr purge``
+
+Executing CDR Webhook API
+-------------------------
+
+With ``CDR_WEBHOOK_ENABLED`` a cron job sends the CDRs written since the last delivery to ``CDR_WEBHOOK_URL`` every
+minute. Each request (``CDR_WEBHOOK_METHOD`` ``POST`` or ``PUT``) carries up to 100 CDRs as a JSON array of ``cdrs``
+rows, oldest first, with the header ``X-DSIP-Event: cdr``. ``CDR_WEBHOOK_AUTH`` is ``basic`` (with
+``CDR_WEBHOOK_USERNAME`` and ``CDR_WEBHOOK_PASSWORD``, the password is stored encrypted and never returned) or empty
+for no authentication.
+
+CDRs only count as sent after the webhook answered with a 2xx, otherwise the same CDRs are sent again on the next run,
+so the receiver should treat ``cdr_id`` as unique. Enabling the webhook starts at the newest CDR, older CDRs are not
+sent. While the webhook is enabled the retention job never deletes CDRs it has not sent yet.
+
+``CDR_STORE_CDR`` (default ``true``) set to ``false`` deletes each CDR (and its ``acc`` rows) once the webhook accepted
+it. It can only be turned off while the webhook is enabled.
+
+Send CDRs to a webhook with basic auth, without keeping them in dSIPRouter:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" \
+         -X PUT -d '{"CDR_WEBHOOK_ENABLED":true,"CDR_WEBHOOK_URL":"https://example.com/cdrs","CDR_WEBHOOK_METHOD":"POST","CDR_WEBHOOK_AUTH":"basic","CDR_WEBHOOK_USERNAME":"<user>","CDR_WEBHOOK_PASSWORD":"<password>","CDR_STORE_CDR":false}' \
+         https://$DSIP_HOSTNAME:5000/api/v1/settings/cdr
+
+Send an empty array (``X-DSIP-Event: test``) to check the webhook, then send the pending CDRs right away:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X POST https://$DSIP_HOSTNAME:5000/api/v1/settings/cdr/test-webhook
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X POST https://$DSIP_HOSTNAME:5000/api/v1/settings/cdr/run-webhook
+
+A CDR in the request body looks like:
+
+.. code-block:: json
+
+    [
+        {
+            "cdr_id": 1234, "src_username": "1001", "src_domain": "pbx.example.com", "dst_username": "18005551212",
+            "dst_domain": "", "dst_ousername": "", "call_start_time": "2026-10-30 14:02:11", "duration": 63,
+            "sip_call_id": "a84b4c76e66710", "sip_from_tag": "1928301774", "sip_to_tag": "314159",
+            "src_ip": "203.0.113.10", "cost": 0, "rated": 0, "created": "2026-10-30 14:05:00",
+            "calltype": "outbound", "fraud": 0, "src_gwgroupid": "12", "dst_gwgroupid": "7"
+        }
+    ]
 
 Further Reading
 +++++++++++++++

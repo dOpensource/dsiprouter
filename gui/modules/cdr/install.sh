@@ -57,12 +57,16 @@ function install {
     # daily CDR retention / S3 archive job, it does nothing until a retention period is set
     cronRemove -u dsiprouter 'dsiprouter_cron.py cdr purge'
     cronAppend -u dsiprouter "30 2 * * * ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter_cron.py cdr purge"
+    # CDR webhook delivery, it does nothing until the webhook is enabled
+    cronRemove -u dsiprouter 'dsiprouter_cron.py cdr webhook'
+    cronAppend -u dsiprouter "*/1 * * * * ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter_cron.py cdr webhook"
     printdbg "CDR module installed"
 }
 
 function uninstall {
     disableKamailioConfigAttrib 'WITH_CDRS' ${DSIP_KAMAILIO_CONFIG_FILE}
     cronRemove -u dsiprouter 'dsiprouter_cron.py cdr purge'
+    cronRemove -u dsiprouter 'dsiprouter_cron.py cdr webhook'
     printdbg "CDR module uninstalled"
 }
 

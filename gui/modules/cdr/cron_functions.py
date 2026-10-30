@@ -36,3 +36,18 @@ def purgeCdrs():
         IO.logerr('CDR retention failed: {}'.format(ex))
         debugException(ex)
         return False
+
+
+def sendCdrWebhook():
+    """Send new CDRs to the CDR webhook, returns False when it failed"""
+    from modules.cdr.webhook import runWebhook
+    from sysloginit import initSyslogLogger
+
+    initSyslogLogger()
+    try:
+        result = runWebhook(trigger='cron')
+        return result['error'] is None
+    except Exception as ex:
+        IO.logerr('CDR webhook failed: {}'.format(ex))
+        debugException(ex)
+        return False

@@ -19,7 +19,7 @@
         <a class="nav-link active" href="#general-settings" name="general-settings-toggle" data-bs-toggle="tab" aria-selected="true">General</a>
       </li>
       <li role="presentation" class="nav-item">
-        <a class="nav-link" href="#cdr-settings" name="cdr-settings-toggle" data-bs-toggle="tab" aria-selected="false">CDR Retention &amp; Archive</a>
+        <a class="nav-link" href="#cdr-settings" name="cdr-settings-toggle" data-bs-toggle="tab" aria-selected="false">CDR Retention &amp; Webhook</a>
       </li>
     </ul>
   </div>
@@ -101,15 +101,73 @@
           </div>
         </fieldset>
 
+        <fieldset>
+          <legend>Webhook</legend>
+          <div class="form-check form-switch">
+            <input class="form-check-input" id="CDR_WEBHOOK_ENABLED" name="CDR_WEBHOOK_ENABLED" type="checkbox">
+            <label class="form-check-label" for="CDR_WEBHOOK_ENABLED">Send new CDRs to a webhook</label>
+          </div>
+          <small class="form-text text-muted">
+            Every minute the CDRs written since the last delivery are sent as a JSON array, up to 100 per request.
+            A failed request is retried with the same CDRs. CDRs written before the webhook was enabled are not sent.
+          </small>
+
+          <div id="cdr-webhook-fields" class="cdr-s3-fields">
+            <div class="form-group">
+              <label for="CDR_WEBHOOK_URL">URL</label>
+              <input class="form-control" id="CDR_WEBHOOK_URL" name="CDR_WEBHOOK_URL" type="url" placeholder="https://example.com/cdrs" autocomplete="off">
+              <div class="invalid-feedback">Enter an http(s) URL.</div>
+            </div>
+            <div class="form-group">
+              <label for="CDR_WEBHOOK_METHOD">Method</label>
+              <select class="form-control" id="CDR_WEBHOOK_METHOD" name="CDR_WEBHOOK_METHOD">
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="CDR_WEBHOOK_AUTH">Authentication</label>
+              <select class="form-control" id="CDR_WEBHOOK_AUTH" name="CDR_WEBHOOK_AUTH">
+                <option value="">None</option>
+                <option value="basic">Basic</option>
+              </select>
+            </div>
+            <div id="cdr-webhook-auth-fields">
+              <div class="form-group">
+                <label for="CDR_WEBHOOK_USERNAME">Username</label>
+                <input class="form-control" id="CDR_WEBHOOK_USERNAME" name="CDR_WEBHOOK_USERNAME" type="text" autocomplete="off">
+                <div class="invalid-feedback">A username without a colon is required for basic auth.</div>
+              </div>
+              <div class="form-group">
+                <label for="CDR_WEBHOOK_PASSWORD">Password</label>
+                <input class="form-control" id="CDR_WEBHOOK_PASSWORD" name="CDR_WEBHOOK_PASSWORD" type="password" autocomplete="new-password">
+                <div class="invalid-feedback">A password is required for basic auth.</div>
+                <small class="form-text text-muted">Stored encrypted and never shown again. Leave empty to keep the saved password.</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-check form-switch">
+            <input class="form-check-input" id="CDR_STORE_CDR" name="CDR_STORE_CDR" type="checkbox" checked>
+            <label class="form-check-label" for="CDR_STORE_CDR">Store CDRs in dSIPRouter</label>
+          </div>
+          <small class="form-text text-muted">
+            Turn this off to delete each CDR once the webhook accepted it. Only possible while the webhook is enabled.
+          </small>
+        </fieldset>
+
         <div class="cdr-settings-actions">
           <button id="cdr-save" class="btn btn-success" type="submit">Save</button>
           <button id="cdr-test-s3" class="btn btn-secondary" type="button">Test S3 connection</button>
+          <button id="cdr-test-webhook" class="btn btn-secondary" type="button">Test webhook</button>
           {% if can_run_cdr %}
           <button id="cdr-run" class="btn btn-warning" type="button">Run retention now</button>
+          <button id="cdr-run-webhook" class="btn btn-warning" type="button">Send CDRs now</button>
           {% endif %}
         </div>
 
         <p id="cdr-last-run" class="cdr-last-run text-muted"></p>
+        <p id="cdr-webhook-last-run" class="cdr-last-run text-muted"></p>
       </form>
     </div>
   </div>

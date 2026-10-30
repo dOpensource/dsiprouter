@@ -36,7 +36,17 @@ SETTINGS_COLUMNS = {
     'CDR_S3_ENDPOINT': 's3_endpoint',
     'CDR_S3_ACCESS_KEY': 's3_access_key',
     'CDR_S3_SECRET_KEY': 's3_secret_key',
+    'CDR_WEBHOOK_ENABLED': 'webhook_enabled',
+    'CDR_WEBHOOK_URL': 'webhook_url',
+    'CDR_WEBHOOK_METHOD': 'webhook_method',
+    'CDR_WEBHOOK_AUTH': 'webhook_auth',
+    'CDR_WEBHOOK_USERNAME': 'webhook_username',
+    'CDR_WEBHOOK_PASSWORD': 'webhook_password',
+    'CDR_STORE_CDR': 'store_cdr',
 }
+# write-only settings, stored encrypted and never returned by the API
+SECRET_SETTINGS = ('CDR_S3_SECRET_KEY', 'CDR_WEBHOOK_PASSWORD')
+BOOL_SETTINGS = ('CDR_ARCHIVE_ENABLED', 'CDR_WEBHOOK_ENABLED', 'CDR_STORE_CDR')
 DEFAULT_SETTINGS = {
     'CDR_RETENTION_DAYS': 0,
     'CDR_ARCHIVE_ENABLED': False,
@@ -46,11 +56,21 @@ DEFAULT_SETTINGS = {
     'CDR_S3_ENDPOINT': '',
     'CDR_S3_ACCESS_KEY': '',
     'CDR_S3_SECRET_KEY': '',
+    'CDR_WEBHOOK_ENABLED': False,
+    'CDR_WEBHOOK_URL': '',
+    'CDR_WEBHOOK_METHOD': 'POST',
+    'CDR_WEBHOOK_AUTH': '',
+    'CDR_WEBHOOK_USERNAME': '',
+    'CDR_WEBHOOK_PASSWORD': '',
+    'CDR_STORE_CDR': True,
 }
+WEBHOOK_METHODS = ('POST', 'PUT')
+WEBHOOK_AUTH_TYPES = ('', 'basic')
 
 S3_BUCKET_REGEX = re.compile(r'^[a-z0-9][a-z0-9.\-]{1,61}[a-z0-9]$')
 S3_REGION_REGEX = re.compile(r'^[a-z0-9\-]{0,64}$')
 S3_ENDPOINT_REGEX = re.compile(r'^https?://[A-Za-z0-9.\-]+(:[0-9]{1,5})?(/[^\s]*)?$')
+WEBHOOK_URL_REGEX = re.compile(r'^https?://(\[[0-9A-Fa-f:.]+\]|[A-Za-z0-9.\-]+)(:[0-9]{1,5})?(/[^\s]*)?$')
 
 
 class CdrSettingsError(ValueError):
@@ -123,8 +143,9 @@ def coerceSettings(data):
         if value < 0 or value > MAX_RETENTION_DAYS:
             raise CdrSettingsError('CDR_RETENTION_DAYS must be between 0 and {}'.format(MAX_RETENTION_DAYS))
         fields['CDR_RETENTION_DAYS'] = value
-    if 'CDR_ARCHIVE_ENABLED' in data:
-        fields['CDR_ARCHIVE_ENABLED'] = _toBool('CDR_ARCHIVE_ENABLED', data['CDR_ARCHIVE_ENABLED'])
+    for key in BOOL_SETTINGS:
+        if key in data:
+            fields[key] = _toBool(key, data[key])
     if 'CDR_S3_BUCKET' in data:
         value = _toStr('CDR_S3_BUCKET', data['CDR_S3_BUCKET'], 63)
         if value != '' and S3_BUCKET_REGEX.match(value) is None:
@@ -147,15 +168,37 @@ def coerceSettings(data):
         fields['CDR_S3_ENDPOINT'] = value
     if 'CDR_S3_ACCESS_KEY' in data:
         fields['CDR_S3_ACCESS_KEY'] = _toStr('CDR_S3_ACCESS_KEY', data['CDR_S3_ACCESS_KEY'])
-    if 'CDR_S3_SECRET_KEY' in data:
-        value = data['CDR_S3_SECRET_KEY']
-        if value is None:
-            fields['CDR_S3_SECRET_KEY'] = ''
-        else:
-            value = _toStr('CDR_S3_SECRET_KEY', value, MAX_SECRET_LEN)
-            # an empty secret means "keep the saved one", the form never receives it back
-            if value != '':
-                fields['CDR_S3_SECRET_KEY'] = value
+    if 'CDR_WEBHOOK_URL' in data:
+        value = _toStr('CDR_WEBHOOK_URL', data['CDR_WEBHOOK_URL'], 2048)
+        if value != '' and WEBHOOK_URL_REGEX.match(value) is None:
+            raise CdrSettingsError('CDR_WEBHOOK_URL must be an http(s) URL, such as https://example.com/cdrs')
+        fields['CDR_WEBHOOK_URL'] = value
+    if 'CDR_WEBHOOK_METHOD' in data:
+        value = _toStr('CDR_WEBHOOK_METHOD', data['CDR_WEBHOOK_METHOD'], 8).upper() or 'POST'
+        if value not in WEBHOOK_METHODS:
+            raise CdrSettingsError('CDR_WEBHOOK_METHOD must be POST or PUT')
+        fields['CDR_WEBHOOK_METHOD'] = value
+    if 'CDR_WEBHOOK_AUTH' in data:
+        value = _toStr('CDR_WEBHOOK_AUTH', data['CDR_WEBHOOK_AUTH'], 16).lower()
+        value = '' if value == 'none' else value
+        if value not in WEBHOOK_AUTH_TYPES:
+            raise CdrSettingsError('CDR_WEBHOOK_AUTH must be basic or empty (no auth)')
+        fields['CDR_WEBHOOK_AUTH'] = value
+    if 'CDR_WEBHOOK_USERNAME' in data:
+        value = _toStr('CDR_WEBHOOK_USERNAME', data['CDR_WEBHOOK_USERNAME'])
+        if ':' in value:
+            raise CdrSettingsError('CDR_WEBHOOK_USERNAME can not contain a colon')
+        fields['CDR_WEBHOOK_USERNAME'] = value
+    for key in SECRET_SETTINGS:
+        if key in data:
+            value = data[key]
+            if value is None:
+                fields[key] = ''
+            else:
+                value = _toStr(key, value, MAX_SECRET_LEN)
+                # an empty secret means "keep the saved one", the form never receives it back
+                if value != '':
+                    fields[key] = value
     return fields
 
 
@@ -171,12 +214,31 @@ def validateSettings(cfg):
         missing = [key for key in ('CDR_S3_BUCKET', 'CDR_S3_ACCESS_KEY', 'CDR_S3_SECRET_KEY') if cfg[key] == '']
         if missing:
             raise CdrSettingsError('S3 archiving needs {}'.format(', '.join(missing)))
+    if cfg['CDR_WEBHOOK_ENABLED']:
+        validateWebhookTarget(cfg, 'the CDR webhook')
+    if not cfg['CDR_STORE_CDR'] and not cfg['CDR_WEBHOOK_ENABLED']:
+        raise CdrSettingsError('CDR_STORE_CDR can only be false while the webhook is enabled, '
+                               'otherwise CDRs would be deleted without being sent anywhere')
+
+
+def validateWebhookTarget(cfg, what):
+    """
+    Check the values needed to call the webhook
+
+    :raises CdrSettingsError: when the URL or the basic auth credentials are missing
+    """
+    if cfg['CDR_WEBHOOK_URL'] == '':
+        raise CdrSettingsError('{} needs CDR_WEBHOOK_URL'.format(what))
+    if cfg['CDR_WEBHOOK_AUTH'] == 'basic':
+        missing = [key for key in ('CDR_WEBHOOK_USERNAME', 'CDR_WEBHOOK_PASSWORD') if cfg[key] == '']
+        if missing:
+            raise CdrSettingsError('basic auth needs {}'.format(', '.join(missing)))
 
 
 def _readSettingsRow(conn):
     row = conn.execute(text(
-        'SELECT retention_days, archive_enabled, s3_bucket, s3_prefix, s3_region, s3_endpoint, s3_access_key, '
-        's3_secret_key, last_run_at, last_run_result FROM dsip_cdr_settings WHERE id = 1'
+        'SELECT {}, last_run_at, last_run_result, webhook_last_cdr_id, webhook_last_run_at, webhook_last_result '
+        'FROM dsip_cdr_settings WHERE id = 1'.format(', '.join(SETTINGS_COLUMNS.values()))
     )).mappings().first()
     return row
 
@@ -186,7 +248,8 @@ def getSettings(conn=None, include_secret=False):
     Read the CDR settings
 
     :param include_secret:  return the decrypted secret key (only for the job itself, never the API)
-    :return:                API field names to typed values, plus CDR_S3_SECRET_KEY_SET and CDR_LAST_RUN
+    :return:                API field names to typed values, plus <secret>_SET for each secret, CDR_LAST_RUN,
+                            CDR_WEBHOOK_LAST_RUN and CDR_WEBHOOK_LAST_CDR_ID
     :rtype:                 dict
     """
     if conn is None:
@@ -195,33 +258,48 @@ def getSettings(conn=None, include_secret=False):
 
     cfg = dict(DEFAULT_SETTINGS)
     cfg['CDR_LAST_RUN'] = None
+    cfg['CDR_WEBHOOK_LAST_RUN'] = None
+    cfg['CDR_WEBHOOK_LAST_CDR_ID'] = None
     row = _readSettingsRow(conn)
     if row is not None:
-        cfg['CDR_RETENTION_DAYS'] = int(row['retention_days'])
-        cfg['CDR_ARCHIVE_ENABLED'] = bool(row['archive_enabled'])
-        for key in ('CDR_S3_BUCKET', 'CDR_S3_PREFIX', 'CDR_S3_REGION', 'CDR_S3_ENDPOINT', 'CDR_S3_ACCESS_KEY'):
-            cfg[key] = row[SETTINGS_COLUMNS[key]]
-        secret = row['s3_secret_key'] or b''
-        cfg['CDR_S3_SECRET_KEY'] = AES_CTR.decrypt(secret) if (include_secret and len(secret) > 0) else (
-            '********' if len(secret) > 0 else '')
-        if row['last_run_at'] is not None:
-            try:
-                result = json.loads(row['last_run_result']) if row['last_run_result'] else {}
-            except ValueError:
-                result = {}
-            cfg['CDR_LAST_RUN'] = {'at': row['last_run_at'].strftime('%Y-%m-%d %H:%M:%S'), 'result': result}
+        for key, col in SETTINGS_COLUMNS.items():
+            if key in SECRET_SETTINGS:
+                secret = row[col] or b''
+                cfg[key] = AES_CTR.decrypt(secret) if (include_secret and len(secret) > 0) else (
+                    '********' if len(secret) > 0 else '')
+            elif key in BOOL_SETTINGS:
+                cfg[key] = bool(row[col])
+            elif key == 'CDR_RETENTION_DAYS':
+                cfg[key] = int(row[col])
+            else:
+                cfg[key] = row[col]
+        cfg['CDR_LAST_RUN'] = _lastRun(row['last_run_at'], row['last_run_result'])
+        cfg['CDR_WEBHOOK_LAST_RUN'] = _lastRun(row['webhook_last_run_at'], row['webhook_last_result'])
+        if row['webhook_last_cdr_id'] is not None:
+            cfg['CDR_WEBHOOK_LAST_CDR_ID'] = int(row['webhook_last_cdr_id'])
 
-    cfg['CDR_S3_SECRET_KEY_SET'] = cfg['CDR_S3_SECRET_KEY'] != ''
-    if not include_secret:
-        del cfg['CDR_S3_SECRET_KEY']
+    for key in SECRET_SETTINGS:
+        cfg[key + '_SET'] = cfg[key] != ''
+        if not include_secret:
+            del cfg[key]
     return cfg
+
+
+def _lastRun(at, result):
+    if at is None:
+        return None
+    try:
+        result = json.loads(result) if result else {}
+    except ValueError:
+        result = {}
+    return {'at': at.strftime('%Y-%m-%d %H:%M:%S'), 'result': result}
 
 
 def mergeSettings(conn, fields):
     """Return the saved settings (with the decrypted secret) with the coerced changes applied"""
     cfg = getSettings(conn, include_secret=True)
-    del cfg['CDR_S3_SECRET_KEY_SET']
-    del cfg['CDR_LAST_RUN']
+    for key in [k + '_SET' for k in SECRET_SETTINGS] + ['CDR_LAST_RUN', 'CDR_WEBHOOK_LAST_RUN', 'CDR_WEBHOOK_LAST_CDR_ID']:
+        del cfg[key]
     cfg.update(fields)
     return cfg
 
@@ -235,12 +313,15 @@ def saveSettings(data):
     """
     fields = coerceSettings(data)
     with _engine().connect() as conn:
+        was_enabled = getSettings(conn)['CDR_WEBHOOK_ENABLED']
         cfg = mergeSettings(conn, fields)
         validateSettings(cfg)
 
         values = {SETTINGS_COLUMNS[key]: cfg[key] for key in SETTINGS_COLUMNS}
-        values['archive_enabled'] = 1 if cfg['CDR_ARCHIVE_ENABLED'] else 0
-        values['s3_secret_key'] = AES_CTR.encrypt(cfg['CDR_S3_SECRET_KEY']) if cfg['CDR_S3_SECRET_KEY'] != '' else b''
+        for key in BOOL_SETTINGS:
+            values[SETTINGS_COLUMNS[key]] = 1 if cfg[key] else 0
+        for key in SECRET_SETTINGS:
+            values[SETTINGS_COLUMNS[key]] = AES_CTR.encrypt(cfg[key]) if cfg[key] != '' else b''
 
         columns = list(values.keys())
         conn.execute(text(
@@ -250,6 +331,12 @@ def saveSettings(data):
                 updates=', '.join('{0} = VALUES({0})'.format(col) for col in columns),
             )
         ), values)
+        if cfg['CDR_WEBHOOK_ENABLED'] and not was_enabled:
+            # the webhook starts with the CDRs written from now on, existing ones are not sent
+            conn.execute(text(
+                'UPDATE dsip_cdr_settings SET webhook_last_cdr_id = (SELECT COALESCE(MAX(cdr_id), 0) FROM cdrs) '
+                'WHERE id = 1'
+            ))
         conn.commit()
         return getSettings(conn)
 
@@ -344,6 +431,13 @@ def _uniqueKey(client, bucket, key):
         candidate = '{}.{}{}'.format(base, n, ext)
 
 
+def _undeliveredFilter(table, cfg):
+    """While the webhook is on, CDRs it has not sent yet are never expired"""
+    if table == 'cdrs' and cfg['CDR_WEBHOOK_ENABLED'] and cfg['CDR_WEBHOOK_LAST_CDR_ID'] is not None:
+        return ' AND cdr_id <= {:d}'.format(cfg['CDR_WEBHOOK_LAST_CDR_ID'])
+    return ''
+
+
 def _archiveDay(conn, client, cfg, tables, day, result):
     """
     Export one day of every CDR table to S3, then delete exactly the exported rows
@@ -358,7 +452,7 @@ def _archiveDay(conn, client, cfg, tables, day, result):
     exports = []
     try:
         for table, id_col, time_col in tables:
-            where = '{0} >= :start AND {0} < :end'.format(time_col)
+            where = '{0} >= :start AND {0} < :end'.format(time_col) + _undeliveredFilter(table, cfg)
             max_id = conn.execute(text('SELECT MAX({}) FROM {} WHERE {}'.format(id_col, table, where)), params).scalar()
             if max_id is None:
                 continue
@@ -456,14 +550,16 @@ def runRetention(trigger='cron'):
                     validateSettings(cfg)
                     client = _s3Client(cfg)
                     day_rows = conn.execute(text(' UNION '.join(
-                        'SELECT DISTINCT DATE({0}) AS day FROM {1} WHERE {0} < :cutoff'.format(time_col, table)
+                        'SELECT DISTINCT DATE({0}) AS day FROM {1} WHERE {0} < :cutoff{2}'.format(
+                            time_col, table, _undeliveredFilter(table, cfg))
                         for table, _, time_col in tables
                     ) + ' ORDER BY day'), {'cutoff': cutoff})
                     for day in [row[0] for row in day_rows]:
                         _archiveDay(conn, client, cfg, tables, day, result)
                 else:
                     for table, _, time_col in tables:
-                        _deleteBatches(conn, table, '{} < :cutoff'.format(time_col), {'cutoff': cutoff}, result)
+                        _deleteBatches(conn, table, '{} < :cutoff'.format(time_col) + _undeliveredFilter(table, cfg),
+                            {'cutoff': cutoff}, result)
             except (CdrArchiveError, CdrSettingsError) as ex:
                 conn.rollback()
                 result['error'] = str(ex)

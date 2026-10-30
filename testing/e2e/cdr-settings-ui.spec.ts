@@ -1,5 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { loginAdmin, loginGUI, createTestUser, deleteTestUser, freshContext } from './helpers';
+import { startReceiver } from './fixtures/webhook';
 import {
   DEAD_S3_ENDPOINT, getCdrSettings, saveCdrSettings, resetCdrSettings, cdrSettingsAreDefault,
 } from './fixtures/cdrs';
@@ -116,6 +117,96 @@ test.describe('CDR settings page', () => {
     await expect(page.locator('#message-bar')).toContainText('retention is off');
   });
 
+  test('the webhook switch shows its fields and requires a URL', async ({ page }) => {
+    const form = await openCdrTab(page);
+    await expect(page.locator('#cdr-webhook-fields')).toBeHidden();
+    await expect(form.locator('#CDR_STORE_CDR')).toBeChecked();
+    await expect(form.locator('#CDR_STORE_CDR')).toBeDisabled();
+
+    await form.locator('#CDR_WEBHOOK_ENABLED').check();
+    await expect(page.locator('#cdr-webhook-fields')).toBeVisible();
+    await expect(form.locator('#CDR_STORE_CDR')).toBeEnabled();
+    await expect(page.locator('#cdr-webhook-auth-fields')).toBeHidden();
+
+    await page.click('#cdr-save');
+    await expect(form.locator('#CDR_WEBHOOK_URL')).toHaveClass(/is-invalid/);
+    expect((await getCdrSettings(page)).CDR_WEBHOOK_ENABLED).toBe(false);
+
+    // basic auth needs a username and password
+    await form.locator('#CDR_WEBHOOK_URL').fill('https://hooks.example.com/cdrs');
+    await form.locator('#CDR_WEBHOOK_AUTH').selectOption('basic');
+    await expect(page.locator('#cdr-webhook-auth-fields')).toBeVisible();
+    await page.click('#cdr-save');
+    await expect(form.locator('#CDR_WEBHOOK_USERNAME')).toHaveClass(/is-invalid/);
+    await expect(form.locator('#CDR_WEBHOOK_PASSWORD')).toHaveClass(/is-invalid/);
+    expect((await getCdrSettings(page)).CDR_WEBHOOK_ENABLED).toBe(false);
+
+    // turning the webhook off stores CDRs again
+    await form.locator('#CDR_STORE_CDR').uncheck();
+    await form.locator('#CDR_WEBHOOK_ENABLED').uncheck();
+    await expect(form.locator('#CDR_STORE_CDR')).toBeChecked();
+  });
+
+  test('saving the webhook persists it and keeps the password write-only', async ({ page }) => {
+    const form = await openCdrTab(page);
+    await form.locator('#CDR_WEBHOOK_ENABLED').check();
+    await form.locator('#CDR_WEBHOOK_URL').fill('https://hooks.example.com/cdrs');
+    await form.locator('#CDR_WEBHOOK_METHOD').selectOption('PUT');
+    await form.locator('#CDR_WEBHOOK_AUTH').selectOption('basic');
+    await form.locator('#CDR_WEBHOOK_USERNAME').fill('acme');
+    await form.locator('#CDR_WEBHOOK_PASSWORD').fill('e2e-ui-pass');
+    await form.locator('#CDR_STORE_CDR').uncheck();
+    await page.click('#cdr-save');
+    await expect(page.locator('#message-bar')).toContainText('CDR settings saved');
+
+    const cfg = await getCdrSettings(page);
+    expect(cfg.CDR_WEBHOOK_ENABLED).toBe(true);
+    expect(cfg.CDR_WEBHOOK_METHOD).toBe('PUT');
+    expect(cfg.CDR_WEBHOOK_USERNAME).toBe('acme');
+    expect(cfg.CDR_WEBHOOK_PASSWORD_SET).toBe(true);
+    expect(cfg.CDR_STORE_CDR).toBe(false);
+
+    await openCdrTab(page);
+    await expect(page.locator('#CDR_WEBHOOK_URL')).toHaveValue('https://hooks.example.com/cdrs');
+    await expect(page.locator('#CDR_WEBHOOK_METHOD')).toHaveValue('PUT');
+    await expect(page.locator('#CDR_WEBHOOK_PASSWORD')).toHaveValue('');
+    await expect(page.locator('#CDR_WEBHOOK_PASSWORD')).toHaveAttribute('placeholder', /Saved/);
+    await expect(page.locator('#CDR_STORE_CDR')).not.toBeChecked();
+    // the status line shows either the last delivery (kept from earlier runs) or that nothing was sent yet
+    await expect(page.locator('#cdr-webhook-last-run')).toContainText(/Last webhook run|not sent anything/);
+
+    // saving again without typing the password keeps it
+    await page.click('#cdr-save');
+    await expect(page.locator('#message-bar')).toContainText('CDR settings saved');
+    expect((await getCdrSettings(page)).CDR_WEBHOOK_PASSWORD_SET).toBe(true);
+  });
+
+  test('test webhook reaches the receiver', async ({ page }) => {
+    const receiver = await startReceiver();
+    try {
+      const form = await openCdrTab(page);
+      await form.locator('#CDR_WEBHOOK_ENABLED').check();
+      await form.locator('#CDR_WEBHOOK_URL').fill(receiver.url);
+      await page.click('#cdr-test-webhook');
+      await expect(page.locator('#message-bar')).toContainText('answered HTTP 200');
+      expect(receiver.requests.map((r) => r.headers['x-dsip-event'])).toEqual(['test']);
+
+      receiver.respond(500);
+      await page.click('#cdr-test-webhook');
+      await expect(page.locator('#message-bar')).toContainText('HTTP 500');
+      // testing does not save anything
+      expect((await getCdrSettings(page)).CDR_WEBHOOK_ENABLED).toBe(false);
+    } finally {
+      await receiver.close();
+    }
+  });
+
+  test('send now reports that the webhook is off', async ({ page }) => {
+    await openCdrTab(page);
+    await page.click('#cdr-run-webhook');
+    await expect(page.locator('#message-bar')).toContainText('webhook is off');
+  });
+
   test('engineers do not get the run button', async ({ page, browser }) => {
     const user = `e2e_cdruieng_${Date.now()}`;
     await createTestUser(page, user, 'testpass123', 'dsip_engineer');
@@ -125,6 +216,8 @@ test.describe('CDR settings page', () => {
       await openCdrTab(eng);
       await expect(eng.locator('#cdr-save')).toBeVisible();
       await expect(eng.locator('#cdr-run')).toHaveCount(0);
+      await expect(eng.locator('#cdr-run-webhook')).toHaveCount(0);
+      await expect(eng.locator('#cdr-test-webhook')).toBeVisible();
     } finally {
       await ctx.close();
       await deleteTestUser(page, user);

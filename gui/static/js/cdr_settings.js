@@ -3,9 +3,12 @@
 
   var SETTINGS_URL = API_BASE_URL + "settings/cdr";
   var S3_TEXT_FIELDS = ['CDR_S3_BUCKET', 'CDR_S3_PREFIX', 'CDR_S3_REGION', 'CDR_S3_ENDPOINT', 'CDR_S3_ACCESS_KEY'];
+  var WEBHOOK_TEXT_FIELDS = ['CDR_WEBHOOK_URL', 'CDR_WEBHOOK_METHOD', 'CDR_WEBHOOK_AUTH', 'CDR_WEBHOOK_USERNAME'];
   var ENDPOINT_REGEX = /^https?:\/\/[A-Za-z0-9.\-]+(:[0-9]{1,5})?(\/\S*)?$/;
+  var WEBHOOK_URL_REGEX = /^https?:\/\/(\[[0-9A-Fa-f:.]+\]|[A-Za-z0-9.\-]+)(:[0-9]{1,5})?(\/\S*)?$/;
 
   var secret_saved = false;
+  var webhook_password_saved = false;
 
   function escapeHtml(value) {
     return $('<div>').text(value === null || value === undefined ? '' : String(value)).html();
@@ -27,6 +30,26 @@
     $('#cdr-s3-fields').toggle(enabled);
     $('#cdr-s3-fields :input').prop('disabled', !enabled);
     $('#cdr-test-s3').prop('disabled', !enabled);
+  }
+
+  function toggleWebhookFields() {
+    var enabled = field('CDR_WEBHOOK_ENABLED').prop('checked');
+    var basic = field('CDR_WEBHOOK_AUTH').val() === 'basic';
+    $('#cdr-webhook-fields').toggle(enabled);
+    $('#cdr-webhook-fields :input').prop('disabled', !enabled);
+    $('#cdr-webhook-auth-fields').toggle(basic);
+    $('#cdr-webhook-auth-fields :input').prop('disabled', !enabled || !basic);
+    $('#cdr-test-webhook').prop('disabled', !enabled);
+    // CDRs are always stored while nothing else receives them
+    if (!enabled) {
+      field('CDR_STORE_CDR').prop('checked', true);
+    }
+    field('CDR_STORE_CDR').prop('disabled', !enabled);
+  }
+
+  function toggleFields() {
+    toggleS3Fields();
+    toggleWebhookFields();
   }
 
   function summarizeResult(result) {
@@ -56,6 +79,24 @@
     el.text(text);
   }
 
+  function showWebhookLastRun(last_run) {
+    var el = $('#cdr-webhook-last-run');
+    if (!last_run) {
+      el.text("The webhook has not sent anything yet.");
+      return;
+    }
+    var result = last_run.result || {};
+    var text = "Last webhook run " + last_run.at + " (" + (result.trigger || "cron") + "): sent " + (result.sent || 0) + " CDR" +
+      (result.sent === 1 ? "" : "s");
+    if (result.deleted) {
+      text += ", deleted " + result.deleted + " after delivery";
+    }
+    if (result.error) {
+      text += ". Failed: " + result.error;
+    }
+    el.text(text);
+  }
+
   function fillForm(data) {
     field('CDR_RETENTION_DAYS').val(data.CDR_RETENTION_DAYS);
     field('CDR_ARCHIVE_ENABLED').prop('checked', data.CDR_ARCHIVE_ENABLED === true);
@@ -64,9 +105,18 @@
     });
     secret_saved = data.CDR_S3_SECRET_KEY_SET === true;
     field('CDR_S3_SECRET_KEY').val('').attr('placeholder', secret_saved ? "Saved, leave empty to keep it" : "");
+    field('CDR_WEBHOOK_ENABLED').prop('checked', data.CDR_WEBHOOK_ENABLED === true);
+    field('CDR_STORE_CDR').prop('checked', data.CDR_STORE_CDR !== false);
+    WEBHOOK_TEXT_FIELDS.forEach(function(name) {
+      field(name).val(data[name] || '');
+    });
+    field('CDR_WEBHOOK_METHOD').val(data.CDR_WEBHOOK_METHOD || 'POST');
+    webhook_password_saved = data.CDR_WEBHOOK_PASSWORD_SET === true;
+    field('CDR_WEBHOOK_PASSWORD').val('').attr('placeholder', webhook_password_saved ? "Saved, leave empty to keep it" : "");
     $('#cdrSettingsForm :input').removeClass('is-invalid');
-    toggleS3Fields();
+    toggleFields();
     showLastRun(data.CDR_LAST_RUN);
+    showWebhookLastRun(data.CDR_WEBHOOK_LAST_RUN);
   }
 
   function loadSettings() {
@@ -96,6 +146,19 @@
     return payload;
   }
 
+  /* the webhook values currently in the form, the password only when one was typed */
+  function webhookPayload() {
+    var payload = {};
+    WEBHOOK_TEXT_FIELDS.forEach(function(name) {
+      payload[name] = field(name).val().trim();
+    });
+    var password = field('CDR_WEBHOOK_PASSWORD').val();
+    if (password !== '') {
+      payload.CDR_WEBHOOK_PASSWORD = password;
+    }
+    return payload;
+  }
+
   function markInvalid(name, invalid) {
     field(name).toggleClass('is-invalid', invalid);
     return invalid;
@@ -115,6 +178,21 @@
     }
     else {
       $('#cdr-s3-fields :input').removeClass('is-invalid');
+    }
+
+    if (field('CDR_WEBHOOK_ENABLED').prop('checked')) {
+      invalid = markInvalid('CDR_WEBHOOK_URL', !WEBHOOK_URL_REGEX.test(field('CDR_WEBHOOK_URL').val().trim())) || invalid;
+      if (field('CDR_WEBHOOK_AUTH').val() === 'basic') {
+        var username = field('CDR_WEBHOOK_USERNAME').val().trim();
+        invalid = markInvalid('CDR_WEBHOOK_USERNAME', username === '' || username.indexOf(':') !== -1) || invalid;
+        invalid = markInvalid('CDR_WEBHOOK_PASSWORD', !webhook_password_saved && field('CDR_WEBHOOK_PASSWORD').val() === '') || invalid;
+      }
+      else {
+        $('#cdr-webhook-auth-fields :input').removeClass('is-invalid');
+      }
+    }
+    else {
+      $('#cdr-webhook-fields :input').removeClass('is-invalid');
     }
     return !invalid;
   }
@@ -137,7 +215,7 @@
       },
       complete: function() {
         button.prop('disabled', false);
-        toggleS3Fields();
+        toggleFields();
       }
     });
   }
@@ -149,6 +227,8 @@
     loadSettings();
 
     field('CDR_ARCHIVE_ENABLED').on('change', toggleS3Fields);
+    field('CDR_WEBHOOK_ENABLED').on('change', toggleWebhookFields);
+    field('CDR_WEBHOOK_AUTH').on('change', toggleWebhookFields);
 
     $('#cdrSettingsForm').on('submit', function(ev) {
       ev.preventDefault();
@@ -163,6 +243,11 @@
       if (payload.CDR_ARCHIVE_ENABLED) {
         $.extend(payload, s3Payload());
       }
+      payload.CDR_WEBHOOK_ENABLED = field('CDR_WEBHOOK_ENABLED').prop('checked');
+      payload.CDR_STORE_CDR = field('CDR_STORE_CDR').prop('checked');
+      if (payload.CDR_WEBHOOK_ENABLED) {
+        $.extend(payload, webhookPayload());
+      }
       sendRequest("PUT", SETTINGS_URL, payload, $('#cdr-save'), function(response) {
         fillForm(response.data[0]);
         showNotification("CDR settings saved", false, 10000, false);
@@ -172,6 +257,19 @@
     $('#cdr-test-s3').on('click', function() {
       sendRequest("POST", SETTINGS_URL + "/test-s3", s3Payload(), $(this), function(response) {
         showNotification(escapeHtml(response.msg), false, 10000, false);
+      });
+    });
+
+    $('#cdr-test-webhook').on('click', function() {
+      sendRequest("POST", SETTINGS_URL + "/test-webhook", webhookPayload(), $(this), function(response) {
+        showNotification(escapeHtml(response.msg), false, 10000, false);
+      });
+    });
+
+    $('#cdr-run-webhook').on('click', function() {
+      sendRequest("POST", SETTINGS_URL + "/run-webhook", null, $(this), function(response) {
+        showNotification(escapeHtml(response.msg), false, 10000, false);
+        loadSettings();
       });
     });
 

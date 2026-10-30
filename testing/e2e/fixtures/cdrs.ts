@@ -10,6 +10,13 @@ export const CDR_DEFAULTS = {
   CDR_S3_ENDPOINT: '',
   CDR_S3_ACCESS_KEY: '',
   CDR_S3_SECRET_KEY: null,
+  CDR_WEBHOOK_ENABLED: false,
+  CDR_WEBHOOK_URL: '',
+  CDR_WEBHOOK_METHOD: 'POST',
+  CDR_WEBHOOK_AUTH: '',
+  CDR_WEBHOOK_USERNAME: '',
+  CDR_WEBHOOK_PASSWORD: null,
+  CDR_STORE_CDR: true,
 };
 
 // a local port nothing listens on, uploads to it always fail
@@ -58,11 +65,16 @@ export async function resetCdrSettings(page: Page) {
  */
 export async function cdrSettingsAreDefault(page: Page): Promise<boolean> {
   const cfg = await getCdrSettings(page);
-  return cfg.CDR_RETENTION_DAYS === 0 && cfg.CDR_ARCHIVE_ENABLED === false && cfg.CDR_S3_SECRET_KEY_SET === false;
+  return cfg.CDR_RETENTION_DAYS === 0 && cfg.CDR_ARCHIVE_ENABLED === false && cfg.CDR_S3_SECRET_KEY_SET === false &&
+    cfg.CDR_WEBHOOK_ENABLED === false && cfg.CDR_WEBHOOK_PASSWORD_SET === false && cfg.CDR_STORE_CDR === true;
 }
 
 export async function runRetention(page: Page) {
   return guiApiRequest(page, 'POST', '/settings/cdr/run');
+}
+
+export async function runWebhook(page: Page) {
+  return guiApiRequest(page, 'POST', '/settings/cdr/run-webhook');
 }
 
 /**

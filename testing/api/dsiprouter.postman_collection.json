@@ -1368,6 +1368,69 @@
 						"description": "Run the retention / archive job now (the cron job runs it daily at 02:30). Returns 502 when an S3 upload failed, nothing unarchived is deleted then."
 					},
 					"response": []
+				},
+				{
+					"name": "/api/v1/settings/cdr/test-webhook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/settings/cdr/test-webhook",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"settings",
+								"cdr",
+								"test-webhook"
+							]
+						},
+						"description": "Send an empty JSON array (X-DSIP-Event: test) to the webhook. Unsaved CDR_WEBHOOK_* values in the body are tested without saving them.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"CDR_WEBHOOK_URL\": \"https://example.com/cdrs\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/settings/cdr/run-webhook",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/settings/cdr/run-webhook",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"settings",
+								"cdr",
+								"run-webhook"
+							]
+						},
+						"description": "Send the CDRs written since the last delivery now (the cron job runs it every minute). Returns 502 when the webhook failed, the CDRs are sent again on the next run."
+					},
+					"response": []
 				}
 			]
 		}

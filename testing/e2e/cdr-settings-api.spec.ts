@@ -23,6 +23,40 @@ test.describe('CDR settings API', () => {
     expect(cfg.CDR_S3_PREFIX).toBe('cdrs/');
     expect(cfg.CDR_S3_SECRET_KEY_SET).toBe(false);
     expect(cfg).not.toHaveProperty('CDR_S3_SECRET_KEY');
+    expect(cfg.CDR_WEBHOOK_ENABLED).toBe(false);
+    expect(cfg.CDR_WEBHOOK_METHOD).toBe('POST');
+    expect(cfg.CDR_WEBHOOK_AUTH).toBe('');
+    expect(cfg.CDR_STORE_CDR).toBe(true);
+    expect(cfg.CDR_WEBHOOK_PASSWORD_SET).toBe(false);
+    expect(cfg).not.toHaveProperty('CDR_WEBHOOK_PASSWORD');
+  });
+
+  test('webhook settings round-trip and enabling starts at the newest CDR', async ({ page }) => {
+    const saved = await saveCdrSettings(page, {
+      CDR_WEBHOOK_ENABLED: 'true', CDR_WEBHOOK_URL: ' https://hooks.example.com/cdrs?x=1 ', CDR_WEBHOOK_METHOD: 'put',
+      CDR_WEBHOOK_AUTH: 'basic', CDR_WEBHOOK_USERNAME: 'acme', CDR_WEBHOOK_PASSWORD: 'e2e-pass', CDR_STORE_CDR: 'false',
+    });
+    expect(saved.CDR_WEBHOOK_ENABLED).toBe(true);
+    expect(saved.CDR_WEBHOOK_URL).toBe('https://hooks.example.com/cdrs?x=1');
+    expect(saved.CDR_WEBHOOK_METHOD).toBe('PUT');
+    expect(saved.CDR_WEBHOOK_AUTH).toBe('basic');
+    expect(saved.CDR_WEBHOOK_USERNAME).toBe('acme');
+    expect(saved.CDR_WEBHOOK_PASSWORD_SET).toBe(true);
+    expect(saved.CDR_STORE_CDR).toBe(false);
+    expect(typeof saved.CDR_WEBHOOK_LAST_CDR_ID).toBe('number');
+    expect(JSON.stringify(saved)).not.toContain('e2e-pass');
+
+    // "none" is the same as no auth, an omitted password is kept
+    const none = await saveCdrSettings(page, { CDR_WEBHOOK_AUTH: 'none' });
+    expect(none.CDR_WEBHOOK_AUTH).toBe('');
+    expect(none.CDR_WEBHOOK_PASSWORD_SET).toBe(true);
+
+    // turning the webhook off needs CDRs to be stored again
+    const off = await putCdrSettings(page, { CDR_WEBHOOK_ENABLED: false });
+    expect(off.status).toBe(400);
+    expect(off.data.msg).toContain('CDR_STORE_CDR');
+    await saveCdrSettings(page, { CDR_WEBHOOK_ENABLED: false, CDR_STORE_CDR: true, CDR_WEBHOOK_PASSWORD: null });
+    expect((await getCdrSettings(page)).CDR_WEBHOOK_PASSWORD_SET).toBe(false);
   });
 
   test('PUT coerces and round-trips the values', async ({ page }) => {
@@ -63,6 +97,17 @@ test.describe('CDR settings API', () => {
     ['archive without retention', {
       CDR_ARCHIVE_ENABLED: true, CDR_S3_BUCKET: 'b-1', CDR_S3_ACCESS_KEY: 'a', CDR_S3_SECRET_KEY: 's',
     }, 'CDR_RETENTION_DAYS above 0'],
+    ['webhook URL that is not http(s)', { CDR_WEBHOOK_URL: 'ftp://example.com/cdrs' }, 'http(s) URL'],
+    ['webhook URL with spaces', { CDR_WEBHOOK_URL: 'https://exa mple.com' }, 'http(s) URL'],
+    ['webhook method GET', { CDR_WEBHOOK_METHOD: 'GET' }, 'POST or PUT'],
+    ['webhook auth digest', { CDR_WEBHOOK_AUTH: 'digest' }, 'basic or empty'],
+    ['webhook username with a colon', { CDR_WEBHOOK_USERNAME: 'a:b' }, 'colon'],
+    ['non boolean webhook flag', { CDR_WEBHOOK_ENABLED: 'maybe' }, 'true or false'],
+    ['webhook without a URL', { CDR_WEBHOOK_ENABLED: true }, 'needs CDR_WEBHOOK_URL'],
+    ['basic auth without credentials', {
+      CDR_WEBHOOK_ENABLED: true, CDR_WEBHOOK_URL: 'https://example.com/cdrs', CDR_WEBHOOK_AUTH: 'basic',
+    }, 'basic auth needs CDR_WEBHOOK_USERNAME, CDR_WEBHOOK_PASSWORD'],
+    ['not storing CDRs without the webhook', { CDR_STORE_CDR: false }, 'only be false while the webhook is enabled'],
   ];
   for (const [name, body, msg] of invalid) {
     test(`rejects ${name}`, async ({ page }) => {
@@ -145,6 +190,8 @@ test.describe('CDR settings permissions', () => {
       expect((await guiApiRequest(guest, 'PUT', '/settings/cdr', { CDR_RETENTION_DAYS: 1 })).status).toBe(403);
       expect((await guiApiRequest(guest, 'POST', '/settings/cdr/run')).status).toBe(403);
       expect((await guiApiRequest(guest, 'POST', '/settings/cdr/test-s3', {})).status).toBe(403);
+      expect((await guiApiRequest(guest, 'POST', '/settings/cdr/test-webhook', {})).status).toBe(403);
+      expect((await guiApiRequest(guest, 'POST', '/settings/cdr/run-webhook')).status).toBe(403);
       expect(await cdrSettingsAreDefault(page)).toBe(true);
     } finally {
       await ctx.close();
@@ -161,6 +208,7 @@ test.describe('CDR settings permissions', () => {
       expect((await guiApiRequest(eng, 'GET', '/settings/cdr')).status).toBe(200);
       expect((await guiApiRequest(eng, 'PUT', '/settings/cdr', { CDR_RETENTION_DAYS: 90 })).status).toBe(200);
       expect((await guiApiRequest(eng, 'POST', '/settings/cdr/run')).status).toBe(403);
+      expect((await guiApiRequest(eng, 'POST', '/settings/cdr/run-webhook')).status).toBe(403);
     } finally {
       await ctx.close();
       await deleteTestUser(page, user);
@@ -174,6 +222,8 @@ test.describe('CDR settings permissions', () => {
       expect((await guiApiRequest(anon, 'GET', '/settings/cdr')).status).toBe(401);
       expect((await guiApiRequest(anon, 'PUT', '/settings/cdr', CDR_DEFAULTS)).status).toBe(401);
       expect((await guiApiRequest(anon, 'POST', '/settings/cdr/run')).status).toBe(401);
+      expect((await guiApiRequest(anon, 'POST', '/settings/cdr/run-webhook')).status).toBe(401);
+      expect((await guiApiRequest(anon, 'POST', '/settings/cdr/test-webhook', {})).status).toBe(401);
     } finally {
       await ctx.close();
     }
