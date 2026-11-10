@@ -5,7 +5,8 @@ if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
 import datetime, uuid
-from flask import Blueprint, jsonify
+from functools import wraps
+from flask import Blueprint, jsonify, session
 from util.security import AES_CTR
 from shared import debugEndpoint, StatusCodes, getRequestData
 from database import DummySession, startSession, dSIPUser
@@ -15,6 +16,20 @@ from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 import settings
 
 user = Blueprint('user', __name__)
+
+
+def users_admin_required(func):
+    """
+    Only admins may manage users through a GUI session, the Users page is admin only too.
+    API token callers are already checked by api_security and keep full access like the rest of the API.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if session.get('logged_in') and 'dsip_admin' not in set(session.get('user_groups', []) or []):
+            return jsonify({'error': 'Forbidden', 'msg': 'You do not have permission to manage users'}), \
+                StatusCodes.HTTP_FORBIDDEN
+        return func(*args, **kwargs)
+    return wrapper
 
 
 # TODO: standardize response payloads using new createApiResponse()
@@ -89,6 +104,7 @@ def login():
 
 @user.route('/api/v1/auth/user', methods=['POST'])
 @api_security
+@users_admin_required
 def createUser():
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {"firstname": str, "lastname": str, "username": str, "password": str, "roles": dict,
@@ -135,6 +151,8 @@ def createUser():
 
 
 @user.route('/api/v1/auth/user', methods=['GET'])
+@api_security
+@users_admin_required
 def listUsers():
     # defaults.. keep data returned separate from returned metadata
     response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
@@ -172,7 +190,8 @@ def listUsers():
 
 
 @user.route('/api/v1/auth/user/<int:id>', methods=['GET'])
-# @api_security
+@api_security
+@users_admin_required
 def getUser(id=None):
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     # VALID_REQUEST_DATA_ARGS = {"firstname": str, "lastname": str, "username": str, "password": str, "roles": dict, "domains": dict}
@@ -220,7 +239,8 @@ def getUser(id=None):
 
 
 @user.route('/api/v1/auth/user/<int:id>', methods=['PUT'])
-# @api_security
+@api_security
+@users_admin_required
 def updateUser(id=None):
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {"firstname": str, "lastname": str, "username": str, "password": str, "roles": dict,
@@ -284,7 +304,8 @@ def updateUser(id=None):
 
 
 @user.route('/api/v1/auth/user/<int:id>', methods=['DELETE'])
-# @api_security
+@api_security
+@users_admin_required
 def deleteUser(id=None):
     db = DummySession()
 
