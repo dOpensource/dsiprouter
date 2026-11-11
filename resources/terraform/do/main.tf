@@ -34,9 +34,14 @@ resource "digitalocean_droplet" "dsiprouter" {
 
 # we w for the assignment to complete and then run provisioner
 # this allows for us to have a valid DNS record prior to install
-resource "digitalocean_reserved_ip_assignment" "floating_ip_assn" {
+resource "digitalocean_reserved_ip" "floating_ip" {
+  region = digitalocean_droplet.web.region
+}
+
+resource "digitalocean_reserved_ip_assignment" "floating_ip" {
   ip_address = digitalocean_reserved_ip.floating_ip.ip_address
-  droplet_id = digitalocean_droplet.dsiprouter.id
+  droplet_id = digitalocean_droplet.web.id
+}
 
   provisioner "remote-exec" {
     connection {
