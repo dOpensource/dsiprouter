@@ -1,0 +1,40 @@
+{# shared add / edit form for gui/templates/domains.html #}
+{% macro domain_form(prefix, submit_label, submit_class) %}
+  <form id="{{ prefix }}DomainForm" role="form" novalidate>
+    <input class="domain_id" type="hidden" name="domain_id">
+
+    <div class="form-group">
+      <input class="domain_name form-control" type="text" name="domainlist"
+             placeholder="{{ 'domainA.com,domainB.com' if prefix == 'add' else 'domain.com' }}">
+    </div>
+
+    <div class="form-group">
+      <select class="authtype form-control" name="authtype">
+        <option value="">Select Domain Type</option>
+        <option value="passthru">Pass Thru to PBX</option>
+        {% if hc %}
+          <option value="msteams">Microsoft Teams Direct Routing</option>
+        {% else %}
+          <option value="msteams-nosub">Microsoft Teams Direct Routing (Subscription Required)</option>
+        {% endif %}
+        <option value="local">Local Subscriber Table</option>
+        <option value="realtime">Real Time DB</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <input class="pbx_list form-control" type="text" name="pbx_list"
+             placeholder="Endpoint ID(s) of the backend PBX, e.g. 12 or 12,13">
+    </div>
+
+    <div class="form-group">
+      <input class="notes form-control" type="text" name="notes" placeholder="Notes">
+    </div>
+
+    <div class="modal-footer">
+      <button type="submit" class="btn {{ submit_class }} btn-lg" style="width: 100%;"><i
+          class="ti ti-circle-check"></i> {{ submit_label }}
+      </button>
+    </div>
+  </form>
+{% endmacro %}

@@ -45,6 +45,8 @@ from modules.api.licensemanager.functions import licenseDictToStateDict, getLice
     getLicenseStatus
 from modules.api.licensemanager.routes import license_manager
 from modules.api.outboundroutes.routes import outboundroutes
+from modules.api.domains.routes import domains_api
+from modules.api.cdrsettings.routes import cdr_settings_api
 from modules.api.auth.routes import user
 from modules.api.auth.functions import getUserRoles
 from modules.numbers import numbers
@@ -85,6 +87,8 @@ app.register_blueprint(carriergroups)
 app.register_blueprint(user)
 app.register_blueprint(license_manager)
 app.register_blueprint(outboundroutes)
+app.register_blueprint(domains_api)
+app.register_blueprint(cdr_settings_api)
 app.register_blueprint(Blueprint('docs', 'docs', static_url_path='/docs', static_folder=settings.DSIP_DOCS_DIR))
 csrf = CSRFProtect(app)
 csrf.exempt(api)
@@ -92,6 +96,8 @@ csrf.exempt(carriergroups)
 csrf.exempt(user)
 csrf.exempt(license_manager)
 csrf.exempt(outboundroutes)
+csrf.exempt(domains_api)
+csrf.exempt(cdr_settings_api)
 
 numbers_api = flowroute.Numbers()
 ansi_converter = Ansi2HTMLConverter(inline=True)
@@ -247,7 +253,8 @@ def ui_settings():
             debugEndpoint()
 
         action = request.args.get('action')
-        return render_template('settings.html', show_add_onload=action, version=settings.VERSION)
+        can_run_cdr = 'dsip_admin' in set(session.get('user_groups', []) or [])
+        return render_template('settings.html', show_add_onload=action, can_run_cdr=can_run_cdr, version=settings.VERSION)
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)

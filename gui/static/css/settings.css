@@ -75,3 +75,26 @@
     color: #721c24;
     border: 1px solid #f5c6cb;
   }
+
+  .cdr-settings-form {
+    max-width: 720px;
+    padding: 10px 0 20px;
+  }
+  .cdr-settings-form fieldset {
+    margin-bottom: 20px;
+  }
+  .cdr-settings-form legend {
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+  .cdr-s3-fields {
+    margin-top: 15px;
+  }
+  .cdr-settings-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .cdr-last-run {
+    margin-top: 15px;
+  }
