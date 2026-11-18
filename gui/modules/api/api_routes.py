@@ -2818,8 +2818,7 @@ def generateCDRS(
                 FROM cdrs t1
                 JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
                 JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
-                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dt_from AND t1.call_start_time <= :dt_to AND t1.cdr_id IN :cdrfilter
-                ORDER BY t1.call_start_time DESC"""
+                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dt_from AND t1.call_start_time <= :dt_to AND t1.cdr_id IN :cdrfilter"""
             )
         else:
             sql_params = {"gwgroupid": gwgroupid, "dt_from": dt_from, "dt_to": dt_to}
@@ -2831,8 +2830,7 @@ def generateCDRS(
                 FROM cdrs t1
                 JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
                 JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
-                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dt_from AND t1.call_start_time <= :dt_to
-                ORDER BY t1.call_start_time DESC"""
+                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dt_from AND t1.call_start_time <= :dt_to"""
             )
 
         if nonCompletedCalls:
@@ -2844,8 +2842,7 @@ def generateCDRS(
                 FROM acc
                 JOIN dr_gw_lists t2 ON (acc.src_gwgroupid = t2.id)
                 LEFT JOIN dr_gw_lists t3 ON (acc.dst_gwgroupid = t3.id)
-                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND acc.time >= :dt_from AND acc.time <= :dt_to
-                ORDER BY acc.time DESC"""
+                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND acc.time >= :dt_from AND acc.time <= :dt_to"""
             )
             sql = f'SELECT SQL_CALC_FOUND_ROWS * FROM (({query1}) UNION ({query2})) t_all'
         else:
@@ -2882,12 +2879,20 @@ def generateCDRS(
                 OR `dst_address` LIKE :search_val
                 OR `call_id` LIKE :search_val
                 '''
+        # Column whitelist for safe ORDER BY injection; index is 1-based to match order_col
+        _CDR_COLUMNS = [
+            None,  # placeholder so index 1 → 'cdr_id'
+            'cdr_id', 'call_start_time', 'call_duration', 'call_direction',
+            'src_gwgroupid', 'src_gwgroupname', 'dst_gwgroupid', 'dst_gwgroupname',
+            'src_username', 'dst_username', 'src_address', 'dst_address', 'call_id',
+        ]
         if filter_params['ordering']:
-            sql_params['order_col'] = filter_params['order_col']
-            if filter_params['order_dir'] == 'desc':
-                sql = sql + ' ORDER BY :order_col DESC'
-            else:
-                sql = sql + ' ORDER BY :order_col ASC'
+            col_idx = filter_params['order_col']
+            order_col = _CDR_COLUMNS[col_idx] if 0 < col_idx < len(_CDR_COLUMNS) else 'call_start_time'
+            order_dir = 'DESC' if filter_params['order_dir'] == 'desc' else 'ASC'
+            sql = sql + f' ORDER BY `{order_col}` {order_dir}, `cdr_id` {order_dir}'
+        else:
+            sql = sql + ' ORDER BY `call_start_time` DESC, `cdr_id` DESC'
         if filter_params['paging']:
             sql_params['page_start'] = filter_params['page_start']
             sql_params['page_len'] = filter_params['page_len']
@@ -3015,6 +3020,9 @@ def getGatewayGroupCDRS(gwgroupid=None):
         raise ValueError(f"Unrecognized datetime format: {value!r}")
 
     dt_from = _parse_dt(request.args['dt_from']) if 'dt_from' in request.args else None
+    # dtfilter is a legacy alias for dt_from; ignored when dt_from is explicitly provided
+    if dt_from is None and 'dtfilter' in request.args:
+        dt_from = _parse_dt(request.args['dtfilter'])
     dt_to = _parse_dt(request.args['dt_to']) if 'dt_to' in request.args else None
     if 'nonCompletedCalls' in request.args:
         nonCompletedCalls = json.loads(request.args['nonCompletedCalls'])
