@@ -2861,7 +2861,8 @@ def generateCDRS(
     gwgroupid,
     report_type=None,
     send_email=None,
-    dtfilter=None,
+    dt_from=None,
+    dt_to=None,
     cdrfilter=None,
     nonCompletedCalls=None,
     run_standalone=False,
@@ -2872,13 +2873,15 @@ def generateCDRS(
 
     :param gwgroupid:       gwgroup to generate cdr's for
     :type gwgroupid:        int|str
-    :param report_type:            type of report (json|csv)
-    :type report_type:             str
-    :param send_email:           whether the report should be emailed
-    :type send_email:            bool
-    :param dtfilter:        time before which cdr's are not returned
-    :type dtfilter:         datetime
-    :param cdrfilter:       comma seperated cdr id's to include
+    :param report_type:     type of report (json|csv)
+    :type report_type:      str
+    :param send_email:      whether the report should be emailed
+    :type send_email:       bool
+    :param dt_from:         earliest call_start_time to include (inclusive)
+    :type dt_from:          datetime
+    :param dt_to:           latest call_start_time to include (inclusive)
+    :type dt_to:            datetime
+    :param cdrfilter:       comma separated cdr id's to include
     :type cdrfilter:        str
     :return:                returns a json response or file
     :rtype:                 flask.Response
@@ -2906,8 +2909,10 @@ def generateCDRS(
             report_type = report_type.lower()
         if send_email is None:
             send_email = False
-        if dtfilter is None:
-            dtfilter = datetime.min
+        if dt_from is None:
+            dt_from = datetime.min
+        if dt_to is None:
+            dt_to = datetime.max
         if cdrfilter is None:
             cdrfilter = tuple()
         else:
@@ -2929,7 +2934,7 @@ def generateCDRS(
             return jsonify(response_payload)
 
         if len(cdrfilter) > 0:
-            sql_params = {"gwgroupid": gwgroupid, "dtfilter": dtfilter, "cdrfilter": cdrfilter}
+            sql_params = {"gwgroupid": gwgroupid, "dt_from": dt_from, "dt_to": dt_to, "cdrfilter": cdrfilter}
             query1 = (
                 """SELECT t1.cdr_id, t1.call_start_time, t1.duration AS call_duration, t1.calltype AS call_direction,
                           t2.id AS src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
@@ -2938,11 +2943,11 @@ def generateCDRS(
                 FROM cdrs t1
                 JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
                 JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
-                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dtfilter AND t1.cdr_id IN :cdrfilter
+                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dt_from AND t1.call_start_time <= :dt_to AND t1.cdr_id IN :cdrfilter
                 ORDER BY t1.call_start_time DESC"""
             )
         else:
-            sql_params = {"gwgroupid": gwgroupid, "dtfilter": dtfilter}
+            sql_params = {"gwgroupid": gwgroupid, "dt_from": dt_from, "dt_to": dt_to}
             query1 = (
                 """SELECT t1.cdr_id, t1.call_start_time, t1.duration AS call_duration, t1.calltype AS call_direction,
                           t2.id AS src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
@@ -2951,7 +2956,7 @@ def generateCDRS(
                 FROM cdrs t1
                 JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
                 JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
-                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dtfilter
+                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dt_from AND t1.call_start_time <= :dt_to
                 ORDER BY t1.call_start_time DESC"""
             )
 
@@ -2964,7 +2969,7 @@ def generateCDRS(
                 FROM acc
                 JOIN dr_gw_lists t2 ON (acc.src_gwgroupid = t2.id)
                 LEFT JOIN dr_gw_lists t3 ON (acc.dst_gwgroupid = t3.id)
-                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND acc.time >= :dtfilter
+                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND acc.time >= :dt_from AND acc.time <= :dt_to
                 ORDER BY acc.time DESC"""
             )
             sql = f'SELECT SQL_CALC_FOUND_ROWS * FROM (({query1}) UNION ({query2})) t_all'
@@ -3125,10 +3130,17 @@ def getGatewayGroupCDRS(gwgroupid=None):
     else:
         send_email = False
     cdrfilter = request.args.get('filter', None)
-    if 'dtfilter' in request.args:
-        dtfilter = datetime.strptime(request.args['dtfilter'], "%Y-%m-%d")
-    else:
-        dtfilter = None
+
+    def _parse_dt(value):
+        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(value, fmt)
+            except ValueError:
+                continue
+        raise ValueError(f"Unrecognized datetime format: {value!r}")
+
+    dt_from = _parse_dt(request.args['dt_from']) if 'dt_from' in request.args else None
+    dt_to = _parse_dt(request.args['dt_to']) if 'dt_to' in request.args else None
     if 'nonCompletedCalls' in request.args:
         nonCompletedCalls = json.loads(request.args['nonCompletedCalls'])
     else:
@@ -3162,7 +3174,7 @@ def getGatewayGroupCDRS(gwgroupid=None):
     else:
         filter_params['ordering'] = False
 
-    return generateCDRS(gwgroupid, report_type, send_email, dtfilter, cdrfilter, nonCompletedCalls, filter_params=filter_params)
+    return generateCDRS(gwgroupid, report_type, send_email, dt_from, dt_to, cdrfilter, nonCompletedCalls, filter_params=filter_params)
 
 
 # TODO: standardize response payload (use createApiResponse())
