@@ -1,174 +1,267 @@
 ;(function(window, document) {
   'use strict';
 
-  function processDomainType(value) {
-    var modal_body = $('.modal-body');
+  // pbx_type attr values, mirrors domainTypeFilter in gui/dsiprouter.py
+  var PBX_TYPE_NAMES = {
+    "0": "Static",
+    "1": "Dynamic",
+    "2": "Static using Dispatcher",
+    "3": "MSTeams"
+  };
 
-    if (value == "msteams-nosub") {
-      //console.log("Clicked on authtype " + value);
-      modal_body.find(".domain_name").attr('disabled', true);
-      modal_body.find(".pbx_list").attr('disabled', true);
-      modal_body.find(".notes").attr('disabled', true);
-      modal_body.find(":submit").attr('disabled', true);
-      //modal_body.find(":submit").attr('disabled',true);
-    }
-    else {
-      modal_body.find(".domain_name").attr('disabled', false);
-      modal_body.find(".pbx_list").attr('disabled', false);
-      modal_body.find(".notes").attr('disabled', false);
-      modal_body.find(":submit").attr('disabled', false);
-    }
+  var domains_table;
+  var domains_by_id = {};
+
+  function escapeHtml(value) {
+    return $('<div>').text(value === null || value === undefined ? '' : String(value)).html();
   }
 
-  /* validate domain form fields before submitting */
-  function validateDomainFormFields(fields) {
-    var domainlist_obj = fields.get('domainlist');
-    // empty string will return [''] here
-    var domains = domainlist_obj.val().split(',');
-    for (var i=0; i<domains.length; i++) {
-      if (domains[i].trim() === '') {
-        return {
-          result: false,
-          err_node: domainlist_obj,
-          err_msg: "Domain can not be an empty string"
-        };
-      }
+  function apiErrorMessage(jqXHR) {
+    if (jqXHR.responseJSON && jqXHR.responseJSON.msg) {
+      return jqXHR.responseJSON.msg;
     }
-
-    return {
-      result: true
-    };
+    return "Request failed (" + jqXHR.status + ")";
   }
 
+  /* enable / disable the inputs of ONE modal based on the selected domain type */
+  function processDomainType(modal_selector) {
+    var modal_body = $(modal_selector + ' .modal-body');
+    var disabled = modal_body.find('.authtype').val() === "msteams-nosub";
+    var is_msteams = modal_body.find('.authtype').val() === "msteams";
 
-  function updateModals() {
+    modal_body.find(".domain_name").prop('disabled', disabled);
+    modal_body.find(".notes").prop('disabled', disabled);
+    modal_body.find(":submit").prop('disabled', disabled);
+    // msteams domains route to the microsoft teams proxies, endpoint ids are ignored
+    modal_body.find(".pbx_list").prop('disabled', disabled || is_msteams);
+  }
 
-    $(document).ready(function() {
+  function resetDomainModal(modal_selector) {
+    var modal_body = $(modal_selector + ' .modal-body');
+    modal_body.find(".domain_id").val('');
+    modal_body.find(".domain_name").val('');
+    modal_body.find(".pbx_list").val('');
+    modal_body.find(".notes").val('');
+    modal_body.find('.authtype').val('');
+    modal_body.find('.is-invalid').removeClass('is-invalid');
+    processDomainType(modal_selector);
+  }
 
-      // Updates the modal with domain to be deleted
-      $('#domains #open-Delete').off('click').on('click', function () {
-        var row_index = $(this).parent().parent().parent().index() + 1;
-        var c = document.getElementById('domains');
-        var domain_id = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-        var domain_name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-
-        /* update modal fields */
-        var modal_body = $('#delete .modal-body');
-        modal_body.find(".domain_id").val(domain_id);
-        modal_body.find(".domain_name").val(domain_name);
-      });
-
-      // Updates the modal with the values from the endpointgroup API
-      $('#domains #open-Update').off('click').on('click', function () {
-
-        var row_index = $(this).parent().parent().parent().index() + 1;
-        var c = document.getElementById('domains');
-        var domain_id = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-        var domain_name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-        var domain_type = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
-        var pbx_name = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
-        var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
-        var pbx_list = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
-        var notes = $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
-
-
-        /** Clear out and reset the modal */
-        var modal_body = $('#edit .modal-body');
-        modal_body.find(".domain_name").attr('disabled', false);
-        modal_body.find(".pbx_list").attr('disabled', false);
-        modal_body.find(".notes").attr('disabled', false);
-        modal_body.find(":submit").attr('disabled', false);
-        modal_body.find(".domain_id").val('');
-        modal_body.find(".domain_name").val('');
-        modal_body.find(".domain_type").val('');
-        modal_body.find(".pbx_name").val('');
-        modal_body.find(".pbx_list").val('');
-        modal_body.find(".notes").val('');
-        modal_body.find('.authtype').val([]);
-        modal_body.find('.authtype').val("");
-
-        /* update modal fields */
-        modal_body.find(".domain_id").val(domain_id);
-        modal_body.find(".domain_name").val(domain_name);
-        modal_body.find(".domain_type").val(domain_type);
-        modal_body.find(".pbx_name").val(pbx_name);
-        modal_body.find(".pbx_list").val(pbx_list);
-        modal_body.find(".notes").val(notes);
-
-        if (authtype !== "") {
-          /* Set the radio button if authtype is given */
-          //modal_body.find('.authtype option[value="' + authtype + '"]').attr('selected', 'selected').trigger("change");
-          modal_body.find('.authtype').val(authtype)
-        }
-      });
-
+  function parsePbxList(value) {
+    return value.split(/[\s,]+/).map(function(item) {
+      return item.trim();
+    }).filter(function(item) {
+      return item !== '';
     });
   }
 
+  /* build the API payload from a modal form, returns null (and flags the field) when invalid */
+  function domainFormToPayload(modal_selector, allow_multiple) {
+    var modal_body = $(modal_selector + ' .modal-body');
+    modal_body.find('.is-invalid').removeClass('is-invalid');
+
+    var domain_field = modal_body.find('.domain_name');
+    var domains = domain_field.val().split(',').map(function(item) {
+      return item.trim();
+    });
+    if (domains.some(function(item) { return item === ''; })) {
+      domain_field.addClass('is-invalid');
+      showNotification("Domain can not be an empty string", true, 10000, false);
+      return null;
+    }
+    if (!allow_multiple && domains.length > 1) {
+      domain_field.addClass('is-invalid');
+      showNotification("Only one domain can be edited at a time", true, 10000, false);
+      return null;
+    }
+
+    var type_field = modal_body.find('.authtype');
+    if (type_field.val() === '') {
+      type_field.addClass('is-invalid');
+      showNotification("Select a domain type", true, 10000, false);
+      return null;
+    }
+
+    var payload = {
+      domain: allow_multiple ? domains : domains[0],
+      type: type_field.val(),
+      notes: modal_body.find('.notes').val()
+    };
+    if (payload.type !== 'msteams') {
+      payload.pbxs = parsePbxList(modal_body.find('.pbx_list').val());
+    }
+    return payload;
+  }
+
+  function sendDomainRequest(method, url, payload, modal_selector, success_msg) {
+    var submit_btn = $(modal_selector + ' :submit');
+    submit_btn.prop('disabled', true);
+
+    $.ajax({
+      type: method,
+      url: url,
+      dataType: "json",
+      contentType: "application/json; charset=utf-8",
+      data: payload === null ? undefined : JSON.stringify(payload),
+      success: function(response) {
+        $(modal_selector).modal('hide');
+        reloadKamRequired(true);
+        showNotification(success_msg);
+        domains_table.ajax.reload(null, false);
+      },
+      error: function(jqXHR) {
+        // keep the modal open so the user can fix the input
+        showNotification(apiErrorMessage(jqXHR), true, 10000, false);
+      },
+      complete: function() {
+        submit_btn.prop('disabled', false);
+      }
+    });
+  }
+
+  function renderCreatedBy(domain) {
+    if (domain.managed_by === null) {
+      return "Manually Created";
+    }
+    return '<a href="/endpointgroups?id=' + encodeURIComponent(domain.managed_by.gwgroupid) + '">' +
+      escapeHtml(domain.managed_by.name || domain.managed_by.gwgroupid) + '</a>';
+  }
+
+  function renderActions(domain, can_edit) {
+    if (!can_edit || !domain.editable) {
+      return '';
+    }
+    var html = '<div class="btn-group" role="group">';
+    html += '<button type="button" class="open-Update btn btn-primary btn-sm" title="Edit" data-id="' +
+      domain.id + '"><i class="ti ti-pencil"></i></button>';
+    if (domain.type === 'msteams') {
+      html += '<a class="open-Test btn btn-warning btn-sm" title="Test MSTeams Connectivity" href="/domains/msteams/' +
+        domain.id + '"><i class="ti ti-plane"></i></a>';
+    }
+    html += '<button type="button" class="open-Delete btn btn-danger btn-sm" title="Delete" data-id="' +
+      domain.id + '"><i class="ti ti-trash"></i></button>';
+    html += '</div>';
+    return html;
+  }
 
   $(document).ready(function() {
-    // datatable init
-    $('#domains')
-      .on('page.dt', function() { updateModals(); } )
-      .DataTable({
-      "columnDefs": [
-        {"orderable": true, "targets": [1, 2, 3, 4, 5, 6, 7]},
-        {"orderable": false, "targets": [0, 8, 9, 10]},
+    var can_edit = $('#domains').data('can-edit') === true;
+
+    domains_table = $('#domains').DataTable({
+      "autoWidth": false,
+      "ajax": {
+        "url": API_BASE_URL + "domains",
+        "dataSrc": function(response) {
+          domains_by_id = {};
+          (response.data || []).forEach(function(domain) {
+            domains_by_id[domain.id] = domain;
+          });
+          return response.data || [];
+        }
+      },
+      "rowId": function(domain) {
+        return 'domain-' + domain.id;
+      },
+      "columns": [
+        {"data": "id", "className": "domain_id"},
+        {"data": "domain", "className": "domain_name", "render": $.fn.dataTable.render.text()},
+        {
+          "data": "pbx_type", "className": "domain_type", "render": function(data) {
+            return PBX_TYPE_NAMES[data] || 'Unknown';
+          }
+        },
+        {
+          "data": null, "className": "pbx_name", "render": function(data, type, domain) {
+            return renderCreatedBy(domain);
+          }
+        },
+        {"data": "type", "className": "authtype", "render": $.fn.dataTable.render.text()},
+        {
+          "data": "pbxs", "className": "pbx_list", "render": function(data) {
+            return escapeHtml((data || []).join(', '));
+          }
+        },
+        {"data": "notes", "className": "notes", "render": $.fn.dataTable.render.text()},
+        {
+          "data": null, "orderable": false, "className": "actions", "render": function(data, type, domain) {
+            return renderActions(domain, can_edit);
+          }
+        }
       ],
-      "order": [[1, 'asc']]
+      "order": [[0, 'asc']]
     });
 
-
-    // Update the modals on the first page load
-    updateModals();
-
-    // Resets the Add Modal
-    $('#open-DomainAdd').click(function() {
-      /** Clear out and reset the modal */
-      var modal_body = $('#add .modal-body');
-      modal_body.find(".domain_name").attr('disabled', false);
-      modal_body.find(".pbx_list").attr('disabled', false);
-      modal_body.find(".notes").attr('disabled', false);
-      modal_body.find(":submit").attr('disabled', false);
-      modal_body.find(".domain_id").val('');
-      modal_body.find(".domain_name").val('');
-      modal_body.find(".domain_type").val('');
-      modal_body.find(".pbx_name").val('');
-      modal_body.find(".pbx_list").val('');
-      modal_body.find(".notes").val('');
-      modal_body.find('.authtype').val([]);
-      modal_body.find('.authtype').val("");
-
-    });   
-
-    $('#add .authtype').change(function() {
-      var modal_body = $('#add .modal-body');
-      var type = modal_body.find('.authtype').val();
-
-      processDomainType(type);
+    $('#open-DomainAdd').on('click', function() {
+      resetDomainModal('#add');
     });
 
-    $('#edit .authtype').change(function() {
+    $('#domains tbody').on('click', '.open-Update', function() {
+      var domain = domains_by_id[$(this).data('id')];
+      if (domain === undefined) {
+        return;
+      }
+      resetDomainModal('#edit');
       var modal_body = $('#edit .modal-body');
-      var type = modal_body.find('.authtype').val();
-
-      processDomainType(type);
+      modal_body.find('.domain_id').val(domain.id);
+      modal_body.find('.domain_name').val(domain.domain);
+      modal_body.find('.pbx_list').val((domain.pbxs || []).join(','));
+      modal_body.find('.notes').val(domain.notes);
+      // an unlicensed install shows msteams as msteams-nosub
+      if (domain.type === 'msteams' && modal_body.find('.authtype option[value="msteams"]').length === 0) {
+        modal_body.find('.authtype').val('msteams-nosub');
+      }
+      else {
+        modal_body.find('.authtype').val(domain.type);
+      }
+      processDomainType('#edit');
+      $('#edit').modal('show');
     });
 
-    $('#addDomainForm').submit(function(ev) {
-      if (!validateFields(this, validateDomainFormFields)) {
-        // prevent form from submitting if it failed
-        ev.preventDefault();
-        // prevent jquery from propagating event
-        return false;
+    $('#domains tbody').on('click', '.open-Delete', function() {
+      var domain = domains_by_id[$(this).data('id')];
+      if (domain === undefined) {
+        return;
       }
+      var modal_body = $('#delete .modal-body');
+      modal_body.find('.domain_id').val(domain.id);
+      modal_body.find('.domain_name').text(domain.domain);
+      modal_body.find(':submit').prop('disabled', false);
+      $('#delete').modal('show');
     });
 
-    $('#updateDomainForm').submit(function(ev) {
-      if (!validateFields(this, validateDomainFormFields)) {
-        ev.preventDefault();
-        return false;
+    $('#add .authtype').on('change', function() {
+      processDomainType('#add');
+    });
+
+    $('#edit .authtype').on('change', function() {
+      processDomainType('#edit');
+    });
+
+    $('#addDomainForm').on('submit', function(ev) {
+      ev.preventDefault();
+      var payload = domainFormToPayload('#add', true);
+      if (payload !== null) {
+        sendDomainRequest('POST', API_BASE_URL + "domains", payload, '#add',
+          payload.domain.length > 1 ? "Domains added" : "Domain added");
       }
+      return false;
+    });
+
+    $('#updateDomainForm').on('submit', function(ev) {
+      ev.preventDefault();
+      var domain_id = $('#edit .domain_id').val();
+      var payload = domainFormToPayload('#edit', false);
+      if (payload !== null) {
+        sendDomainRequest('PUT', API_BASE_URL + "domains/" + domain_id, payload, '#edit', "Domain updated");
+      }
+      return false;
+    });
+
+    $('#deleteDomainForm').on('submit', function(ev) {
+      ev.preventDefault();
+      var domain_id = $('#delete .domain_id').val();
+      sendDomainRequest('DELETE', API_BASE_URL + "domains/" + domain_id, null, '#delete', "Domain deleted");
+      return false;
     });
   });
 })(window, document);

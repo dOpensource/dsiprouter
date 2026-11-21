@@ -3,7 +3,7 @@
 {% block title %}Settings{% endblock %}
 
 {% block custom_css %}
-    {{ link_tag('settings') }}  
+    {{ link_tag('settings') }}
 {% endblock %}
 
  {% block table_headers %}
@@ -13,22 +13,165 @@
   {% endblock %}
 
 {% block table %}
-  <!-- settings table -->
-  <table id="settings-table" class="table table-striped table-centered">
-    <thead>
-    <tr class='element-row'>
-      <th><input type="checkbox" class="checkall"/></th>
-      <th data-field="key">Key</th>
-      <th data-field="value">Value</th>
-      <th data-field="category">Category</th>
-      <th data-field="actions">Actions</th>
-    </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-  
-{% endblock %}    
+  <div id="settings-nav" class="navbar">
+    <ul class="nav nav-tabs">
+      <li role="presentation" class="nav-item">
+        <a class="nav-link active" href="#general-settings" name="general-settings-toggle" data-bs-toggle="tab" aria-selected="true">General</a>
+      </li>
+      <li role="presentation" class="nav-item">
+        <a class="nav-link" href="#cdr-settings" name="cdr-settings-toggle" data-bs-toggle="tab" aria-selected="false">CDR Retention &amp; Webhook</a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="tab-content">
+    <div id="general-settings" class="tab-pane fade show active" name="general-settings-toggle">
+      <!-- settings table -->
+      <table id="settings-table" class="table table-striped table-centered">
+        <thead>
+        <tr class='element-row'>
+          <th><input type="checkbox" class="checkall"/></th>
+          <th data-field="key">Key</th>
+          <th data-field="value">Value</th>
+          <th data-field="category">Category</th>
+          <th data-field="actions">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="cdr-settings" class="tab-pane fade" name="cdr-settings-toggle">
+      <form id="cdrSettingsForm" class="cdr-settings-form" novalidate data-can-run="{{ 'true' if can_run_cdr else 'false' }}">
+        <fieldset>
+          <legend>Retention</legend>
+          <div class="form-group">
+            <label for="CDR_RETENTION_DAYS">Keep CDRs for (days)</label>
+            <input class="form-control" id="CDR_RETENTION_DAYS" name="CDR_RETENTION_DAYS" type="number" min="0" max="36500" step="1" value="0">
+            <div class="invalid-feedback">Enter a whole number of days from 0 to 36500.</div>
+            <small class="form-text text-muted">
+              CDRs older than this many days are deleted every night at 02:30. 0 keeps CDRs forever.
+              Whole days are kept: with 7 days, everything from 7 days ago at midnight onward stays.
+            </small>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>S3 cold storage</legend>
+          <div class="form-check form-switch">
+            <input class="form-check-input" id="CDR_ARCHIVE_ENABLED" name="CDR_ARCHIVE_ENABLED" type="checkbox">
+            <label class="form-check-label" for="CDR_ARCHIVE_ENABLED">Archive expired CDRs to an S3 bucket before deleting them</label>
+          </div>
+          <small class="form-text text-muted">
+            Each expired day is uploaded as gzipped CSV files (<code>&lt;prefix&gt;YYYY/MM/cdrs-YYYY-MM-DD.csv.gz</code>, plus
+            <code>acc-</code> and <code>missed_calls-</code> files). Rows are only deleted after their upload succeeded.
+          </small>
+
+          <div id="cdr-s3-fields" class="cdr-s3-fields">
+            <div class="form-group">
+              <label for="CDR_S3_BUCKET">Bucket</label>
+              <input class="form-control" id="CDR_S3_BUCKET" name="CDR_S3_BUCKET" type="text" autocomplete="off">
+              <div class="invalid-feedback">A bucket is required for archiving.</div>
+            </div>
+            <div class="form-group">
+              <label for="CDR_S3_PREFIX">Prefix</label>
+              <input class="form-control" id="CDR_S3_PREFIX" name="CDR_S3_PREFIX" type="text" placeholder="cdrs/" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label for="CDR_S3_REGION">Region</label>
+              <input class="form-control" id="CDR_S3_REGION" name="CDR_S3_REGION" type="text" placeholder="us-east-1" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label for="CDR_S3_ENDPOINT">Endpoint URL</label>
+              <input class="form-control" id="CDR_S3_ENDPOINT" name="CDR_S3_ENDPOINT" type="url" placeholder="leave empty for AWS, e.g. https://nyc3.digitaloceanspaces.com" autocomplete="off">
+              <div class="invalid-feedback">Enter an http(s) URL.</div>
+            </div>
+            <div class="form-group">
+              <label for="CDR_S3_ACCESS_KEY">Access key</label>
+              <input class="form-control" id="CDR_S3_ACCESS_KEY" name="CDR_S3_ACCESS_KEY" type="text" autocomplete="off">
+              <div class="invalid-feedback">An access key is required for archiving.</div>
+            </div>
+            <div class="form-group">
+              <label for="CDR_S3_SECRET_KEY">Secret key</label>
+              <input class="form-control" id="CDR_S3_SECRET_KEY" name="CDR_S3_SECRET_KEY" type="password" autocomplete="new-password">
+              <div class="invalid-feedback">A secret key is required for archiving.</div>
+              <small class="form-text text-muted">Stored encrypted and never shown again. Leave empty to keep the saved key.</small>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Webhook</legend>
+          <div class="form-check form-switch">
+            <input class="form-check-input" id="CDR_WEBHOOK_ENABLED" name="CDR_WEBHOOK_ENABLED" type="checkbox">
+            <label class="form-check-label" for="CDR_WEBHOOK_ENABLED">Send new CDRs to a webhook</label>
+          </div>
+          <small class="form-text text-muted">
+            Every minute the CDRs written since the last delivery are sent as a JSON array, up to 100 per request.
+            A failed request is retried with the same CDRs. CDRs written before the webhook was enabled are not sent.
+          </small>
+
+          <div id="cdr-webhook-fields" class="cdr-s3-fields">
+            <div class="form-group">
+              <label for="CDR_WEBHOOK_URL">URL</label>
+              <input class="form-control" id="CDR_WEBHOOK_URL" name="CDR_WEBHOOK_URL" type="url" placeholder="https://example.com/cdrs" autocomplete="off">
+              <div class="invalid-feedback">Enter an http(s) URL.</div>
+            </div>
+            <div class="form-group">
+              <label for="CDR_WEBHOOK_METHOD">Method</label>
+              <select class="form-control" id="CDR_WEBHOOK_METHOD" name="CDR_WEBHOOK_METHOD">
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="CDR_WEBHOOK_AUTH">Authentication</label>
+              <select class="form-control" id="CDR_WEBHOOK_AUTH" name="CDR_WEBHOOK_AUTH">
+                <option value="">None</option>
+                <option value="basic">Basic</option>
+              </select>
+            </div>
+            <div id="cdr-webhook-auth-fields">
+              <div class="form-group">
+                <label for="CDR_WEBHOOK_USERNAME">Username</label>
+                <input class="form-control" id="CDR_WEBHOOK_USERNAME" name="CDR_WEBHOOK_USERNAME" type="text" autocomplete="off">
+                <div class="invalid-feedback">A username without a colon is required for basic auth.</div>
+              </div>
+              <div class="form-group">
+                <label for="CDR_WEBHOOK_PASSWORD">Password</label>
+                <input class="form-control" id="CDR_WEBHOOK_PASSWORD" name="CDR_WEBHOOK_PASSWORD" type="password" autocomplete="new-password">
+                <div class="invalid-feedback">A password is required for basic auth.</div>
+                <small class="form-text text-muted">Stored encrypted and never shown again. Leave empty to keep the saved password.</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-check form-switch">
+            <input class="form-check-input" id="CDR_STORE_CDR" name="CDR_STORE_CDR" type="checkbox" checked>
+            <label class="form-check-label" for="CDR_STORE_CDR">Store CDRs in dSIPRouter</label>
+          </div>
+          <small class="form-text text-muted">
+            Turn this off to delete each CDR once the webhook accepted it. Only possible while the webhook is enabled.
+          </small>
+        </fieldset>
+
+        <div class="cdr-settings-actions">
+          <button id="cdr-save" class="btn btn-success" type="submit">Save</button>
+          <button id="cdr-test-s3" class="btn btn-secondary" type="button">Test S3 connection</button>
+          <button id="cdr-test-webhook" class="btn btn-secondary" type="button">Test webhook</button>
+          {% if can_run_cdr %}
+          <button id="cdr-run" class="btn btn-warning" type="button">Run retention now</button>
+          <button id="cdr-run-webhook" class="btn btn-warning" type="button">Send CDRs now</button>
+          {% endif %}
+        </div>
+
+        <p id="cdr-last-run" class="cdr-last-run text-muted"></p>
+        <p id="cdr-webhook-last-run" class="cdr-last-run text-muted"></p>
+      </form>
+    </div>
+  </div>
+{% endblock %}
 </div>
 
 
@@ -38,4 +181,5 @@
 
 {% block custom_js %}
   {{ script_tag('settings') }}
+  {{ script_tag('cdr_settings') }}
 {% endblock %}
