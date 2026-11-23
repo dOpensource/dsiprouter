@@ -788,7 +788,7 @@ function updateDsiprouterConfig() {
     # TODO: workaround to update DB settings until next major release (v0.80)
     if [[ "$LOAD_SETTINGS_FROM" == "db" ]]; then
         setConfigAttrib 'LOAD_SETTINGS_FROM' 'file' ${DSIP_CONFIG_FILE} -q
-        ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from dsiprouter import syncSettings; syncSettings();"
+        withConfigOwner ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from dsiprouter import syncSettings; syncSettings();"
         setConfigAttrib 'LOAD_SETTINGS_FROM' 'db' ${DSIP_CONFIG_FILE} -q
     fi
 
@@ -2078,14 +2078,17 @@ function installDsiprouter() {
     # 1:    set via cmdline arg
     # 2:    set prior to externally
     # 3:    generate new key
-    # TODO: create bash-native equivalent function for creating the private key
     if [[ -n ${SET_DSIP_PRIV_KEY+set} ]]; then
         printf '%s' "${SET_DSIP_PRIV_KEY}" > ${DSIP_PRIV_KEY}
     elif [ -f "${DSIP_PRIV_KEY}" ]; then
         :
     elif (( ${RUNNING_UPGRADE:-0} == 0 )); then
         # only generate if running a fresh install
-        ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
+        head -c "$AES_CTR_KEY_SIZE" /dev/urandom >"$DSIP_PRIV_KEY" || {
+            rm -f "$DSIP_PRIV_KEY"
+            printerr "dSIPRouter install failed - could not generate private key"
+            exit 1
+        }
     fi
 
     # Set credentials for our services, will either use credentials from CLI or generate them
@@ -3299,7 +3302,7 @@ function upgrade() {
 
     if systemctl is-active -q dsiprouter; then
         # check shared memory
-        if [[ $(${PYTHON_CMD} -c "
+        if [[ $(withConfigOwner ${PYTHON_CMD} -c "
 import os
 os.chdir('${DSIP_PROJECT_DIR}/gui')
 from modules.api.licensemanager.functions import getLicenseStatus
@@ -3310,7 +3313,7 @@ print(getLicenseStatus(license_tag='DSIP_CORE'))
         fi
     else
         # manually grab license status
-        if [[ $(${PYTHON_CMD} -c "
+        if [[ $(withConfigOwner ${PYTHON_CMD} -c "
 import os, sys
 os.chdir('${DSIP_PROJECT_DIR}/gui')
 sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui')
@@ -3979,7 +3982,13 @@ function removeSwapFile() {
 }
 
 function licenseManager() {
-    ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/modules/api/licensemanager/cli.py "$@"
+    # the keys file is passed on stdin, the user the license manager runs as may not have access to it
+    if [[ "$1" == "-import" && -r "$2" ]] && (( $# == 2 )); then
+        withConfigOwner ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/modules/api/licensemanager/cli.py -import - <"$2"
+        return $?
+    fi
+
+    withConfigOwner ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/modules/api/licensemanager/cli.py "$@"
     return $?
 }
 
