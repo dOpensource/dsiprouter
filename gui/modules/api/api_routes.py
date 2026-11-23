@@ -4,7 +4,7 @@ import sys
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os, time, random, subprocess, requests, csv, base64, codecs, re, socket, json, urllib3
+import os, time, random, requests, csv, base64, codecs, re, socket, json, urllib3, tempfile
 from contextlib import closing
 from datetime import datetime
 from flask import Blueprint, jsonify, request, send_file, g
@@ -20,6 +20,7 @@ from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, debugE
     strFieldsToDict, getRequestData, IO, objToDict, getAllowedSettings,updateDsipLocalSettingsFromDict, \
     updateConfig
 from util.pyasync import daemonize
+from util.kamdb_backup import dumpKamDB, restoreKamDB
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from modules.api.api_functions import createApiResponse, showApiError, api_security, api_require_roles
 from modules.api.kamailio.functions import reloadKamailio
@@ -3251,15 +3252,9 @@ def createBackup():
         if (settings.DEBUG):
             debugEndpoint()
 
-        backup_path = os.path.join(settings.BACKUP_FOLDER, f'{time.strftime("%s")}-db.sql')
-
-        dumpcmd = ['sudo', 'dsiprouter', 'backup', '-f', backup_path]
-        proc = subprocess.run(
-            dumpcmd,
-            capture_output=True,
-            text=True
-        )
-        proc.check_returncode()
+        backup_fd, backup_path = tempfile.mkstemp(prefix=f'{time.strftime("%s")}-', suffix='-db.sql', dir=settings.BACKUP_FOLDER)
+        with os.fdopen(backup_fd, 'wb') as backup_file:
+            dumpKamDB(backup_file)
 
         return send_file(backup_path, as_attachment=True), StatusCodes.HTTP_OK
 
@@ -3300,13 +3295,7 @@ def restoreBackup():
         else:
             raise http_exceptions.BadRequest("Improper file upload")
 
-        restorecmd = ['sudo', 'dsiprouter', 'restore', '-f', restore_path]
-        proc = subprocess.run(
-            restorecmd,
-            capture_output=True,
-            text=True
-        )
-        proc.check_returncode()
+        restoreKamDB(restore_path)
 
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(

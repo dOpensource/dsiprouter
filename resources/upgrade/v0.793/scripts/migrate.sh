@@ -974,6 +974,9 @@ function restoreKamDBAfterReinstall() {
         withRootDBConn mysql -e "DROP USER ${ACCOUNT};" || return 1
     done
     withRootDBConn mysql <"$KAMDB_USER_DUMP_FILE" || return 1
+    # the saved grants predate GUI backups being made by the kamailio DB user
+    grantKamDBRoutinePrivs ||
+        printwarn 'could not allow the kamailio DB user to read stored routines, backups from the GUI will fail'
 
     # the installer seeds rows (dispatcher, gateways, rules, ...), so every base table is emptied before extra columns and the saved rows are loaded
     TABLES=$(kamDBBaseTables "$KAM_DB_NAME") || return 1
