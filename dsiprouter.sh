@@ -94,6 +94,8 @@ function setStaticScriptSettings() {
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/kamailio.cfg"
     export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/tls.cfg"
     export DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
+    # upgrades are run as root from these settings, they are kept apart from the config the dsiprouter user owns
+    export DSIP_UPGRADE_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/upgrade_settings.py"
     export DSIP_RUN_DIR="/run/dsiprouter"
     export DSIP_LIB_DIR="/var/lib/dsiprouter"
     export DSIP_CERTS_DIR="${DSIP_SYSTEM_CONFIG_DIR}/certs"
@@ -370,8 +372,10 @@ function setDynamicScriptSettings() {
     # find the repo where we are getting upgrades from
     # note that remote is assumed to be "origin"
     # note that the VCS is assumed to be git
-    GIT_REPO_URL=$(getConfigAttrib 'GIT_REPO_URL' ${DSIP_CONFIG_FILE})
-    GIT_RELEASE_URL=$(getConfigAttrib 'GIT_RELEASE_URL' ${DSIP_CONFIG_FILE})
+    if [[ -f "$DSIP_UPGRADE_CONFIG_FILE" ]]; then
+        GIT_REPO_URL=$(getConfigAttrib 'GIT_REPO_URL' ${DSIP_UPGRADE_CONFIG_FILE})
+        GIT_RELEASE_URL=$(getConfigAttrib 'GIT_RELEASE_URL' ${DSIP_UPGRADE_CONFIG_FILE})
+    fi
 
     export CURR_BACKUP_DIR=${CURR_BACKUP_DIR:-"${BACKUPS_DIR}/$(date '+%s')"}
 }
@@ -749,8 +753,6 @@ function updateDsiprouterConfig() {
     setConfigAttrib 'PUBLIC_IFACE' "$PUBLIC_IFACE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'PRIVATE_IFACE' "$PRIVATE_IFACE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'UAC_REG_ADDR' "$UAC_REG_ADDR" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'GIT_REPO_URL' "$GIT_REPO_URL" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'GIT_RELEASE_URL' "$GIT_RELEASE_URL" ${DSIP_CONFIG_FILE} -q
 
     # TODO: the following are updated in setCredentials() and the config file should only be updated here
     #		i.e. settings the variables elsewhere is fine but any changes to the config file or DB should be centralised here
@@ -2256,6 +2258,41 @@ function handleRequest() {
     return $RETVAL
 }
 
+# the settings upgrades are run from are installed where only root can change them
+# previous versions read them from the dsiprouter config, which the dsiprouter user owns
+function installUpgradeConfig() {
+    local TEMPLATE="${DSIP_PROJECT_DIR}/gui/upgrade_settings.py"
+    local URL_REGEX='^https://[A-Za-z0-9._~%@:/+-]+$'
+    local NAME VALUE
+    local -a NAMES
+
+    mapfile -t NAMES < <(grep -oP '^[A-Z_]+(?=[ \t]*=)' "$TEMPLATE")
+    if (( ${#NAMES[@]} == 0 )); then
+        return 1
+    fi
+
+    if [[ ! -f "$DSIP_UPGRADE_CONFIG_FILE" ]]; then
+        install -o root -g root -m 644 "$TEMPLATE" "$DSIP_UPGRADE_CONFIG_FILE" || return 1
+        # the settings made in the dsiprouter config of a previous version are carried over once
+        for NAME in "${NAMES[@]}"; do
+            grep -q "^${NAME}[ \t]*=" "$DSIP_CONFIG_FILE" 2>/dev/null || continue
+            VALUE=$(getConfigAttrib "$NAME" "$DSIP_CONFIG_FILE")
+            if [[ "$VALUE" == "True" || "$VALUE" == "False" ]]; then
+                setConfigAttrib "$NAME" "$VALUE" "$DSIP_UPGRADE_CONFIG_FILE"
+            elif [[ "$VALUE" =~ $URL_REGEX ]]; then
+                setConfigAttrib "$NAME" "$VALUE" "$DSIP_UPGRADE_CONFIG_FILE" -q
+            fi
+        done
+    fi
+    chown root:root "$DSIP_UPGRADE_CONFIG_FILE" && chmod 644 "$DSIP_UPGRADE_CONFIG_FILE" || return 1
+
+    # the settings are not read from the dsiprouter config any more
+    for NAME in "${NAMES[@]}"; do
+        sed -i -e "/^${NAME}[ \t]*=/d" "$DSIP_CONFIG_FILE" 2>/dev/null
+    done
+    return 0
+}
+
 function installDsiprouter() {
     local DSIP_CURRENT_PYTHON_VER
 
@@ -2286,6 +2323,10 @@ function installDsiprouter() {
     if [[ ! -f "$DSIP_CONFIG_FILE" ]]; then
         generateDsiprouterConfig
     fi
+    installUpgradeConfig || {
+        printerr "dSIPRouter install failed - could not install the upgrade settings"
+        exit 1
+    }
 
     # Set dsip private key (used for encryption across services) by following precedence:
     # 1:    set via cmdline arg
@@ -3489,8 +3530,21 @@ function upgrade() {
     local REPO_URL=${UPGRADE_REPO:-"$GIT_REPO_URL"}
     REPO_URL=${REPO_URL:-https://github.com/dOpensource/dsiprouter.git}
     local TAG_NAME="${UPGRADE_RELEASE}-rel"
-    export NEW_PROJECT_DIR=/tmp/dsiprouter
     export RUNNING_UPGRADE=1
+
+    # the upgrade runs the files it downloads, git is limited to the https transport
+    if ! [[ "$REPO_URL" =~ ^https://[A-Za-z0-9._~%@:/+-]+$ ]]; then
+        printerr 'the upgrade repo must be an https url'
+        exit 1
+    fi
+
+    # the new project files are run as root, so they are downloaded to a directory only root can access
+    UPGRADE_TMP_DIR=$(mktemp -d) || {
+        printerr 'failed creating temporary directory for the new project files'
+        exit 1
+    }
+    trap 'rm -rf "$UPGRADE_TMP_DIR"' EXIT
+    export NEW_PROJECT_DIR="${UPGRADE_TMP_DIR}/dsiprouter"
 
     # make sure mask is reset to be more permissive
     # repo must be created with permissions set in the remote repo
@@ -3498,15 +3552,16 @@ function upgrade() {
     umask 022
 
     printdbg 'downloading new dSIPRouter project files'
-    rm -rf "$NEW_PROJECT_DIR" 2>/dev/null
-    git clone --depth 1 -c advice.detachedHead=false -b "$TAG_NAME" "$REPO_URL" "$NEW_PROJECT_DIR" || {
+    git -c protocol.allow=never -c protocol.https.allow=always \
+        clone --depth 1 -c advice.detachedHead=false -b "$TAG_NAME" -- "$REPO_URL" "$NEW_PROJECT_DIR" || {
         printerr 'failed downloading new project files'
         exit 1
     }
 
     printdbg 'verifying version requirements'
     UPGRADE_VER=$(jq -r -e '.version' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json")
-    CURRENT_VERSION=$(getConfigAttrib "VERSION" "${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py")
+    # the installed version is read from the project files, the dsiprouter config is owned by the dsiprouter user
+    CURRENT_VERSION=$(getConfigAttrib "VERSION" "${DSIP_PROJECT_DIR}/gui/settings.py")
     UPGRADE_DEPENDS=( $(jq -r -e '.depends[]' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json") )
     (
         for VER in ${UPGRADE_DEPENDS[@]}; do
@@ -3547,7 +3602,7 @@ print(getLicenseStatusFromStateDict(licenseDictToStateDict(settings.DSIP_LICENSE
     fi
 
     printdbg "starting migration from $CURRENT_VERSION to $UPGRADE_VER"
-    ${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/scripts/migrate.sh
+    "${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/scripts/migrate.sh"
     return $?
 }
 

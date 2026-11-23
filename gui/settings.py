@@ -224,10 +224,6 @@ ROOT_DB_NAME = 'mysql'
 # db    - load from dsip_settings table
 LOAD_SETTINGS_FROM = 'file'
 
-# where upgrades will be pulled from
-GIT_REPO_URL = 'https://github.com/dOpensource/dsiprouter.git'
-GIT_RELEASE_URL = 'https://api.github.com/repos/dOpensource/dsiprouter/releases'
-
 # auth modules
 # a dictionary of authentication modules to load and their corresponding settings
 # example for ldap module:
