@@ -3996,7 +3996,21 @@ EOSSH
 # TODO: update systemd ExecStartPre commands to use this logic instead
 function updatePermissions() {
     local PROVISIONER_SITE="/etc/nginx/sites-enabled/dsiprouter-provisioner.conf"
-    local OPT STI_CERTS SERVERS_FILE
+    local OPT SERVERS_FILE
+
+    # sets the mode of the files in a tree owned by the dsiprouter user, as that user
+    # the user can replace a file in its tree with a link at any time, root would change the mode of the file the link points to
+    # usage: chmodOwnedFiles <mode> <dir> [find tests...]
+    chmodOwnedFiles() {
+        local MODE="$1" DIR="$2"
+        shift 2
+
+        if id -u dsiprouter &>/dev/null; then
+            ( cd / && runuser -u dsiprouter -- find "$DIR" -type f "$@" -exec chmod "$MODE" {} + )
+        else
+            find "$DIR" -type f "$@" -exec chmod "$MODE" {} +
+        fi
+    }
 
     # set permissions on the X509 certs used by dsiprouter and kamailio
     # [special use case]: testing kamailio service startup
@@ -4010,10 +4024,11 @@ function updatePermissions() {
             # dsiprouter user does not yet exist so make sure kamailio user has access
             chown -R root:kamailio ${DSIP_CERTS_DIR}
         fi
-        find ${DSIP_CERTS_DIR}/ -type f -exec chmod 640 {} +
+        chmodOwnedFiles 640 "${DSIP_CERTS_DIR}/"
         # STIR/SHAKEN certs need to be globally readable for nginx
-        STI_CERTS=$(grep -rl --include='*' 'BEGIN CERTIFICATE' "${DSIP_CERTS_DIR}/stirshaken/") &&
-        chmod 644 $STI_CERTS
+        if [[ -d "${DSIP_CERTS_DIR}/stirshaken/" ]]; then
+            chmodOwnedFiles 644 "${DSIP_CERTS_DIR}/stirshaken/" -exec grep -q 'BEGIN CERTIFICATE' {} \;
+        fi
     }
     # set permissions for files/dirs used by dnsmasq
     setDnsmasqPerms() {
@@ -4055,7 +4070,7 @@ function updatePermissions() {
         else
             chown -R root:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
         fi
-        find ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/ -type f -exec chmod 640 {} +
+        chmodOwnedFiles 640 "${DSIP_SYSTEM_CONFIG_DIR}/kamailio/"
     }
     # set permissions for files/dirs used by dsiprouter
     setDsiprouterPerms() {
@@ -4070,7 +4085,7 @@ function updatePermissions() {
         chmod 400 ${DSIP_PRIV_KEY}
         # dsiprouter gui files readable and writable only by dsiprouter
         chown -R dsiprouter:root ${DSIP_SYSTEM_CONFIG_DIR}/gui/
-        find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
+        chmodOwnedFiles 600 "${DSIP_SYSTEM_CONFIG_DIR}/gui/"
 
         # project files can only be edited by root
         chown -R root:root "$DSIP_PROJECT_DIR/"
@@ -4094,7 +4109,7 @@ function updatePermissions() {
         else
             chown -R root:rtpengine ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
         fi
-        find ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/ -type f -exec chmod 640 {} +
+        chmodOwnedFiles 640 "${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/"
     }
 
     # no args given set permissions for all services
