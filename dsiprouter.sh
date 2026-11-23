@@ -2078,6 +2078,83 @@ function uninstallRequestUnits() {
     rm -rf ${DSIP_REQUESTS_DIR}
 }
 
+# usage:    writeProvisionerSite <file>
+# notes:    the file lists the FusionPBX servers phones are provisioned from, one host per line
+#           the nginx site is generated from the hosts that are valid, without any host the site is removed
+# returns:  0 if the site was generated or removed, 1 if the list is not valid or the site could not be written
+function writeProvisionerSite() {
+    local SERVERS_FILE="$1"
+    local SITE_TEMPLATE="${DSIP_PROJECT_DIR}/gui/modules/fusionpbx/dsiprouter-provisioner.tpl"
+    local SITE_FILE="/etc/nginx/sites-available/dsiprouter-provisioner.conf"
+    local SITE_LINK="/etc/nginx/sites-enabled/dsiprouter-provisioner.conf"
+    local SITE_PLACEHOLDER='##SERVERLIST##'
+    # hostnames, IPv4 addresses and IPv6 addresses in square brackets
+    local HOST_REGEX='^([A-Za-z0-9]([A-Za-z0-9._-]{0,251}[A-Za-z0-9])?|\[[0-9A-Fa-f:.]{2,45}\])$'
+    local HOST SITE_CONFIG TMP_FILE RETVAL
+    local SERVER_LIST=''
+    local -a HOSTS
+
+    mapfile -t -n 257 HOSTS <"$SERVERS_FILE" || return 1
+    if (( ${#HOSTS[@]} > 256 )); then
+        printerr 'too many servers in the provisioning site request'
+        return 1
+    fi
+    for HOST in "${HOSTS[@]}"; do
+        [[ -z "$HOST" ]] && continue
+        # nginx reads a server starting with unix: as a socket path
+        if ! [[ "$HOST" =~ $HOST_REGEX ]] || [[ "${HOST,,}" == "unix" ]]; then
+            printerr 'invalid server in the provisioning site request'
+            return 1
+        fi
+        SERVER_LIST+="server ${HOST}:443;"$'\n\t'
+    done
+
+    if [[ -z "$SERVER_LIST" ]]; then
+        rm -f "$SITE_LINK" "$SITE_FILE"
+        return 0
+    fi
+
+    SITE_CONFIG=$(<"$SITE_TEMPLATE") || return 1
+    TMP_FILE=$(mktemp) || return 1
+    printf '%s\n' "${SITE_CONFIG//"$SITE_PLACEHOLDER"/${SERVER_LIST%$'\n\t'}}" >"$TMP_FILE" &&
+    install -o root -g root -m 644 "$TMP_FILE" "$SITE_FILE" &&
+    ln -sfn "$SITE_FILE" "$SITE_LINK"
+    RETVAL=$?
+    rm -f "$TMP_FILE"
+    return $RETVAL
+}
+export -f writeProvisionerSite
+
+# usage:    updateProvisionerSite <file>
+# notes:    generates the nginx provisioning site from the file and reloads nginx
+#           the previous site is put back when nginx does not accept the new one
+# returns:  0 if nginx is running with the new site, 1 otherwise
+function updateProvisionerSite() {
+    local SERVERS_FILE="$1"
+    local SITE_FILE="/etc/nginx/sites-available/dsiprouter-provisioner.conf"
+    local SITE_LINK="/etc/nginx/sites-enabled/dsiprouter-provisioner.conf"
+    local BACKUP_DIR RETVAL
+
+    BACKUP_DIR=$(mktemp -d) || return 1
+    cp -af "$SITE_FILE" "${BACKUP_DIR}/site" 2>/dev/null
+
+    writeProvisionerSite "$SERVERS_FILE" && nginx -t
+    RETVAL=$?
+    if (( $RETVAL != 0 )); then
+        printerr 'the provisioning site was not updated'
+        if [[ -f "${BACKUP_DIR}/site" ]]; then
+            cp -af "${BACKUP_DIR}/site" "$SITE_FILE" && ln -sfn "$SITE_FILE" "$SITE_LINK"
+        else
+            rm -f "$SITE_LINK" "$SITE_FILE"
+        fi
+    fi
+    rm -rf "$BACKUP_DIR"
+    (( $RETVAL != 0 )) && return 1
+
+    systemctl reload nginx
+    return $?
+}
+
 # usage:    handleRequest <restart|upgrade|provisioner>
 # notes:    run as root by the dsip-request systemd units, acts on a request written by the dsiprouter user
 #           the name of the request selects a fixed command, a request is one line that is validated before use
@@ -3918,7 +3995,8 @@ EOSSH
 # $@ == subset of permissions to update
 # TODO: update systemd ExecStartPre commands to use this logic instead
 function updatePermissions() {
-    local OPT STI_CERTS
+    local PROVISIONER_SITE="/etc/nginx/sites-enabled/dsiprouter-provisioner.conf"
+    local OPT STI_CERTS SERVERS_FILE
 
     # set permissions on the X509 certs used by dsiprouter and kamailio
     # [special use case]: testing kamailio service startup
@@ -3949,9 +4027,18 @@ function updatePermissions() {
         chown -R nginx:nginx /run/nginx
         chmod 770 /run/nginx
 
-        # dsiprouter needs to be able to dynamically update the provisioning site
-        chown root:dsiprouter /etc/nginx/sites-enabled/
-        chmod 775 /etc/nginx/sites-enabled/
+        # the nginx master process runs as root, only root can change the sites it loads
+        chown -R root:root /etc/nginx/sites-enabled/ /etc/nginx/sites-available/
+        chmod 755 /etc/nginx/sites-enabled/ /etc/nginx/sites-available/
+        find /etc/nginx/sites-enabled/ /etc/nginx/sites-available/ -type f -exec chmod 644 {} +
+        # a provisioning site written by the dsiprouter user is replaced by one generated from its server list
+        if [[ -f "$PROVISIONER_SITE" && ! -L "$PROVISIONER_SITE" ]]; then
+            SERVERS_FILE=$(mktemp) &&
+            { grep -oP '^\s*server\s+\K\S+(?=:443;)' "$PROVISIONER_SITE" >"$SERVERS_FILE"; rm -f "$PROVISIONER_SITE"; } &&
+            writeProvisionerSite "$SERVERS_FILE" ||
+                printwarn 'the provisioning site was removed, it is generated again on the next FusionPBX sync'
+            rm -f "$SERVERS_FILE"
+        fi
     }
     # set permissions for files/dirs used by kamailio
     setKamailioPerms() {
