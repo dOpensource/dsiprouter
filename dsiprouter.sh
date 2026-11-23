@@ -110,6 +110,8 @@ function setStaticScriptSettings() {
     export DSIP_UPGRADE_LOG="/var/log/dsiprouter/upgrade.log"
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
+    # backups the dsiprouter user creates and receives through the GUI, root never restores from this directory
+    export DSIP_GUI_BACKUPS_DIR="${DSIP_LIB_DIR}/gui-backups"
     IMAGE_BUILD=${IMAGE_BUILD:-0}
     # TODO: marked for review in v0.78
     #       we should move these settings to the OS specific install scripts
@@ -724,7 +726,7 @@ function updateDsiprouterConfig() {
     [[ -n "$MAIL_DEFAULT_SUBJECT" ]] && setConfigAttrib 'MAIL_DEFAULT_SUBJECT' "$MAIL_DEFAULT_SUBJECT" ${DSIP_CONFIG_FILE} -q
     [[ -n "$RTPENGINE_URI" ]] && setConfigAttrib 'RTPENGINE_URI' "$RTPENGINE_URI" ${DSIP_CONFIG_FILE} -q
     [[ -n "$CLOUD_PLATFORM" ]] && setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
-    [[ -n "$BACKUPS_DIR" ]] && setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
+    [[ -n "$DSIP_GUI_BACKUPS_DIR" ]] && setConfigAttrib 'BACKUP_FOLDER' "$DSIP_GUI_BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
     [[ -n "$DID_PREFIX_ALLOWED_CHARS" ]] && setConfigAttrib 'DID_PREFIX_ALLOWED_CHARS' "$DID_PREFIX_ALLOWED_CHARS" ${DSIP_CONFIG_FILE}
     [[ -n "$LOAD_SETTINGS_FROM" ]] && setConfigAttrib 'LOAD_SETTINGS_FROM' "$LOAD_SETTINGS_FROM" ${DSIP_CONFIG_FILE} -q
     [[ -n "$DSIP_LICENSE_STORE" ]] && setConfigAttrib 'DSIP_LICENSE_STORE' "$DSIP_LICENSE_STORE" ${DSIP_CONFIG_FILE}
@@ -1607,6 +1609,12 @@ function fixCloudInitFirewalldConflict() {
 function setupScriptRequiredFiles() {
     # make sure dirs exist required for this script
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}{,/gui,/kamailio,/rtpengine} ${SRC_DIR} ${DSIP_RUN_DIR} ${DSIP_LIB_DIR} ${DSIP_CERTS_DIR}{,/ca} ${BACKUPS_DIR}
+
+    # the commands of this script save to and restore from the backups, they are secured before any of them runs
+    if ! secureBackupsDir "$BACKUPS_DIR"; then
+        printerr "Could not secure the backups directory: ${BACKUPS_DIR}"
+        exit 1
+    fi
 
     # only copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exist
     if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
@@ -4078,8 +4086,14 @@ function updatePermissions() {
         chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
         chmod 770 ${DSIP_RUN_DIR}
 
-        # dsiprouter user is the only one making backups
-        chown -R dsiprouter:root ${BACKUPS_DIR}
+        # the backups are restored by root (system files, package sources, the state before an upgrade)
+        # only root can add to or change them, the dsiprouter user has its own directory for the backups made in the GUI
+        secureBackupsDir "$BACKUPS_DIR" || printerr "Could not secure the backups directory: ${BACKUPS_DIR}"
+        if [[ -L "$DSIP_GUI_BACKUPS_DIR" || ! -d "$DSIP_GUI_BACKUPS_DIR" ]]; then
+            rm -f "$DSIP_GUI_BACKUPS_DIR"
+        fi
+        install -d -o dsiprouter -g dsiprouter -m 700 "$DSIP_GUI_BACKUPS_DIR"
+        chown -R dsiprouter:dsiprouter "$DSIP_GUI_BACKUPS_DIR"
         # dsiprouter private key only readable by dsiprouter
         chown dsiprouter:root ${DSIP_PRIV_KEY}
         chmod 400 ${DSIP_PRIV_KEY}

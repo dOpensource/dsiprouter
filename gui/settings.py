@@ -168,7 +168,8 @@ UAC_REG_ADDR = ''
 CLOUD_PLATFORM = ''
 
 # backup settings
-BACKUP_FOLDER = '/var/backups/dsiprouter'
+# where the backups made and restored through the GUI are stored while they are transferred
+BACKUP_FOLDER = '/var/lib/dsiprouter/gui-backups'
 
 # TransNexus Settings
 # TODO: marked for review, these settings should be synced across cluster in the DB

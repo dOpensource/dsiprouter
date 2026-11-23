@@ -6,8 +6,12 @@
 NEW_PROJECT_DIR=${NEW_PROJECT_DIR:-/tmp/dsiprouter}
 # project dir where previous repo was located
 OLD_PROJECT_DIR=${DSIP_PROJECT_DIR:-/opt/dsiprouter}
-# the backup directory set by dsiprouter.sh
-CURR_BACKUP_DIR=${CURR_BACKUP_DIR:-"/var/backups/dsiprouter/$(date '+%s')"}
+# the backup is restored as root when the upgrade fails, so it is kept where only root can write
+# the backup directory set by previous versions of dsiprouter.sh is not used
+# it has a name that can be predicted, in a directory those versions handed to the dsiprouter user
+BACKUPS_DIR='/var/backups/dsiprouter'
+CURR_BACKUP_DIR="${BACKUPS_DIR}/$(date '+%s').$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+export CURR_BACKUP_DIR
 # system config files for dsiprouter
 DSIP_SYSTEM_CONFIG_DIR='/etc/dsiprouter'
 DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
@@ -313,6 +317,15 @@ fi
 # never reuse a backup dir that already has content, it could be stale or partial
 if [[ -e "$CURR_BACKUP_DIR" ]] && [[ -n "$(ls -A "$CURR_BACKUP_DIR" 2>/dev/null)" ]]; then
     printerr "backup directory already has content, refusing to reuse it: ${CURR_BACKUP_DIR}"
+    exit 1
+fi
+
+# secureBackupsDir() makes the backups directory writable by root only, the installed version does not have it
+# only that function is taken from the dsip_lib.sh of this release, the rest of it is loaded after the reinstall
+unset -f secureBackupsDir
+eval "$(unset DSIP_LIB_IMPORTED; . "${NEW_PROJECT_DIR}/dsiprouter/dsip_lib.sh" &>/dev/null; declare -f secureBackupsDir)"
+if ! declare -F secureBackupsDir >/dev/null; then
+    printerr "could not load secureBackupsDir() from ${NEW_PROJECT_DIR}/dsiprouter/dsip_lib.sh"
     exit 1
 fi
 
@@ -1234,7 +1247,9 @@ trap 'resetConfigsHandler 143' SIGTERM
 trap 'resetConfigsHandler $?' EXIT
 
 printdbg 'backing up configs and databases before making any change'
-mkdir -p "$CURR_BACKUP_DIR" || backupFailed "could not create ${CURR_BACKUP_DIR}"
+# from here on only root can add to the backups, the backup directory must be new
+secureBackupsDir "$BACKUPS_DIR" &&
+    mkdir -m 700 "$CURR_BACKUP_DIR" || backupFailed "could not create ${CURR_BACKUP_DIR}"
 backupTree "$OLD_PROJECT_DIR" || backupFailed "${OLD_PROJECT_DIR}"
 backupTree "$DSIP_LIB_DIR" || backupFailed "${DSIP_LIB_DIR}"
 backupTree "$DSIP_SYSTEM_CONFIG_DIR" || backupFailed "${DSIP_SYSTEM_CONFIG_DIR}"
