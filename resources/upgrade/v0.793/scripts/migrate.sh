@@ -60,6 +60,20 @@ MANAGED_FILES=(
     /etc/rsyslog.d/kamailio.conf
     /etc/rsyslog.d/rtpengine.conf
 )
+# package sources the reinstall rewrites, restored with the packages so the package manager is back on the repos of the saved versions
+PKG_SOURCE_FILES=(
+    /etc/apt/sources.list.d/kamailio.list
+    /etc/apt/preferences.d/kamailio.pref
+    /etc/apt/trusted.gpg.d/kamailiodebkey.gpg
+    /etc/yum.repos.d/kamailio.repo
+)
+# packages the reinstall replaces, an installable copy of each is saved and reinstalled when the upgrade fails
+PKG_PATTERNS=('kamailio*' 'ngcp-rtpengine*')
+PKG_BACKUP_DIR="${CURR_BACKUP_DIR}/packages"
+# one line per saved package: name, version, architecture
+PKG_MANIFEST="${PKG_BACKUP_DIR}/manifest.tsv"
+# kamailio modules dir, holds the modules built by the installer that no package owns, empty when kamailio is not installed
+KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
 # state read by resetConfigsHandler to decide what can be restored safely
 MIGRATION_COMPLETE=0
@@ -67,6 +81,7 @@ BACKUP_COMPLETE=0
 CHANGES_STARTED=0
 KAM_DB_BACKED_UP=0
 KAM_DB_TOUCHED=0
+PKG_BACKED_UP=0
 MASKED_UNITS=()
 STOPPED_UNITS=()
 
@@ -815,6 +830,153 @@ function setKamDBSettingsVersion() {
     }
 }
 
+# lists the installed packages matching PKG_PATTERNS, one per line as: name, version, architecture (tab separated)
+function listTrackedPackages() {
+    if cmdExists 'apt-get'; then
+        dpkg-query -W -f '${db:Status-Abbrev}\t${Package}\t${Version}\t${Architecture}\n' "${PKG_PATTERNS[@]}" 2>/dev/null |
+            awk -F '\t' '$1 ~ /^.i/ { print $2 "\t" $3 "\t" $4 }'
+    else
+        rpm -qa --qf '%{NAME}\t%{EPOCHNUM}:%{VERSION}-%{RELEASE}\t%{ARCH}\n' "${PKG_PATTERNS[@]}"
+    fi
+    return 0
+}
+
+# prints the version of a package file, in the same format as listTrackedPackages
+# usage: packageFileVersion <package file>
+function packageFileVersion() {
+    if cmdExists 'apt-get'; then
+        dpkg-deb -f "$1" Version
+    else
+        rpm -qp --nosignature --qf '%{EPOCHNUM}:%{VERSION}-%{RELEASE}' "$1" 2>/dev/null
+    fi
+}
+
+# saves an installable copy of an installed package as the only file in ${PKG_BACKUP_DIR}/<name>/
+# usage: savePackage <name> <version> <arch>
+# notes: the package is repacked from the installed files when possible, locally built packages are not in any repo
+#        otherwise the installed version is downloaded from the configured repos
+function savePackage() {
+    local NAME="$1" VERSION="$2" ARCH="$3"
+    local DIR="${PKG_BACKUP_DIR}/${NAME}"
+    local FILES=()
+
+    mkdir -p "$DIR" || return 1
+    if cmdExists 'apt-get'; then
+        (
+            cd "$DIR" || exit 1
+            if cmdExists 'dpkg-repack' && dpkg-repack "$NAME" >/dev/null 2>&1; then
+                exit 0
+            fi
+            rm -f ./*.deb
+            apt-get download "${NAME}=${VERSION}" >/dev/null 2>&1
+        ) || return 1
+        FILES=("$DIR"/*.deb)
+    else
+        if cmdExists 'rpmrebuild' && rpmrebuild --batch --notest-install --directory="$DIR" "$NAME" >/dev/null 2>&1; then
+            # the package is written to a subdirectory named after its architecture
+            find "$DIR" -mindepth 2 -name '*.rpm' -exec mv -f {} "$DIR/" \;
+        elif cmdExists 'dnf'; then
+            dnf download -q --destdir "$DIR" "${NAME}-${VERSION#0:}.${ARCH}" >/dev/null 2>&1 || return 1
+        else
+            yumdownloader -q --destdir "$DIR" "${NAME}-${VERSION#0:}.${ARCH}" >/dev/null 2>&1 || return 1
+        fi
+        FILES=("$DIR"/*.rpm)
+    fi
+
+    # exactly one package file of the installed version must have been saved
+    [[ ${#FILES[@]} -eq 1 && -f "${FILES[0]}" && "$(packageFileVersion "${FILES[0]}")" == "$VERSION" ]]
+}
+
+# saves every installed package matching PKG_PATTERNS so restorePackages can reinstall it
+# notes: the repack tool is installed if it is missing, it is the only way to save a locally built package
+function backupPackages() {
+    local NAME VERSION ARCH
+
+    mkdir -p "$PKG_BACKUP_DIR" || return 1
+    listTrackedPackages >"$PKG_MANIFEST" || return 1
+    [[ -s "$PKG_MANIFEST" ]] || return 0
+
+    if cmdExists 'apt-get'; then
+        cmdExists 'dpkg-repack' || apt-get install -y dpkg-repack >/dev/null 2>&1
+    elif cmdExists 'dnf'; then
+        cmdExists 'rpmrebuild' || dnf install -y rpmrebuild >/dev/null 2>&1
+    else
+        cmdExists 'rpmrebuild' || yum install -y rpmrebuild yum-utils >/dev/null 2>&1
+    fi
+
+    while IFS=$'\t' read -r NAME VERSION ARCH; do
+        savePackage "$NAME" "$VERSION" "$ARCH" || {
+            printerr "could not save a copy of the installed package ${NAME} ${VERSION}"
+            return 1
+        }
+    done <"$PKG_MANIFEST"
+}
+
+# puts the saved packages back: packages the upgrade added are removed, packages it changed or removed are reinstalled
+# notes: a package still at its saved version is left alone, so nothing happens when the upgrade failed before the reinstall
+#        dependencies are not checked while removing, the reinstall that follows puts every tracked package back at one version
+function restorePackages() {
+    local NAME VERSION ARCH CURRENT RETVAL
+    local FILES=() ADDED=()
+    local PKG_EXT='rpm'
+    local -A SAVED=()
+    local POLICY_FILE='/usr/sbin/policy-rc.d'
+    local POLICY_CREATED=0
+
+    [[ -f "$PKG_MANIFEST" ]] || {
+        printerr "package manifest is missing, cannot restore packages: ${PKG_MANIFEST}"
+        return 1
+    }
+    cmdExists 'apt-get' && PKG_EXT='deb'
+    CURRENT=$(listTrackedPackages)
+
+    while IFS=$'\t' read -r NAME VERSION ARCH; do
+        [[ -n "$NAME" ]] || continue
+        SAVED["$NAME"]=1
+        grep -qxF "${NAME}"$'\t'"${VERSION}"$'\t'"${ARCH}" <<<"$CURRENT" && continue
+        FILES+=("${PKG_BACKUP_DIR}/${NAME}"/*."${PKG_EXT}")
+    done <"$PKG_MANIFEST"
+    while IFS=$'\t' read -r NAME VERSION ARCH; do
+        [[ -n "$NAME" ]] || continue
+        [[ -n "${SAVED[$NAME]:-}" ]] || ADDED+=("$NAME")
+    done <<<"$CURRENT"
+
+    if (( ${#FILES[@]} == 0 && ${#ADDED[@]} == 0 )); then
+        return 0
+    fi
+    printwarn 'restoring the packages changed by the upgrade'
+
+    if cmdExists 'apt-get'; then
+        if (( ${#ADDED[@]} > 0 )); then
+            dpkg --purge --force-depends "${ADDED[@]}" || return 1
+        fi
+        if (( ${#FILES[@]} > 0 )); then
+            # the package scripts fail if a service does not start, and it may not with the configs of the failed upgrade
+            # service starts are denied while reinstalling, the services are started once everything is restored
+            if [[ ! -e "$POLICY_FILE" ]]; then
+                printf '#!/bin/sh\nexit 101\n' >"$POLICY_FILE" && chmod 755 "$POLICY_FILE" && POLICY_CREATED=1
+            fi
+            DEBIAN_FRONTEND=noninteractive dpkg -i --force-confold --force-confdef "${FILES[@]}"
+            RETVAL=$?
+            if (( POLICY_CREATED == 1 )); then
+                rm -f "$POLICY_FILE"
+            fi
+            (( RETVAL == 0 )) || return 1
+        fi
+    else
+        if (( ${#ADDED[@]} > 0 )); then
+            rpm -e --nodeps "${ADDED[@]}" || return 1
+        fi
+        if (( ${#FILES[@]} > 0 )); then
+            rpm -U --oldpackage --replacepkgs "${FILES[@]}" || return 1
+        fi
+    fi
+
+    # every saved package must be back at its saved version
+    CURRENT=$(listTrackedPackages)
+    [[ "$(sort <<<"$CURRENT")" == "$(sort "$PKG_MANIFEST")" ]]
+}
+
 # usage: backupFailed <message>
 # notes: only called before any system change, so nothing needs restoring
 function backupFailed() {
@@ -900,6 +1062,16 @@ resetConfigsHandler() {
     fi
 
     printwarn 'upgrade failed, resetting system to previous state'
+    # packages are put back first, their install scripts can start the services and replace the units and configs restored below
+    for FILE in "${PKG_SOURCE_FILES[@]}"; do
+        restoreEntry "$FILE" || RESTORE_FAILED=1
+    done
+    if (( PKG_BACKED_UP == 1 )); then
+        restorePackages || {
+            printerr "could not restore packages, the saved copies are here: ${PKG_BACKUP_DIR}"
+            RESTORE_FAILED=1
+        }
+    fi
     # every masked unit is stopped before the restore, the installer may have started it with the upgraded config and code
     # a start on a running unit does nothing, so only the units that were running before the upgrade are started after the restore
     for UNIT in "${MASKED_UNITS[@]}"; do
@@ -910,6 +1082,10 @@ resetConfigsHandler() {
     for TREE in "$OLD_PROJECT_DIR" "$DSIP_LIB_DIR" "$DSIP_SYSTEM_CONFIG_DIR" "$SYSTEM_KAMAILIO_CONFIG_DIR" "$SYSTEM_RTPENGINE_CONFIG_DIR" "$SYSTEM_NGINX_CONFIG_DIR"; do
         restoreTree "$TREE" || RESTORE_FAILED=1
     done
+    # after the packages, so the modules built by the installer replace the ones shipped in the packages
+    if [[ -n "$KAM_MODULES_DIR" ]]; then
+        restoreTree "$KAM_MODULES_DIR" || RESTORE_FAILED=1
+    fi
     # request queues the upgrade installed are stopped and disabled before their unit files are removed
     for UNIT in "${REQUEST_SOCKET_UNITS[@]}"; do
         if [[ ! -e "${CURR_BACKUP_DIR}/lib/systemd/system/${UNIT}" && -e "/lib/systemd/system/${UNIT}" ]]; then
@@ -1269,10 +1445,15 @@ for FILE in /etc/profile.d/dsip_*.sh; do
     backupEntry "$FILE" || backupFailed "${FILE}"
 done
 shopt -u nullglob
-for FILE in "${MANAGED_FILES[@]}"; do
+for FILE in "${MANAGED_FILES[@]}" "${PKG_SOURCE_FILES[@]}"; do
     backupEntry "$FILE" || backupFailed "${FILE}"
 done
 backupCrontab || backupFailed "root crontab"
+if [[ -n "$KAM_MODULES_DIR" ]]; then
+    backupTree "$KAM_MODULES_DIR" || backupFailed "${KAM_MODULES_DIR}"
+fi
+backupPackages || backupFailed "installed packages"
+PKG_BACKED_UP=1
 
 if (( KAM_DB_EXISTS == 1 )); then
     dumpKamDBFull "$KAM_DB_NAME" >"$KAMDB_DUMP_FILE" || backupFailed "${KAM_DB_NAME} DB dump"
