@@ -49,8 +49,9 @@
   }
 
   $(document).ready(function() {
-    // the latest release is looked up in the background, the page is loaded again to show it
-    if (upgrade_form.data('lookup-pending') === 1) {
+    // the releases are looked up in the background, the page is loaded again to show them
+    // the log of an upgrade that is running is not interrupted for that
+    if (upgrade_form.data('lookup-pending') === 1 && upgrade_form.data('upgrade-ongoing') !== 1) {
       setTimeout(function() {
         window.location.reload();
       }, 3000);
@@ -60,6 +61,13 @@
       displayUpgradeLog();
       dumpLog();
     });
+
+    // an upgrade that is still running is shown when the page is opened
+    if (upgrade_form.data('upgrade-ongoing') === 1) {
+      displayUpgradeLog();
+      streamLog();
+      monitorUpgrade();
+    }
 
     upgrade_form.submit(function(e) {
       e.preventDefault();
