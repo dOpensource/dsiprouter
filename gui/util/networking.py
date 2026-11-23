@@ -26,6 +26,7 @@ RFC2396_USER_TRANSLATION = {
     250: '%fa', 251: '%fb', 252: '%fc', 253: '%fd', 254: '%fe', 255: '%ff'
 }
 RFC2396_USER_ESCAPE_REGEX = re.compile(r'%[a-fA-F0-9][a-fA-F0-9]')
+RFC1123_LABEL_REGEX = re.compile(r'[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?')
 
 
 def ipv4Test(address):
@@ -60,6 +61,20 @@ def isValidIP(address, ip_ver=''):
         if not ipv4Test(address) and not ipv6Test(address):
             return False
         return True
+
+
+def isValidHostname(hostname):
+    """
+    Determine if hostname is valid per RFC 1123
+
+    :param hostname:    hostname to validate
+    :type hostname:     str
+    :return:            whether the hostname is valid
+    :rtype:             bool
+    """
+    if not isinstance(hostname, str) or not 0 < len(hostname) <= 253:
+        return False
+    return all(RFC1123_LABEL_REGEX.fullmatch(label) for label in hostname.split('.'))
 
 
 def check_host_type(host_string):

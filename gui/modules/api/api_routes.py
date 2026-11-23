@@ -23,7 +23,8 @@ from util.pyasync import daemonize
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from modules.api.api_functions import createApiResponse, showApiError, api_security, api_require_roles
 from modules.api.kamailio.functions import reloadKamailio
-from util.networking import getExternalIP, hostToIP, isValidIP, parseGenericUri, safeUriToHost, safeStripPort, check_host_type
+from util.networking import getExternalIP, hostToIP, isValidIP, isValidHostname, parseGenericUri, safeUriToHost, safeStripPort, \
+    check_host_type
 from util.notifications import sendEmail
 from util.security import AES_CTR, urandomChars, KeyCertPair
 from util.file_handling import change_owner
@@ -3580,6 +3581,8 @@ def createCertificate():
         domain = request_payload['domain']
         if domain == "default":
             domain = socket.gethostname()
+        elif not isValidHostname(domain):
+            raise http_exceptions.BadRequest("Value for Request Argument 'domain' is Not Valid")
         ip = request_payload['ip'] if 'ip' in request_payload else settings.EXTERNAL_IP_ADDR
         port = request_payload['port'] if 'port' in request_payload else 5061
         server_name_mode = request_payload['server_name_mode'] \
@@ -3667,7 +3670,9 @@ def deleteCertificates(domain=None):
         Certificates.delete(synchronize_session=False)
 
         # Remove the certificate from the file system
-        letsencrypt.deleteCertificate(domain)
+        # invalid domains are still purged from the DB and TLS config, but never resolved to a path
+        if isValidHostname(domain):
+            letsencrypt.deleteCertificate(domain)
 
         # Remove from Kamailio TLS
         kamtls.deleteCustomTLSConfig(domain)
@@ -3704,9 +3709,12 @@ def uploadCertificates(domain=None):
 
         if 'domain' in data.keys():
             domain = data['domain'][0]
-            print(domain)
         else:
             domain = "default"
+
+        # the domain is used to build filesystem paths and TLS config entries
+        if not isValidHostname(domain):
+            raise http_exceptions.BadRequest("Value for Request Argument 'domain' is Not Valid")
 
         if 'replace_default_cert' in data.keys():
             replace_default_cert = data['replace_default_cert'][0]
