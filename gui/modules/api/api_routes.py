@@ -19,7 +19,7 @@ from modules.numbers.db.dsip_number import dSIPNumber
 from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, debugEndpoint, StatusCodes, \
     strFieldsToDict, getRequestData, IO, objToDict, getAllowedSettings,updateDsipLocalSettingsFromDict, \
     updateConfig
-from util.pyasync import daemonize
+from util.sysrequests import fileRequest, isRequestOngoing
 from util.kamdb_backup import dumpKamDB, restoreKamDB
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from modules.api.api_functions import createApiResponse, showApiError, api_security, api_require_roles
@@ -277,13 +277,20 @@ def handleReloadDsiprouter():
                     msg='dSIPRouter reload in progress',
                     status_code=StatusCodes.HTTP_ACCEPTED,
                 )
+            # the services are stopped and started by the upgrade
+            if isRequestOngoing('upgrade'):
+                raise http_exceptions.Conflict('dSIPRouter can not be reloaded while an upgrade is in progress')
 
             # update globals before we reload so server stores them on teardown
             getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_ongoing'] = True
             getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = False
             getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_required'] = False
 
-            daemonize(['sudo', 'dsiprouter', 'restart', '-all', '-daemonize'])
+            try:
+                fileRequest('restart', 'restart')
+            except OSError:
+                getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_ongoing'] = False
+                raise
 
             return createApiResponse(
                 msg='dSIPRouter reload started',

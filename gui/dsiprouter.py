@@ -7,7 +7,7 @@ if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
-import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess, time, requests, socket
+import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, time, requests, socket
 import importlib.util
 from ansi2html import Ansi2HTMLConverter
 from copy import copy
@@ -52,7 +52,7 @@ from util.security import Credentials, urandomChars, AES_CTR
 from util.ipc import SETTINGS_SHMEM_NAME, STATE_SHMEM_NAME, createSharedMemoryDict, getSharedMemoryDict
 from util.parse_json import CreateEncoder
 from util.persistence import updatePersistentState, setPersistentState
-from util.pyasync import process
+from util.sysrequests import UPGRADE_LOG, fileRequest, isRequestOngoing, getUpgradeExitCode
 from modules.upgrade import UpdateUtils
 import settings
 
@@ -70,9 +70,8 @@ import settings
 #       we moved to shared memory instead of domain sockets for sharing state across processes
 
 # module constants
-# TODO: create /var/log/dsiprouter/ and move there
-UPGRADE_LOG = f'{settings.BACKUP_FOLDER}/upgrade.log'
-UPGRADE_OFFSET = f'{UPGRADE_LOG}.offset'
+# position of the upgrade page in the upgrade log, the log itself is written by the handler of the upgrade request
+UPGRADE_OFFSET = f'{settings.BACKUP_FOLDER}/upgrade.log.offset'
 
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
@@ -2227,29 +2226,6 @@ def displayUpgrade(msg=None):
         return showError(type=error)
 
 
-@process
-def runUpgrade(cmd, env):
-    try:
-        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_upgrade_ongoing'] = True
-
-        with open(UPGRADE_LOG, 'wb', buffering=0) as f:
-            run_info = subprocess.run(
-                cmd,
-                stdout=f,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True,
-                env=env,
-                restore_signals=False,
-                close_fds=True
-            )
-            run_info.check_returncode()
-
-            # getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
-            # kamailio will be reloaded when dsiprouter is reloaded
-            getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_required'] = True
-    finally:
-        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_upgrade_ongoing'] = False
-
 @app.route('/upgrade/start', methods=['POST'])
 def startUpgrade():
     try:
@@ -2264,13 +2240,21 @@ def startUpgrade():
         if getLicenseStatus(license_tag='DSIP_CORE') != 3:
             raise WoocommerceError('invalid license')
 
-        IO.loginfo("starting upgrade")
+        if isRequestOngoing('upgrade'):
+            raise http_exceptions.Conflict('an upgrade is already in progress')
 
-        form = stripDictVals(request.form.to_dict())
-        cmd = ['sudo', '-E', 'dsiprouter', 'upgrade', '-rel', f"{form['latest_version']}", '-url', settings.GIT_REPO_URL]
-        runUpgrade(cmd, None)
+        # the release is not taken from the form, the latest release is requested
+        latest = UpdateUtils.get_latest_version()
+        if latest['ver_num'] <= float(settings.VERSION):
+            raise http_exceptions.BadRequest('no upgrade is available')
+        # releases are tagged v<version>-rel
+        release = 'v{}-rel'.format(latest['tag_name'].lstrip('v').split('-')[0])
 
-        IO.loginfo("upgrade started")
+        IO.loginfo("requesting upgrade to {}".format(release))
+
+        fileRequest('upgrade', release)
+
+        IO.loginfo("upgrade requested")
 
         return Response(), StatusCodes.HTTP_OK
 
@@ -2297,10 +2281,9 @@ def formatSSE(data: str, event: str = None) -> str:
 # TODO: move to file handling
 # TODO: figure out why the SSE are not being sent every 1 second as expected
 def readLogChunk(log_file):
-    state = getSharedMemoryDict(STATE_SHMEM_NAME)
-    while state['dsip_upgrade_ongoing'] == True:
+    while isRequestOngoing('upgrade'):
         try:
-            lines = Pygtail(log_file, offset_file=f'{log_file}.offset').read()
+            lines = Pygtail(log_file, offset_file=UPGRADE_OFFSET).read()
             yield formatSSE(
                 ansi_converter.convert(
                     lines,
@@ -2312,7 +2295,7 @@ def readLogChunk(log_file):
         time.sleep(1)
     # process the reset of the lines
     try:
-        lines = Pygtail(log_file, offset_file=f'{log_file}.offset').read()
+        lines = Pygtail(log_file, offset_file=UPGRADE_OFFSET).read()
         yield formatSSE(
             ansi_converter.convert(
                 lines,
@@ -2323,10 +2306,12 @@ def readLogChunk(log_file):
         pass
 
 def checkUpgradeStatus():
-    state = getSharedMemoryDict(STATE_SHMEM_NAME)
-    while state['dsip_upgrade_ongoing'] == True:
+    while isRequestOngoing('upgrade'):
         yield formatSSE('1')
         time.sleep(30)
+    if getUpgradeExitCode() == 0:
+        # kamailio will be reloaded when dsiprouter is reloaded
+        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_required'] = True
     yield formatSSE('0')
 
 
@@ -2642,12 +2627,10 @@ def intializeGlobalState(**state_updates):
 
     # create/update the shared state file
     # if the state got corrupted throw it away and start fresh
-    # NOTE: upgrade process does not daemonize, it is always gone on startup
     try:
         state = updatePersistentState({
             'dsip_reload_ongoing': False,
             'dsip_reload_required': False,
-            'dsip_upgrade_ongoing': False,
         })
     except json.JSONDecodeError:
         state = {}
@@ -2667,7 +2650,6 @@ def intializeGlobalState(**state_updates):
     state['kam_reload_required'] = state.get('kam_reload_required', False)
     state['dsip_reload_required'] = state.get('dsip_reload_required', False)
     state['dsip_reload_ongoing'] = state.get('dsip_reload_ongoing', False)
-    state['dsip_upgrade_ongoing'] = state.get('dsip_upgrade_ongoing', False)
 
     # after normal logic for loading state we do any overwrites passed in
     state.update(state_updates)

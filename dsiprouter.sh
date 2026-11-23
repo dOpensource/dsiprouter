@@ -105,7 +105,9 @@ function setStaticScriptSettings() {
     export SYSTEM_RTPENGINE_CONFIG_FILE="${SYSTEM_RTPENGINE_CONFIG_DIR}/rtpengine.conf"
     export PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh" # updates paths required
     GIT_UPDATE_FILE="/etc/profile.d/dsip_git.sh" # extends git command
-    DSIP_SUDOERS_FILE="/etc/sudoers.d/99-dsiprouter"
+    # request queues of the dsip-request systemd units, the dsiprouter user writes its requests to them
+    export DSIP_REQUESTS_DIR="/run/dsiprouter-requests"
+    export DSIP_UPGRADE_LOG="/var/log/dsiprouter/upgrade.log"
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
     IMAGE_BUILD=${IMAGE_BUILD:-0}
@@ -1947,23 +1949,10 @@ function installDsiprouterCli() {
         return 0
     fi
 
-    # TODO: add support for 'su' privilege escalation
     printdbg "Installing dSIPRouter CLI"
-    if cmdExists 'apt-get'; then
-        apt-get install -y sudo
-    elif cmdExists 'dnf'; then
-        dnf install -y sudo
-    elif cmdExists 'yum'; then
-        yum install -y sudo
-    else
-        printerr 'Could not install dSIPRouter CLI - failed installing required packages'
-        exit 1
-    fi
 
     # add dsiprouter CLI command to the path
     install -o root -g root -m 755 ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
-    # add specific commands to sudoers that dsiprouter can run with escalated privileges
-    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/sudoers.d/99-dsiprouter ${DSIP_SUDOERS_FILE}
 
     printdbg "Installing 'dsiprouter' tab completion"
     if cmdExists 'apt-get'; then
@@ -2025,9 +2014,6 @@ function uninstallDsiprouterCli() {
     # remove command line completion for dsiprouter.sh
     rm -f /etc/bash_completion.d/dsiprouter
 
-    # remove dsiprouter sudoers file
-    rm -f ${DSIP_SUDOERS_FILE}
-
     printdbg "uninstalling dsiprouter manpages"
     rm -f ${MAN_PROGS_DIR}/dsiprouter.1
     rm -f ${MAN_PROGS_DIR}/dsiprouter.1.gz
@@ -2043,6 +2029,148 @@ function uninstallDsiprouterCli() {
 # we should be starting the web server as root and dropping root privilege after
 # this is standard practice, but we would have to consider file permissions
 # it would be easier to manage if we moved dsiprouter configs to /etc/dsiprouter
+# the dsiprouter user can not restart services or install software
+# it writes a request to a FIFO only it can write to, systemd starts the handler of the request as root
+function installRequestUnits() {
+    local NAME UNIT STATE RETVAL
+
+    for NAME in restart upgrade provisioner; do
+        for UNIT in dsip-request-${NAME}.socket dsip-request-${NAME}.service; do
+            perl -pe "s|DSIP_REQUESTS_DIR|${DSIP_REQUESTS_DIR}|g;" \
+                ${DSIP_PROJECT_DIR}/dsiprouter/systemd/${UNIT} >/lib/systemd/system/${UNIT} &&
+            chmod 644 /lib/systemd/system/${UNIT} || return 1
+        done
+    done
+    systemctl daemon-reload
+
+    for NAME in restart upgrade provisioner; do
+        systemctl enable dsip-request-${NAME}.socket || return 1
+        # a socket can not be restarted while its handler runs, an upgrade requested by the GUI runs this function from its handler
+        STATE=$(systemctl is-active dsip-request-${NAME}.service)
+        if [[ "$STATE" == "activating" || "$STATE" == "active" ]]; then
+            timeout 60 systemctl start dsip-request-${NAME}.socket
+        else
+            timeout 60 systemctl restart dsip-request-${NAME}.socket
+        fi
+        RETVAL=$?
+        # a handler that was started in the meantime can be waiting for the upgrade running this function to finish
+        # systemd applies the change once that handler is done, waiting for it here would never end
+        if (( $RETVAL == 124 )); then
+            printwarn "dsip-request-${NAME}.socket is updated once its handler finished"
+        elif (( $RETVAL != 0 )); then
+            return 1
+        fi
+    done
+    return 0
+}
+
+# the request handlers are not stopped, one of them may be running this function
+function uninstallRequestUnits() {
+    local NAME
+
+    for NAME in restart upgrade provisioner; do
+        systemctl stop dsip-request-${NAME}.socket
+        systemctl disable dsip-request-${NAME}.socket
+        rm -f /lib/systemd/system/dsip-request-${NAME}.socket /lib/systemd/system/dsip-request-${NAME}.service
+    done
+    systemctl daemon-reload
+
+    rm -rf ${DSIP_REQUESTS_DIR}
+}
+
+# usage:    handleRequest <restart|upgrade|provisioner>
+# notes:    run as root by the dsip-request systemd units, acts on a request written by the dsiprouter user
+#           the name of the request selects a fixed command, a request is one line that is validated before use
+function handleRequest() {
+    local NAME="$1"
+    local RELEASE_REGEX='^v[0-9]+\.[0-9]+-[a-z0-9]+$'
+    local LOCK_FILE="${DSIP_REQUESTS_DIR}.lock"
+    local REQUEST=''
+    local DATA TMP_FILE RETVAL LOCK_FD READS
+
+    case "$NAME" in
+        restart|upgrade|provisioner)
+            ;;
+        *)
+            printerr "Invalid request [$NAME]"
+            return 1
+            ;;
+    esac
+
+    # systemd passes the request queue as file descriptor 3
+    if [[ "$LISTEN_FDS" != "1" || "$LISTEN_PID" != "$$" ]]; then
+        printerr 'requests are handled by the dsip-request systemd units'
+        return 1
+    fi
+
+    # the queue is emptied, the last request in it is the one that is handled
+    # a request is written in one piece, so the data that was read ends with a complete request
+    for (( READS=0; READS<64; READS++ )); do
+        DATA=$(dd iflag=nonblock bs=65536 count=1 <&3 2>/dev/null) && [[ -n "$DATA" ]] || break
+        REQUEST="${DATA##*$'\n'}"
+    done
+    # systemd can start this handler again for requests that were read by a previous run
+    if [[ -z "$REQUEST" ]]; then
+        return 0
+    fi
+    if (( ${#REQUEST} > 4096 )); then
+        printerr "the ${NAME} request is too long"
+        return 1
+    fi
+
+    # one request is handled at a time, a restart or a change of the provisioning site waits for a running upgrade
+    # the commands run without the lock file and the queue open, a process they leave behind can not hold on to them
+    ( umask 077 && : >>"$LOCK_FILE" ) && exec {LOCK_FD}<"$LOCK_FILE" && flock "$LOCK_FD" || {
+        printerr 'failed locking the request handlers'
+        return 1
+    }
+
+    case "$NAME" in
+        restart)
+            if [[ "$REQUEST" != "restart" ]]; then
+                printerr 'invalid restart request'
+                return 1
+            fi
+            "$0" restart -all {LOCK_FD}>&- 3<&-
+            RETVAL=$?
+            ;;
+        upgrade)
+            rm -f "${DSIP_UPGRADE_LOG}.exitcode"
+            # the release is the only value taken from the request
+            # the upgrade checks it against the supported releases of the repo set in the upgrade settings
+            if ! [[ "$REQUEST" =~ $RELEASE_REGEX ]]; then
+                printerr 'invalid release in the upgrade request'
+                return 1
+            fi
+            # the log and the result are written where only root can create files
+            # the log shows the credentials reset by the upgrade, of the service users only the dsiprouter user can read it
+            mkdir -p "$(dirname "$DSIP_UPGRADE_LOG")" &&
+            install -o dsiprouter -g root -m 600 /dev/null "$DSIP_UPGRADE_LOG" || {
+                printerr 'failed creating the upgrade log'
+                return 1
+            }
+            "$0" upgrade -rel "${REQUEST%-*}" &>"$DSIP_UPGRADE_LOG" {LOCK_FD}>&- 3<&-
+            RETVAL=$?
+            echo "$RETVAL" >"${DSIP_UPGRADE_LOG}.exitcode"
+            ;;
+        provisioner)
+            # the servers of the site, separated by commas
+            TMP_FILE=$(mktemp) || return 1
+            tr ',' '\n' <<<"$REQUEST" >"$TMP_FILE" &&
+            updateProvisionerSite "$TMP_FILE" {LOCK_FD}>&- 3<&-
+            RETVAL=$?
+            rm -f "$TMP_FILE"
+            return $RETVAL
+            ;;
+    esac
+
+    # requests made while the services were restarted or upgraded are dropped
+    for (( READS=0; READS<64; READS++ )); do
+        DATA=$(dd iflag=nonblock bs=65536 count=1 <&3 2>/dev/null) && [[ -n "$DATA" ]] || break
+    done
+    return $RETVAL
+}
+
 function installDsiprouter() {
     local DSIP_CURRENT_PYTHON_VER
 
@@ -2134,6 +2262,11 @@ function installDsiprouter() {
 
     # update systemd startup dependencies
     updateDsiprouterStartup
+
+    installRequestUnits || {
+        printerr "dSIPRouter install failed - could not install the request handlers"
+        exit 1
+    }
 
     # NOTE: some of the previous files/dirs get updated here to allow dsiprouter access
     updatePermissions -certs -kamailio -dsiprouter
@@ -2248,6 +2381,8 @@ function uninstallDsiprouter() {
         printerr "dsiprouter uninstall failed"
         exit 1
     fi
+
+    uninstallRequestUnits
 
     # Remove all dsiprouter crontab entries
     printdbg "Removing dsiprouter crontab entries"
@@ -2613,7 +2748,7 @@ function start() {
             # perform pre-startup commands systemd would normally do in dsiprouter.service
             updatePermissions -dsiprouter
             # keep dSIPRouter in the foreground, only used for debugging issues (blocking)
-            sudo -E -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
+            runuser -u dsiprouter -g dsiprouter -- ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
             exit $?
         else
             # start the reverse proxy first
@@ -4140,7 +4275,7 @@ function preprocessCMD() {
     # Do not run the extra prep on these commands
     # we only need a portion of the script settings
     case "$1" in
-        chown|exec|clusterinstall|licensemanager|version|-v|--version|help|-h|--help)
+        chown|exec|handlerequest|clusterinstall|licensemanager|version|-v|--version|help|-h|--help)
             setStaticScriptSettings
             ;;
         *)
@@ -4775,6 +4910,15 @@ function processCMD() {
         # internal command, replace this process with the GUI server immediately
         exec)
             exec ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
+            ;;
+        # internal command, run by the dsip-request systemd units
+        handlerequest)
+            validateRootPriv
+            handleRequest "$2"
+            RETVAL=$?
+            # systemd stops a request queue that starts its handler too often, a handler that takes this long stays below that limit
+            sleep 0.2
+            exit $RETVAL
             ;;
         chown)
             shift

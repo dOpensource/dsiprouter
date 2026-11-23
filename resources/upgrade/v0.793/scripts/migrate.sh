@@ -33,13 +33,19 @@ KAMDB_OBJECTS_MANIFEST="${KAMDB_OBJECTS_DIR}/manifest.tsv"
 # column definitions of every kamailio base table, used to ADD COLUMN extra user columns after the reinstall
 KAMDB_COLUMNS_FILE="${CURR_BACKUP_DIR}/kam_columns.tsv"
 # systemd units and drop-in dirs the reinstall can change, each is backed up and restored as one entry
-SYSTEMD_UNITS=(dsiprouter.service kamailio.service rtpengine.service dsip-init.service mariadb.service nginx-watcher.service nginx-watcher.path)
+SYSTEMD_UNITS=(dsiprouter.service kamailio.service rtpengine.service dsip-init.service mariadb.service nginx-watcher.service nginx-watcher.path
+    dsip-request-restart.service dsip-request-upgrade.service dsip-request-provisioner.service)
+# queues for the requests of the dsiprouter user, installed and enabled by the reinstall, each is also backed up and restored as a unit
+REQUEST_SOCKET_UNITS=(dsip-request-restart.socket dsip-request-upgrade.socket dsip-request-provisioner.socket)
+SYSTEMD_UNITS+=("${REQUEST_SOCKET_UNITS[@]}")
 SYSTEMD_DROPINS=(dsiprouter.service.d kamailio.service.d rtpengine.service.d dsip-init.service.d mariadb.service.d nginx.service.d)
 SYSTEM_NGINX_CONFIG_DIR='/etc/nginx'
+# installed by previous versions, removed by this upgrade
+DSIP_SUDOERS_FILE='/etc/sudoers.d/99-dsiprouter'
 # installer-managed files restored as individual entries so unrelated files in the same directory survive
 MANAGED_FILES=(
     /usr/bin/dsiprouter
-    /etc/sudoers.d/99-dsiprouter
+    "$DSIP_SUDOERS_FILE"
     /etc/bash_completion.d/dsiprouter
     /etc/bash.bashrc
     /usr/share/man/man1/dsiprouter.1
@@ -891,6 +897,13 @@ resetConfigsHandler() {
     for TREE in "$OLD_PROJECT_DIR" "$DSIP_LIB_DIR" "$DSIP_SYSTEM_CONFIG_DIR" "$SYSTEM_KAMAILIO_CONFIG_DIR" "$SYSTEM_RTPENGINE_CONFIG_DIR" "$SYSTEM_NGINX_CONFIG_DIR"; do
         restoreTree "$TREE" || RESTORE_FAILED=1
     done
+    # request queues the upgrade installed are stopped and disabled before their unit files are removed
+    for UNIT in "${REQUEST_SOCKET_UNITS[@]}"; do
+        if [[ ! -e "${CURR_BACKUP_DIR}/lib/systemd/system/${UNIT}" && -e "/lib/systemd/system/${UNIT}" ]]; then
+            systemctl stop "$UNIT"
+            systemctl disable "$UNIT"
+        fi
+    done
     for SYS_DIR in /etc/systemd/system /lib/systemd/system; do
         for NAME in "${SYSTEMD_UNITS[@]}" "${SYSTEMD_DROPINS[@]}"; do
             restoreEntry "${SYS_DIR}/${NAME}" || RESTORE_FAILED=1
@@ -1068,6 +1081,11 @@ function applyUpgrade() {
     [[ -f "${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh" ]] || return 1
     export PYTHON_CMD="${DSIP_PROJECT_DIR}/venv/bin/python"
     . "${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh"
+
+    # the dsiprouter user no longer runs commands as root, the GUI files its requests in the queues of the dsip-request units
+    # the installer of this release does not know the file, it is put back with the other managed files when the upgrade fails
+    printdbg 'removing the sudoers file of the installed version'
+    rm -f "$DSIP_SUDOERS_FILE" || return 1
 
     printdbg 'adding new settings to the dSIPRouter config'
     addMissingSettings "${NEW_PROJECT_DIR}/gui/settings.py" "${DSIP_CONFIG_FILE}" || return 1
