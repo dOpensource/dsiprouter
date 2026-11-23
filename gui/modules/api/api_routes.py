@@ -21,7 +21,7 @@ from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, debugE
     updateConfig
 from util.pyasync import daemonize
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
-from modules.api.api_functions import createApiResponse, showApiError, api_security
+from modules.api.api_functions import createApiResponse, showApiError, api_security, api_require_roles
 from modules.api.kamailio.functions import reloadKamailio
 from util.networking import getExternalIP, hostToIP, isValidIP, parseGenericUri, safeUriToHost, safeStripPort, check_host_type
 from util.notifications import sendEmail
@@ -3237,6 +3237,7 @@ def getGatewayCDRS(gwid=None):
 
 @api.route("/api/v1/backupandrestore/backup", methods=['GET'])
 @api_security
+@api_require_roles(['dsip_admin'])
 def createBackup():
     """
     Generate a backup of the database
@@ -3270,6 +3271,7 @@ def createBackup():
 
 @api.route("/api/v1/backupandrestore/restore", methods=['POST'])
 @api_security
+@api_require_roles(['dsip_admin'])
 def restoreBackup():
     """
     Restore backup of the database
@@ -3486,6 +3488,7 @@ def testConnectivity(domain):
 @api.route("/api/v1/certificates", methods=['GET'])
 @api.route("/api/v1/certificates/<string:domain>", methods=['GET'])
 @api_security
+@api_require_roles(['dsip_admin', 'dsip_engineer'])
 def getCertificates(domain=None):
     db = DummySession()
 
@@ -3532,6 +3535,7 @@ def getCertificates(domain=None):
 
 @api.route("/api/v1/certificates", methods=['POST', 'PUT'])
 @api_security
+@api_require_roles(['dsip_admin', 'dsip_engineer'])
 def createCertificate():
     """
     Create TLS cert for a domain
@@ -3644,6 +3648,7 @@ def createCertificate():
 
 @api.route("/api/v1/certificates/<string:domain>", methods=['DELETE'])
 @api_security
+@api_require_roles(['dsip_admin', 'dsip_engineer'])
 def deleteCertificates(domain=None):
     db = DummySession()
 
@@ -3685,6 +3690,7 @@ def deleteCertificates(domain=None):
 
 @api.route("/api/v1/certificates/upload/<string:domain>", methods=['POST'])
 @api_security
+@api_require_roles(['dsip_admin', 'dsip_engineer'])
 def uploadCertificates(domain=None):
     db = DummySession()
 

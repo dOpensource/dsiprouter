@@ -87,6 +87,29 @@ def showApiError(ex, payload=None):
 
     return createApiResponse(**payload, status_code=status_code)
 
+def api_require_roles(required_roles):
+    """
+    Deny access to an API route unless the GUI session user has one of the given roles\n
+    Must be placed below api_security, API token callers are already checked there and keep full access
+
+    :param required_roles:  role names that may access the route
+    :type required_roles:   list
+    :return:                decorated route handler
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if session.get('logged_in') and not set(session.get('user_groups', []) or []).intersection(required_roles):
+                return createApiResponse(
+                    error='http',
+                    msg='Forbidden - You do not have permission to access this resource',
+                    status_code=StatusCodes.HTTP_FORBIDDEN
+                )
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 def api_security(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
