@@ -2248,20 +2248,15 @@ function handleRequest() {
                 printerr 'failed locking the request handlers'
                 return 1
             }
-            rm -f "${DSIP_UPGRADE_LOG}.exitcode"
-            # the release is the only value taken from the request
-            # the upgrade checks it against the supported releases of the repo set in the upgrade settings
-            if ! [[ "$REQUEST" =~ $RELEASE_REGEX ]]; then
-                printerr 'invalid release in the upgrade request'
-                return 1
-            fi
             # the log and the result are written where only root can create files
             # the log shows the credentials reset by the upgrade, of the service users only the dsiprouter user can read it
             mkdir -p "$(dirname "$DSIP_UPGRADE_LOG")" &&
+            rm -f "${DSIP_UPGRADE_LOG}.exitcode" &&
             install -o dsiprouter -g root -m 600 /dev/null "$DSIP_UPGRADE_LOG" || {
                 printerr 'failed creating the upgrade log'
                 return 1
             }
+            # a request with an invalid release is held back like the others, it replaces the log as well
             flock -u "$LOCK_FD"
             waitRequestInterval upgrade &>>"$DSIP_UPGRADE_LOG"
             ;;
@@ -2280,8 +2275,16 @@ function handleRequest() {
             RETVAL=$?
             ;;
         upgrade)
-            "$0" upgrade -rel "${REQUEST%-*}" &>>"$DSIP_UPGRADE_LOG" {LOCK_FD}>&- 3<&-
-            RETVAL=$?
+            # the release is the only value taken from the request
+            # the upgrade checks it against the supported releases of the repo set in the upgrade settings
+            if [[ "$REQUEST" =~ $RELEASE_REGEX ]]; then
+                "$0" upgrade -rel "${REQUEST%-*}" &>>"$DSIP_UPGRADE_LOG" {LOCK_FD}>&- 3<&-
+                RETVAL=$?
+            else
+                # a request that is turned down is recorded as a failed upgrade, what was requested is not written to the log
+                printerr 'invalid release in the upgrade request' | tee -a "$DSIP_UPGRADE_LOG" >&2
+                RETVAL=1
+            fi
             echo "$RETVAL" >"${DSIP_UPGRADE_LOG}.exitcode"
             ;;
         provisioner)
