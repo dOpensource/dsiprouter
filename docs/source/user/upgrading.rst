@@ -30,6 +30,9 @@ Previous versions let the ``dsiprouter`` user write to that directory, so what i
 Nothing is restored from that directory, also not the system files that were saved when dSIPRouter was installed (package sources, DNS and network settings, motd).
 Review its content and move those files back to ``/var/backups/dsiprouter`` before dSIPRouter is uninstalled, otherwise the uninstall does not put them back.
 
+Upgrades and reloads requested from the UI restart the services.
+A request of the same kind made less than 60 seconds after the last one is started once the 60 seconds have passed.
+
 Upgrade to 0.793
 --------------------
 

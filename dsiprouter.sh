@@ -109,6 +109,8 @@ function setStaticScriptSettings() {
     GIT_UPDATE_FILE="/etc/profile.d/dsip_git.sh" # extends git command
     # request queues of the dsip-request systemd units, the dsiprouter user writes its requests to them
     export DSIP_REQUESTS_DIR="/run/dsiprouter-requests"
+    # seconds between two restart requests and between two upgrade requests, the services are restarted for each of them
+    DSIP_REQUEST_INTERVAL=60
     export DSIP_UPGRADE_LOG="/var/log/dsiprouter/upgrade.log"
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
@@ -2165,6 +2167,27 @@ function updateProvisionerSite() {
     return $?
 }
 
+# usage:    waitRequestInterval <restart|upgrade>
+# notes:    the dsiprouter user can file these requests at any rate, the services are restarted for each of them
+#           a request is held back until DSIP_REQUEST_INTERVAL seconds passed since the last one was handled
+#           the time the last one was handled is kept where only root can write
+function waitRequestInterval() {
+    local NAME="$1"
+    local NOW LAST WAIT
+
+    LAST=$(head -c 16 "${DSIP_REQUESTS_DIR}.${NAME}.done" 2>/dev/null)
+    [[ "$LAST" =~ ^[1-9][0-9]*$ ]] || return 0
+    NOW=$(date '+%s')
+    WAIT=$(( DSIP_REQUEST_INTERVAL - (NOW - LAST) ))
+    # the clock was set back
+    (( WAIT > DSIP_REQUEST_INTERVAL )) && WAIT=$DSIP_REQUEST_INTERVAL
+    if (( WAIT > 0 )); then
+        printwarn "the last ${NAME} request was handled less than ${DSIP_REQUEST_INTERVAL} seconds ago, this one is handled in ${WAIT} seconds"
+        sleep "$WAIT"
+    fi
+    return 0
+}
+
 # usage:    handleRequest <restart|upgrade|provisioner>
 # notes:    run as root by the dsip-request systemd units, acts on a request written by the dsiprouter user
 #           the name of the request selects a fixed command, a request is one line that is validated before use
@@ -2205,23 +2228,26 @@ function handleRequest() {
         return 1
     fi
 
-    # one request is handled at a time, a restart or a change of the provisioning site waits for a running upgrade
-    # the commands run without the lock file and the queue open, a process they leave behind can not hold on to them
-    ( umask 077 && : >>"$LOCK_FILE" ) && exec {LOCK_FD}<"$LOCK_FILE" && flock "$LOCK_FD" || {
-        printerr 'failed locking the request handlers'
+    ( umask 077 && : >>"$LOCK_FILE" ) && exec {LOCK_FD}<"$LOCK_FILE" || {
+        printerr 'failed opening the lock of the request handlers'
         return 1
     }
 
+    # a request is validated and held back before the handlers are locked, the other requests are handled in the meantime
     case "$NAME" in
         restart)
             if [[ "$REQUEST" != "restart" ]]; then
                 printerr 'invalid restart request'
                 return 1
             fi
-            "$0" restart -all {LOCK_FD}>&- 3<&-
-            RETVAL=$?
+            waitRequestInterval restart
             ;;
         upgrade)
+            # the log and the result of the last upgrade are replaced while no upgrade is running
+            flock "$LOCK_FD" || {
+                printerr 'failed locking the request handlers'
+                return 1
+            }
             rm -f "${DSIP_UPGRADE_LOG}.exitcode"
             # the release is the only value taken from the request
             # the upgrade checks it against the supported releases of the repo set in the upgrade settings
@@ -2236,7 +2262,25 @@ function handleRequest() {
                 printerr 'failed creating the upgrade log'
                 return 1
             }
-            "$0" upgrade -rel "${REQUEST%-*}" &>"$DSIP_UPGRADE_LOG" {LOCK_FD}>&- 3<&-
+            flock -u "$LOCK_FD"
+            waitRequestInterval upgrade &>>"$DSIP_UPGRADE_LOG"
+            ;;
+    esac
+
+    # one request is handled at a time, a restart or a change of the provisioning site waits for a running upgrade
+    # the commands run without the lock file and the queue open, a process they leave behind can not hold on to them
+    flock "$LOCK_FD" || {
+        printerr 'failed locking the request handlers'
+        return 1
+    }
+
+    case "$NAME" in
+        restart)
+            "$0" restart -all {LOCK_FD}>&- 3<&-
+            RETVAL=$?
+            ;;
+        upgrade)
+            "$0" upgrade -rel "${REQUEST%-*}" &>>"$DSIP_UPGRADE_LOG" {LOCK_FD}>&- 3<&-
             RETVAL=$?
             echo "$RETVAL" >"${DSIP_UPGRADE_LOG}.exitcode"
             ;;
@@ -2251,7 +2295,9 @@ function handleRequest() {
             ;;
     esac
 
-    # requests made while the services were restarted or upgraded are dropped
+    date '+%s' >"${DSIP_REQUESTS_DIR}.${NAME}.done"
+
+    # requests made while this one was held back and while the services were restarted or upgraded are dropped
     for (( READS=0; READS<64; READS++ )); do
         DATA=$(dd iflag=nonblock bs=65536 count=1 <&3 2>/dev/null) && [[ -n "$DATA" ]] || break
     done
