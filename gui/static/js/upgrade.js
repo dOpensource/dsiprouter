@@ -49,6 +49,13 @@
   }
 
   $(document).ready(function() {
+    // the latest release is looked up in the background, the page is loaded again to show it
+    if (upgrade_form.data('lookup-pending') === 1) {
+      setTimeout(function() {
+        window.location.reload();
+      }, 3000);
+    }
+
     $('#btnShowLog').click(function() {
       displayUpgradeLog();
       dumpLog();

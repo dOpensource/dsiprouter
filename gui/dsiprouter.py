@@ -53,7 +53,7 @@ from util.ipc import SETTINGS_SHMEM_NAME, STATE_SHMEM_NAME, createSharedMemoryDi
 from util.parse_json import CreateEncoder
 from util.persistence import updatePersistentState, setPersistentState
 from util.sysrequests import UPGRADE_LOG, fileRequest, isRequestOngoing, getUpgradeExitCode
-from modules.upgrade import UpdateUtils
+from modules.upgrade import UpdateUtils, ReleaseLookupPending
 import settings
 
 # TODO: unit testing per component
@@ -2206,13 +2206,24 @@ def displayUpgrade(msg=None):
         if os.path.exists(UPGRADE_OFFSET):
             os.remove(UPGRADE_OFFSET)
 
-        latest = UpdateUtils.get_latest_version()
-
         upgrade_settings = {
             "current_version": settings.VERSION,
-            "latest_version": latest['ver_num'],
-            "upgrade_available": 1 if latest['ver_num'] > float(settings.VERSION) else 0
+            "latest_version": None,
+            "upgrade_available": 0,
+            "lookup_pending": False,
+            "lookup_error": None
         }
+        try:
+            latest, lookup_error = UpdateUtils.get_latest_version()
+            if latest is not None:
+                upgrade_settings["latest_version"] = latest['ver_num']
+                upgrade_settings["upgrade_available"] = 1 if latest['ver_num'] > float(settings.VERSION) else 0
+            if lookup_error is not None:
+                # the page does not load itself again, the lookup is tried again when the page is opened later
+                upgrade_settings["lookup_error"] = str(lookup_error)
+        except ReleaseLookupPending:
+            # the page loads itself again until the lookup finished or failed
+            upgrade_settings["lookup_pending"] = True
         return render_template('upgrade.html', upgrade_settings=upgrade_settings, msg=msg)
 
     except WoocommerceError as ex:
@@ -2244,7 +2255,13 @@ def startUpgrade():
             raise http_exceptions.Conflict('an upgrade is already in progress')
 
         # the release is not taken from the form, the latest release is requested
-        latest = UpdateUtils.get_latest_version()
+        try:
+            latest, lookup_error = UpdateUtils.get_latest_version()
+        except ReleaseLookupPending:
+            raise http_exceptions.ServiceUnavailable('the latest release is being looked up, try again in a moment')
+        # the release of an earlier lookup is requested when the last lookup failed, the upgrade looks it up again
+        if latest is None:
+            raise http_exceptions.ServiceUnavailable('the latest release could not be looked up: {}'.format(lookup_error))
         if latest['ver_num'] <= float(settings.VERSION):
             raise http_exceptions.BadRequest('no upgrade is available')
         # releases are tagged v<version>-rel
