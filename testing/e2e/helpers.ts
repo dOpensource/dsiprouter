@@ -1,4 +1,5 @@
-import { Page, expect } from '@playwright/test';
+import { Browser, Page, expect } from '@playwright/test';
+import { execSync } from 'child_process';
 
 // Node's fetch (used by loginAPI) rejects self-signed test-instance certs;
 // relax TLS trust only for API probes. Browser contexts keep their own
@@ -155,6 +156,88 @@ export async function expectDashboard(page: Page) {
 export async function filterUsersTable(page: Page, query: string) {
   await page.fill('input[type="search"]', query);
   await page.waitForTimeout(400);
+}
+
+/**
+ * Perform an API request with the dSIPRouter API token instead of a session.
+ * Only usable when DSIP_TEST_API_TOKEN is set (requires a DSIP_CORE license).
+ */
+export async function tokenApiRequest(
+  method: string,
+  path: string,
+  body?: any,
+  token: string = API_TOKEN
+): Promise<{ status: number; data: any }> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  let data: any = {};
+  try {
+    data = await response.json();
+  } catch (e) {
+    // non-JSON response body; keep empty object
+  }
+  return { status: response.status, data };
+}
+
+/**
+ * Shell / DB checks run on the dSIPRouter host itself (sudo mysql, kamcmd).
+ * They are opt-in via DSIP_TEST_SHELL=1 so the suite still runs from another machine.
+ */
+export const SHELL_ENABLED = process.env.DSIP_TEST_SHELL === '1';
+export const API_TOKEN = process.env.DSIP_TEST_API_TOKEN || '';
+
+export function shell(cmd: string): string {
+  if (!SHELL_ENABLED) {
+    throw new Error('shell checks are disabled, set DSIP_TEST_SHELL=1');
+  }
+  return execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+}
+
+/**
+ * Run SQL against the kamailio DB and return the rows as arrays of column strings.
+ */
+export function dbQuery(sql: string): string[][] {
+  const out = shell(`sudo mysql -N -B kamailio -e ${JSON.stringify(sql)}`);
+  return out.split('\n').filter((line) => line !== '').map((line) => line.split('\t'));
+}
+
+/**
+ * Quote a value as a SQL string literal for dbQuery().
+ */
+export function sqlQuote(value: string | number): string {
+  return `'${String(value).replace(/\\/g, '\\\\').replace(/'/g, "''")}'`;
+}
+
+export function kamcmd(cmd: string): string {
+  return shell(`sudo kamcmd ${cmd}`);
+}
+
+/**
+ * Reload kamailio through the API (as the current browser session).
+ */
+export async function reloadKamailio(page: Page) {
+  // kamailio refuses reloads less than reload_delta (1s) apart, so retry a refused reload once
+  let result = await guiApiRequest(page, 'POST', '/reload/kamailio');
+  if (result.status !== 200) {
+    await page.waitForTimeout(1500);
+    result = await guiApiRequest(page, 'POST', '/reload/kamailio');
+  }
+  expect(result.status, JSON.stringify(result.data)).toBe(200);
+}
+
+/**
+ * A browser context with no session, for logging in as a different user.
+ */
+export async function freshContext(browser: Browser) {
+  const ctx = await browser.newContext();
+  return { ctx, page: await ctx.newPage() };
 }
 
 export { ADMIN_USER, ADMIN_PASS };
