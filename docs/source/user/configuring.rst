@@ -9,4 +9,8 @@ dSIPRouter GUI Intro
   domains.rst
   inbound_did_mapping.rst
   global_outbound_routes.rst
+  cdrs.rst
+  rate_limiting.rst
+  users_and_roles.rst
+  backup_and_restore.rst
   

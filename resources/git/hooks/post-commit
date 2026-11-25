@@ -17,8 +17,8 @@ unset -f git
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 # destination changelog file
 CHANGELOG_FILE="CHANGELOG.md"
-# where we will be creating our changes
-TMP_CHANGELOG_FILE="/tmp/CHANGELOG.md"
+# tags that mark a release, the commits in the changelog are grouped by the release they were first part of
+RELEASE_TAG_PATTERN="${RELEASE_TAG_PATTERN:-v[0-9]*-rel}"
 # title of our changelog
 CHANGELOG_TITLE="CHANGELOG"
 # indicator that we commited the changelog
@@ -38,6 +38,15 @@ export REMOTE_REPO=$(cut -d '/' -f 5- <<<"${REMOTE_URL}")
 
 # utility functions
 isRemoteGitlab() {
+    # the well known sites are not requested on every commit
+    case "$REMOTE_SITE" in
+        *github.com*)
+            return 1
+            ;;
+        *gitlab.com*)
+            return 0
+            ;;
+    esac
     curl -L ${REMOTE_URL} 2>/dev/null | grep -q -ioP '<title>.*?gitlab</title>'
     return $?
 }
@@ -62,30 +71,6 @@ createMDCommentSection() {
 }
 export -f createMDCommentSection
 
-removeMDRenderedSection() {
-    local NAME="$1"
-
-    perl -e "\$name='${NAME}';" -0777 \
-        -pe 's%\[//\]: # \(START_SECTION ${name}\)\n(.*?)\[//\]: # \(END_SECTION ${name}\)\n%%s'
-}
-export -f removeMDRenderedSection
-
-removeMDRenderedSections() {
-    local NAMES=$(printf '%s' "$1" | tr '\n' '|')
-
-    perl -e "\$names='${NAMES}';" -0777 \
-        -pe 's%\[//\]: # \(START_SECTION (?:${names})\)\n(.*?)\[//\]: # \(END_SECTION (?:${names})\)\n%%sg'
-}
-export -f removeMDRenderedSections
-
-removeMDCommentSection() {
-    local NAME="$1"
-
-    perl -e "\$name='${NAME}';" -0777 \
-        -pe 's%\[//\]: # \(START_SECTION ${name}\n(.*?)END_SECTION ${name}\)\n%%s'
-}
-export -f removeMDCommentSection
-
 getMDRenderedSection() {
     local NAME="$1"
 
@@ -93,14 +78,6 @@ getMDRenderedSection() {
         -e ' while (<>) { if (s%.*\[//\]: # \(START_SECTION ${name}\)\n(.*?)\[//\]: # \(END_SECTION ${name}\)\n.*%\1%s) { print; } }'
 }
 export -f getMDRenderedSection
-
-getMDCommentSection() {
-    local NAME="$1"
-
-    perl -e "\$name='${NAME}';" -0777 \
-        -e ' while (<>) { if (s%.*\[//\]: # \(START_SECTION ${name}\n(.*?)END_SECTION ${name}\)\n.*%\1%s) { print; } }'
-}
-export -f getMDCommentSection
 
 # create a formatted commit section
 createCommitSection() {
@@ -129,23 +106,126 @@ createCommitSection() {
 }
 export -f createCommitSection
 
-# diff of newline delimeted string arrays (A - B)
-strarrDiff() {
-    local SKIP A="$1" B="$2"
+# print the names of the rendered commit sections in a changelog, in the order they appear
+getMDCommitSectionNames() {
+    sed -n 's%^\[//\]: # (START_SECTION \([0-9a-f]\{40\}\))$%\1%p'
+}
+export -f getMDCommitSectionNames
 
-    for i in $A; do
-        SKIP=
-        for j in $B; do
-            [[ "$i" == "$j" ]] && { SKIP=1; break; }
+# list the commits of HEAD grouped by the release they were first part of
+# output:   "R <tag> <date>" for each release (newest first) followed by "C <hash>" for each of its commits (git log order)
+#           commits that are not part of a release yet are listed first, after the line "U"
+# notes:    a release is a tag matching RELEASE_TAG_PATTERN, releases are ordered by the version number in the tag
+#           without release tags only the commits are listed
+createChangelogLayout() {
+    local TAG
+    local -a TAGS
+
+    mapfile -t TAGS < <(
+        git tag -l "$RELEASE_TAG_PATTERN" |
+        perl -ne 'chomp; print "$1 $_\n" if /(\d+(?:\.\d+)?)/' |
+        sort -g -k1,1 |
+        cut -d ' ' -f 2-
+    )
+
+    {
+        git for-each-ref --format='D %(refname:short) %(creatordate:short)' refs/tags
+        # oldest release first, a commit belongs to the first release that contains it
+        for TAG in "${TAGS[@]}"; do
+            git rev-list --no-merges "$TAG" | sed "s%^%T ${TAG} %"
         done
-        [[ -n "$SKIP" ]] || printf '%s\n' "$i"
-    done
+        git rev-list --no-merges HEAD | sed 's%^%H %'
+    } | awk '
+        $1 == "D" { date[$2] = $3; next }
+        $1 == "T" {
+            if (!($2 in known)) { known[$2] = 1; tags[++ntags] = $2 }
+            if (!($3 in release)) release[$3] = $2
+            next
+        }
+        $1 == "H" {
+            tag = ($2 in release) ? release[$2] : ""
+            commits[tag] = commits[tag] "C " $2 "\n"
+        }
+        END {
+            if ("" in commits) {
+                if (ntags > 0) print "U"
+                printf "%s", commits[""]
+            }
+            for (i = ntags; i >= 1; i--) {
+                if (tags[i] in commits) {
+                    print "R " tags[i] " " date[tags[i]]
+                    printf "%s", commits[tags[i]]
+                }
+            }
+        }'
 }
 
-# create a changelog file
+# write the sections of a changelog in the order of a layout
+# usage:    createChangelogSections <layout file> <dir with new commit sections> <existing changelog>
+# notes:    the section of a commit is taken from the existing changelog if it has one, otherwise from the file named after the commit
+createChangelogSections() {
+    awk -v layout="$1" -v sections_dir="$2" '
+        function heading(name, title, date) {
+            print start name ")"
+            print title
+            print ""
+            if (date != "") {
+                print "> Released: " date "  "
+                print ""
+            }
+            print ""
+            print stop name ")"
+        }
+        BEGIN {
+            start = "[//]: # (START_SECTION "
+            stop = "[//]: # (END_SECTION "
+        }
+        current == "" {
+            if (substr($0, 1, length(start)) == start && length($0) == length(start) + 41) {
+                name = substr($0, length(start) + 1, 40)
+                if (name ~ /^[0-9a-f]+$/) {
+                    current = name
+                    text = $0 "\n"
+                }
+            }
+            next
+        }
+        {
+            text = text $0 "\n"
+            if ($0 == stop current ")") {
+                section[current] = text
+                current = ""
+            }
+        }
+        END {
+            while ((getline line < layout) > 0) {
+                split(line, field, " ")
+                if (field[1] == "C") {
+                    if (field[2] in section) {
+                        printf "%s", section[field[2]]
+                    } else {
+                        file = sections_dir "/" field[2]
+                        while ((getline text < file) > 0) print text
+                        close(file)
+                    }
+                } else if (field[1] == "U") {
+                    heading("UNRELEASED", "## Unreleased", "")
+                } else if (field[1] == "R") {
+                    heading("RELEASE " field[2], "## " field[2], field[3])
+                }
+            }
+        }' "$3"
+}
+
+# create or update the changelog file
+# notes:    a section is only created for the commits the changelog does not have yet, the other sections are reused as they are
+#           the sections of commits that are no longer part of HEAD are dropped
+#           the changelog is written to a temporary file first, it is read while the new one is created
 createChangelog() {
-    local HEADER NEW_COMMIT_HASHES OLD_COMMIT_HASHES COMMITS_ADDED COMMITS_REMOVED
-    local NEW_CHANGELOG=1
+    local HEADER WORK_DIR RETVAL JOBS
+    local EXISTING_CHANGELOG="/dev/null"
+
+    JOBS=$(nproc 2>/dev/null || echo 4)
 
     # start at project root
     cd ${PROJECT_ROOT}
@@ -157,47 +237,40 @@ createChangelog() {
         export PULL_OR_MERGE="pull"
     fi
 
-    # if exists and in correct format we update the changelog
-    # otherwise we create new changelog from scratch
-    NEW_COMMIT_HASHES=$(git --no-pager log --no-merges --format='%H')
+    WORK_DIR=$(mktemp -d) || return 1
+    mkdir -p "${WORK_DIR}/sections"
+
+    git --no-pager log --no-merges --format='%H' >"${WORK_DIR}/commits"
+    createChangelogLayout >"${WORK_DIR}/layout"
+    : >"${WORK_DIR}/existing"
     if [[ -e "$CHANGELOG_FILE" ]]; then
-        OLD_COMMIT_HASHES=$(getMDCommentSection 'COMMITS')
-        if [[ -n "$OLD_COMMIT_HASHES" ]]; then
-            NEW_CHANGELOG=0
-
-            # get commits added / removed from last changelog
-            COMMITS_ADDED=$(strarrDiff "$NEW_COMMIT_HASHES" "$OLD_COMMIT_HASHES")
-            COMMITS_REMOVED=$(strarrDiff "$OLD_COMMIT_HASHES" "$NEW_COMMIT_HASHES")
-        fi
+        EXISTING_CHANGELOG="$CHANGELOG_FILE"
+        getMDCommitSectionNames <"$CHANGELOG_FILE" >"${WORK_DIR}/existing"
     fi
 
-    # create the new header
-    printf -v HEADER '%s\n\n\n\n' "## $CHANGELOG_TITLE"
+    # one file per new commit, so the sections can be created in parallel and still be written in order
+    grep -vxFf "${WORK_DIR}/existing" "${WORK_DIR}/commits" >"${WORK_DIR}/added"
+    xargs -r -P "$JOBS" -I '{}' bash -c 'createCommitSection "$1" >"$2/$1"' _ '{}' "${WORK_DIR}/sections" <"${WORK_DIR}/added"
+    RETVAL=$?
 
-    # create changelog from scratch
-    if (( ${NEW_CHANGELOG} == 1 )); then
-        createMDRenderedSection 'HEADER' "$HEADER" > ${CHANGELOG_FILE}
-        createMDCommentSection 'COMMITS' "$NEW_COMMIT_HASHES" >> ${CHANGELOG_FILE}
-        parallel --env -k -j 0 createCommitSection ::: $NEW_COMMIT_HASHES >>${CHANGELOG_FILE}
-    # create temp changelog and merge with old
-    else
-        createMDRenderedSection 'HEADER' "$HEADER" > ${TMP_CHANGELOG_FILE}
-        createMDCommentSection 'COMMITS' "$NEW_COMMIT_HASHES" >> ${TMP_CHANGELOG_FILE}
-        parallel --env -k -j 0 createCommitSection ::: $COMMITS_ADDED >>${TMP_CHANGELOG_FILE}
-        (
-            cat ${TMP_CHANGELOG_FILE}
-            cat ${CHANGELOG_FILE} |
-                removeMDRenderedSection 'HEADER' |
-                removeMDCommentSection 'COMMITS' |
-			    removeMDRenderedSections "$COMMITS_REMOVED"
-        ) > ${CHANGELOG_FILE}
-        rm -f ${TMP_CHANGELOG_FILE}
+    if (( $RETVAL == 0 )); then
+        printf -v HEADER '%s\n\n\n\n' "## $CHANGELOG_TITLE"
+        {
+            createMDRenderedSection 'HEADER' "$HEADER" &&
+            createMDCommentSection 'COMMITS' "$(<"${WORK_DIR}/commits")" &&
+            createChangelogSections "${WORK_DIR}/layout" "${WORK_DIR}/sections" "$EXISTING_CHANGELOG"
+        } >"${WORK_DIR}/changelog" &&
+        cat "${WORK_DIR}/changelog" >"$CHANGELOG_FILE"
+        RETVAL=$?
     fi
+
+    rm -rf "$WORK_DIR"
+    return $RETVAL
 }
 
 main() {
     touch ${CHANGELOG_INDICATOR_FILE}
-    createChangelog
+    createChangelog &&
     git add ${CHANGELOG_FILE} &&
     git commit --amend -C HEAD --no-verify &&
     echo "$REMOTE_NAME" > ${REMOTE_FILE} &&

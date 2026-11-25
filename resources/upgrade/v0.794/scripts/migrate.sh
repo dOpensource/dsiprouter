@@ -1,0 +1,1793 @@
+#!/usr/bin/env bash
+
+(( ${DEBUG:-0} == 1 )) && set -x
+
+# the release this script upgrades to
+NEW_VERSION='0.794'
+# where the new project files were downloaded, this script is one of them
+NEW_PROJECT_DIR=${NEW_PROJECT_DIR:-$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/../../../..")}
+# project dir where previous repo was located
+OLD_PROJECT_DIR=${DSIP_PROJECT_DIR:-/opt/dsiprouter}
+# the backup is restored as root when the upgrade fails, so it is kept where only root can write
+# the backup directory set by previous versions of dsiprouter.sh is not used
+# it has a name that can be predicted, in a directory those versions handed to the dsiprouter user
+BACKUPS_DIR='/var/backups/dsiprouter'
+CURR_BACKUP_DIR="${BACKUPS_DIR}/$(date '+%s').$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+export CURR_BACKUP_DIR
+# system config files for dsiprouter
+DSIP_SYSTEM_CONFIG_DIR='/etc/dsiprouter'
+DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
+# system library files for dsiprouter
+DSIP_LIB_DIR='/var/lib/dsiprouter'
+SYSTEM_KAMAILIO_CONFIG_DIR='/etc/kamailio'
+SYSTEM_RTPENGINE_CONFIG_DIR='/etc/rtpengine'
+# source dirs the installer builds from, removed before a reinstall so it rebuilds them (same path as dsiprouter.sh)
+SRC_DIR='/usr/local/src'
+# schema and data files shipped with this upgrade
+UPGRADE_DIR="${NEW_PROJECT_DIR}/resources/upgrade/v${NEW_VERSION}"
+# read by the GUI of this release, releases up to 0.793 write the upgrade log of the GUI to the backups directory
+DSIP_UPGRADE_LOG='/var/log/dsiprouter/upgrade.log'
+# named apart from the db.sql/user.sql files written by installKamailio()
+KAMDB_DUMP_FILE="${CURR_BACKUP_DIR}/kam_db.sql"
+KAMDB_USER_DUMP_FILE="${CURR_BACKUP_DIR}/kam_user.sql"
+# data only rows of the kamailio DB, replayed after schema.sql so the restored rows land in the new tables
+KAMDB_DATA_FILE="${CURR_BACKUP_DIR}/kam_data.sql"
+# rows of the tables the triggers on the base tables write, restored after the base rows so the trigger output is replaced
+KAMDB_DERIVED_FILE="${CURR_BACKUP_DIR}/kam_derived.sql"
+KAMDB_DERIVED_TABLES=(dsip_gw2gwgroup dsip_gwgroup2lb)
+# tables, views, triggers and routines of the kamailio DB, object N is saved as ${KAMDB_OBJECTS_DIR}/N.sql and listed on line N of the manifest
+KAMDB_OBJECTS_DIR="${CURR_BACKUP_DIR}/kam_objects"
+KAMDB_OBJECTS_MANIFEST="${KAMDB_OBJECTS_DIR}/manifest.tsv"
+# column definitions of every kamailio base table, used to ADD COLUMN extra user columns after the reinstall
+KAMDB_COLUMNS_FILE="${CURR_BACKUP_DIR}/kam_columns.tsv"
+# systemd units and drop-in dirs the reinstall can change, each is backed up and restored as one entry
+SYSTEMD_UNITS=(dsiprouter.service kamailio.service rtpengine.service dsip-init.service mariadb.service nginx-watcher.service nginx-watcher.path
+    nginx.service dnsmasq.service dsip-request-restart.service dsip-request-upgrade.service dsip-request-provisioner.service)
+# queues for the requests of the dsiprouter user, installed and enabled by the reinstall, each is also backed up and restored as a unit
+REQUEST_SOCKET_UNITS=(dsip-request-restart.socket dsip-request-upgrade.socket dsip-request-provisioner.socket)
+SYSTEMD_UNITS+=("${REQUEST_SOCKET_UNITS[@]}")
+SYSTEMD_DROPINS=(dsiprouter.service.d kamailio.service.d rtpengine.service.d dsip-init.service.d mariadb.service.d nginx.service.d dnsmasq.service.d)
+SYSTEM_NGINX_CONFIG_DIR='/etc/nginx'
+# copies of project scripts that are only written when dnsmasq is installed, an existing copy is replaced with the script of this release
+declare -A INSTALLED_SCRIPT_COPIES=(
+    [/usr/lib/systemd/networkd-pre]='dnsmasq/configs/systemdnetworkd/networkd-pre.sh'
+    [/usr/lib/ifupdown/networking-pre]='dnsmasq/configs/ifupdown/networking-pre.sh'
+)
+# installed by previous versions, removed by this upgrade
+DSIP_SUDOERS_FILE='/etc/sudoers.d/99-dsiprouter'
+# installer-managed files restored as individual entries so unrelated files in the same directory survive
+MANAGED_FILES=(
+    /usr/bin/dsiprouter
+    "$DSIP_SUDOERS_FILE"
+    /etc/bash_completion.d/dsiprouter
+    /etc/bash.bashrc
+    /usr/share/man/man1/dsiprouter.1
+    /usr/share/man/man1/dsiprouter.1.gz
+    /usr/sbin/nginx-stop
+    /etc/logrotate.d/kamailio
+    /etc/logrotate.d/rtpengine
+    /etc/rsyslog.d/kamailio.conf
+    /etc/rsyslog.d/rtpengine.conf
+    "${!INSTALLED_SCRIPT_COPIES[@]}"
+)
+# package sources the reinstall rewrites, restored with the packages so the package manager is back on the repos of the saved versions
+PKG_SOURCE_FILES=(
+    /etc/apt/sources.list.d/kamailio.list
+    /etc/apt/preferences.d/kamailio.pref
+    /etc/apt/trusted.gpg.d/kamailiodebkey.gpg
+    /etc/yum.repos.d/kamailio.repo
+)
+# packages the reinstall replaces, an installable copy of each is saved and reinstalled when the upgrade fails
+PKG_PATTERNS=('kamailio*' 'ngcp-rtpengine*')
+PKG_BACKUP_DIR="${CURR_BACKUP_DIR}/packages"
+# one line per saved package: name, version, architecture
+PKG_MANIFEST="${PKG_BACKUP_DIR}/manifest.tsv"
+# kamailio modules dir, holds the modules built by the installer that no package owns, empty when kamailio is not installed
+KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
+
+# state read by resetConfigsHandler to decide what can be restored safely
+MIGRATION_COMPLETE=0
+BACKUP_COMPLETE=0
+CHANGES_STARTED=0
+KAM_DB_BACKED_UP=0
+KAM_DB_TOUCHED=0
+PKG_BACKED_UP=0
+MASKED_UNITS=()
+STOPPED_UNITS=()
+
+if [[ ! -f "${OLD_PROJECT_DIR}/dsiprouter/dsip_lib.sh" ]]; then
+    echo "could not find the installed dSIPRouter project files" >&2
+    echo "expected dsip_lib.sh to be here: ${OLD_PROJECT_DIR}/dsiprouter/dsip_lib.sh" >&2
+    exit 1
+fi
+# import dsip_lib utility / shared functions
+. ${OLD_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+
+# releases up to 0.793 run the upgrade as a child of the GUI, stopping dsiprouter.service kills what is left in its control group
+# the upgrade is moved to a scope of its own before anything is checked or changed
+if [[ -z "${DSIP_UPGRADE_SCOPED:-}" ]] && grep -q '/dsiprouter\.service' /proc/self/cgroup 2>/dev/null; then
+    if ! cmdExists 'systemd-run'; then
+        printerr 'the upgrade was started by the dsiprouter service and can not be moved out of it, no changes were made'
+        echo "run the upgrade from a shell instead: dsiprouter upgrade -rel ${NEW_VERSION}"
+        exit 1
+    fi
+    export DSIP_UPGRADE_SCOPED=1
+    exec systemd-run --scope bash "$(readlink -f "${BASH_SOURCE[0]}")" "$@"
+fi
+
+# preflight: nothing below this point is changed until the checks pass
+[[ ! -e "$NEW_PROJECT_DIR" ]] && {
+    printerr 'could not find repo to upgrade from'
+    echo "expected updated repo to be here: $NEW_PROJECT_DIR"
+    exit 1
+}
+# code is loaded from the new project files and they replace the installed ones, so no other user may be able to change them
+# releases up to 0.793 download them to a fixed path in /tmp, where another user can create the directory first
+if [[ -L "$NEW_PROJECT_DIR" || -z "$(find "$NEW_PROJECT_DIR" -maxdepth 0 -type d -uid "$(id -u)" ! -perm /022 -print)" ]]; then
+    printerr 'the new project files are in a directory that other users can change, no changes were made'
+    echo "expected a directory owned by the user running the upgrade and writable by that user only: $NEW_PROJECT_DIR"
+    exit 1
+fi
+[[ ! -f "${UPGRADE_DIR}/schema.sql" || ! -f "${UPGRADE_DIR}/settings.json" ]] && {
+    printerr 'new project files for this upgrade are missing'
+    echo "expected files to be here: ${UPGRADE_DIR}"
+    exit 1
+}
+# the next upgrade reads the installed version from the project files, so they must carry the version of this release
+[[ "$(getConfigAttrib 'VERSION' "${NEW_PROJECT_DIR}/gui/settings.py")" == "$NEW_VERSION" ]] || {
+    printerr "the new project files are not version ${NEW_VERSION}, no changes were made"
+    echo "expected VERSION = '${NEW_VERSION}' in: ${NEW_PROJECT_DIR}/gui/settings.py"
+    exit 1
+}
+[[ -f "$DSIP_CONFIG_FILE" ]] || {
+    printerr "could not find the dSIPRouter config: ${DSIP_CONFIG_FILE}"
+    exit 1
+}
+
+# what is migrated depends on the installed version
+# each case covers the differences between the release tag of that version and this release
+OLD_VERSION=$(getConfigAttrib 'VERSION' "$DSIP_CONFIG_FILE")
+# kamailio has to be reinstalled: its configs, modules, install scripts or the schema of its DB changed
+KAM_CHANGED=0
+# installed by 0.78 only: unit files that replace the unit of the package, rtpengine reading its config from the dsiprouter config dir
+LEGACY_LAYOUT=0
+# project files removed since the installed version, copying the new project files over the old ones leaves them behind
+REMOVED_PROJECT_FILES=(
+    cloud/build_image.sh
+    cloud/build_instance.sh
+    dsiprouter/sudoers.d/99-dsiprouter
+)
+case "$OLD_VERSION" in
+0.793)
+    ;;
+0.79|0.791|0.792)
+    KAM_CHANGED=1
+    ;;
+0.78)
+    KAM_CHANGED=1
+    LEGACY_LAYOUT=1
+    REMOVED_PROJECT_FILES+=(
+        dnsmasq/init.d/dnsmasq
+        rtpengine/rtpengine-start-pre
+        rtpengine/rtpengine-stop-post
+        gui/static/css/bootstrap-theme.css
+        gui/static/css/bootstrap-theme.css.map
+        gui/static/css/bootstrap-theme.min.css
+        gui/static/css/bootstrap-theme.min.css.map
+        gui/static/css/bootstrap-toggle.css
+        gui/static/css/bootstrap-toggle.min.css
+        gui/static/css/titatoggle-dist.css
+        gui/static/fonts/glyphicons-halflings-regular.eot
+        gui/static/fonts/glyphicons-halflings-regular.svg
+        gui/static/fonts/glyphicons-halflings-regular.ttf
+        gui/static/fonts/glyphicons-halflings-regular.woff
+        gui/static/fonts/glyphicons-halflings-regular.woff2
+        gui/static/js/bootstrap-datepicker.min.js
+        gui/static/js/bootstrap-toggle.js
+        gui/static/js/bootstrap-toggle.min.js
+        gui/static/js/bootstrap-toggle.min.js.map
+        gui/static/js/bootstrap.js
+        gui/static/js/bootstrap.min.js
+    )
+    ;;
+*)
+    printerr "upgrading from version ${OLD_VERSION:-unknown} to ${NEW_VERSION} is not supported, no changes were made"
+    exit 1
+    ;;
+esac
+
+# 0.78 found its project files next to the dsiprouter.sh that was run, later releases only run from /opt/dsiprouter
+if (( LEGACY_LAYOUT == 1 )) && [[ ! /opt/dsiprouter -ef "$OLD_PROJECT_DIR" ]]; then
+    printerr "dSIPRouter is installed in ${OLD_PROJECT_DIR}, this release only runs from /opt/dsiprouter, no changes were made"
+    exit 1
+fi
+
+printdbg 'validating system configuration'
+if ! dsiprouter licensemanager -check tag=DSIP_CORE; then
+    printerr 'A DSIP_CORE license is required to use the auto upgrade feature'
+    echo 'Consider supporting the hard working engineers maintaining this software if you would like to use this feature'
+    exit 1
+fi
+
+# OS support map mirrors validateOSInfo() in dsiprouter.sh, values must stay in sync
+unset NEW_KAM_VERSION NEW_RTPENGINE_VER
+DISTRO=$(getDistroName)
+DISTRO_VER=$(getDistroVer)
+DISTRO_MAJOR_VER=$(cut -d '.' -f 1 <<<"$DISTRO_VER")
+case "$DISTRO" in
+debian)
+    case "$DISTRO_VER" in
+    13)
+        NEW_KAM_VERSION="6.0.3"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    12|11|10)
+        NEW_KAM_VERSION="5.8.3"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    9)
+        NEW_KAM_VERSION="5.7.6"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    esac
+    ;;
+centos)
+    case "$DISTRO_VER" in
+    9)
+        NEW_KAM_VERSION="6.0.2"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    8)
+        NEW_KAM_VERSION="5.8.3"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    7)
+        NEW_KAM_VERSION="5.7.6"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    esac
+    ;;
+amzn)
+    case "$DISTRO_VER" in
+    2)
+        NEW_KAM_VERSION="5.7.6"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    esac
+    ;;
+ubuntu)
+    case "$DISTRO_VER" in
+    24.04)
+        NEW_KAM_VERSION="5.8.4"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    22.04)
+        NEW_KAM_VERSION="5.8.3"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    20.04)
+        NEW_KAM_VERSION="5.8.3"
+        NEW_RTPENGINE_VER="mr9.5.5.1"
+        ;;
+    esac
+    ;;
+rhel)
+    case "$DISTRO_MAJOR_VER" in
+    9)
+        NEW_KAM_VERSION="5.8.3"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    8)
+        NEW_KAM_VERSION="5.8.3"
+        NEW_RTPENGINE_VER="mr9.5.5.1"
+        ;;
+    esac
+    ;;
+almalinux)
+    case "$DISTRO_MAJOR_VER" in
+    9)
+        NEW_KAM_VERSION="5.8.3"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    8)
+        NEW_KAM_VERSION="5.8.3"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    esac
+    ;;
+rocky)
+    case "$DISTRO_MAJOR_VER" in
+    9)
+        NEW_KAM_VERSION="5.8.3"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    8)
+        NEW_KAM_VERSION="5.8.3"
+        NEW_RTPENGINE_VER="mr11.5.1.11"
+        ;;
+    esac
+    ;;
+esac
+if [[ -z "$NEW_KAM_VERSION" || -z "$NEW_RTPENGINE_VER" ]]; then
+    printerr 'Your Operating System Version is not supported by this upgrade'
+    exit 1
+fi
+export NEW_KAM_VERSION NEW_RTPENGINE_VER
+
+printdbg 'retrieving current system settings'
+# NOTE: the SET_* exports are read by the reinstall (dsiprouter.sh) so existing secrets are kept
+# reads an encrypted setting into a variable
+# an encrypted empty secret is stored as nonce-only hex (length 2*AES_CTR_NONCE_SIZE) and is valid
+# note: sets the variable directly (no subshell) so that exit is honored
+# usage: loadSecret <attribute name> <variable name>
+function loadSecret() {
+    local NAME="$1"
+    local VAR="$2"
+    local RAW VALUE PK_FILE
+    local NONCE_HEX_LEN=$(( ${AES_CTR_NONCE_SIZE:-0} * 2 ))
+    local ENCRYPTED=0
+
+    RAW=$(getConfigAttrib "$NAME" "$DSIP_CONFIG_FILE")
+    if grep -qE "^${NAME}[[:space:]]*=[[:space:]]*b['\"]" "$DSIP_CONFIG_FILE"; then
+        ENCRYPTED=1
+    fi
+
+    if (( ENCRYPTED == 1 )); then
+        PK_FILE=$(getConfigAttrib 'DSIP_PRIV_KEY' "$DSIP_CONFIG_FILE")
+        if [[ ! -r "$PK_FILE" ]]; then
+            printerr "could not decrypt ${NAME}: DSIP_PRIV_KEY is missing or unreadable, no changes were made"
+            exit 1
+        fi
+        if (( NONCE_HEX_LEN == 0 )); then
+            printerr "could not decrypt ${NAME}: AES_CTR_NONCE_SIZE is unset, no changes were made"
+            exit 1
+        fi
+    fi
+
+    VALUE=$(decryptConfigAttrib "$NAME" "$DSIP_CONFIG_FILE")
+    if (( ENCRYPTED == 1 )) && (( ${#RAW} > NONCE_HEX_LEN )) && [[ -z "$VALUE" ]]; then
+        printerr "could not decrypt ${NAME} from ${DSIP_CONFIG_FILE}, no changes were made"
+        exit 1
+    fi
+    printf -v "$VAR" '%s' "$VALUE"
+}
+
+# NOTE: the privkey file is not exported here, the reinstall keeps the existing key file
+export PYTHON_CMD=${OLD_PROJECT_DIR}/venv/bin/python
+SET_ROOT_DB_USER=$(getConfigAttrib 'ROOT_DB_USER' "$DSIP_CONFIG_FILE")
+export SET_ROOT_DB_USER ROOT_DB_USER="$SET_ROOT_DB_USER"
+loadSecret 'ROOT_DB_PASS' SET_ROOT_DB_PASS
+export SET_ROOT_DB_PASS ROOT_DB_PASS="$SET_ROOT_DB_PASS"
+ROOT_DB_HOST=$(getConfigAttrib 'ROOT_DB_HOST' "$DSIP_CONFIG_FILE")
+ROOT_DB_PORT=$(getConfigAttrib 'ROOT_DB_PORT' "$DSIP_CONFIG_FILE")
+ROOT_DB_NAME=$(getConfigAttrib 'ROOT_DB_NAME' "$DSIP_CONFIG_FILE")
+KAM_DB_NAME=$(getConfigAttrib 'KAM_DB_NAME' "$DSIP_CONFIG_FILE")
+SET_KAM_DB_HOST=$(getConfigAttrib 'KAM_DB_HOST' "$DSIP_CONFIG_FILE")
+export SET_KAM_DB_HOST KAM_DB_HOST="$SET_KAM_DB_HOST"
+SET_KAM_DB_USER=$(getConfigAttrib 'KAM_DB_USER' "$DSIP_CONFIG_FILE")
+export SET_KAM_DB_USER KAM_DB_USER="$SET_KAM_DB_USER"
+loadSecret 'KAM_DB_PASS' SET_KAM_DB_PASS
+export SET_KAM_DB_PASS KAM_DB_PASS="$SET_KAM_DB_PASS"
+loadSecret 'DSIP_API_TOKEN' SET_DSIP_API_TOKEN
+export SET_DSIP_API_TOKEN DSIP_API_TOKEN="$SET_DSIP_API_TOKEN"
+loadSecret 'MAIL_PASSWORD' SET_DSIP_MAIL_PASS
+export SET_DSIP_MAIL_PASS MAIL_PASSWORD="$SET_DSIP_MAIL_PASS"
+loadSecret 'DSIP_IPC_PASS' SET_DSIP_IPC_TOKEN
+export SET_DSIP_IPC_TOKEN DSIP_IPC_PASS="$SET_DSIP_IPC_TOKEN"
+DSIP_LICENSE_STORE=$(getConfigAttrib 'DSIP_LICENSE_STORE' "$DSIP_CONFIG_FILE")
+export ROOT_DB_HOST ROOT_DB_PORT ROOT_DB_NAME KAM_DB_NAME DSIP_LICENSE_STORE
+
+printdbg 'preparing for migration'
+KAM_INSTALLED=0
+REINSTALL_KAMAILIO=0
+REINSTALL_DSIPROUTER=0
+REINSTALL_RTPENGINE=0
+if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]]; then
+    KAM_INSTALLED=1
+    REINSTALL_KAMAILIO=$KAM_CHANGED
+fi
+if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+    REINSTALL_DSIPROUTER=1
+fi
+if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
+    OLD_RTPENGINE_VER=$(rtpengine -v 2>&1 | awk '{print $2}' | cut -d '~' -f 2)
+    # the rtpengine install of 0.78 is replaced even at the same version
+    # its rtpengine user can not read the config once the dsiprouter config dir belongs to the dsiprouter group
+    if (( LEGACY_LAYOUT == 1 )) || [[ "$OLD_RTPENGINE_VER" != "$NEW_RTPENGINE_VER" ]]; then
+        REINSTALL_RTPENGINE=1
+    fi
+fi
+
+# 0.78 stored DSIP_LICENSE_STORE encoded in dsip_settings, later releases store it as the GUI writes it
+# only matters when the GUI loads its settings from the DB, the value the reinstalled GUI wrote is then kept for that column
+LEGACY_LICENSE_STORE=0
+if (( LEGACY_LAYOUT == 1 && REINSTALL_KAMAILIO == 1 && REINSTALL_DSIPROUTER == 1 )) &&
+    [[ "$(getConfigAttrib 'LOAD_SETTINGS_FROM' "$DSIP_CONFIG_FILE")" == 'db' ]]; then
+    LEGACY_LICENSE_STORE=1
+fi
+
+# a unit file of 0.78 that is unchanged gets the drop-in later releases install, so an update of the package can not undo the unit
+# the unit is matched against the unit files of the installed project, which are replaced when the project files are migrated
+declare -A LEGACY_UNIT_DROPINS=()
+if (( LEGACY_LAYOUT == 1 )); then
+    for SERVICE in nginx dnsmasq; do
+        [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.${SERVICE}installed" ]] || continue
+        [[ -e "/etc/systemd/system/${SERVICE}.service.d/override.conf" ]] && continue
+        for FILE in "${OLD_PROJECT_DIR}/${SERVICE}/systemd/${SERVICE}"-v*.service; do
+            if cmp -s "$FILE" "/lib/systemd/system/${SERVICE}.service" && [[ -f "${NEW_PROJECT_DIR}/${SERVICE}/systemd/${FILE##*/}" ]]; then
+                LEGACY_UNIT_DROPINS["$SERVICE"]="${FILE##*/}"
+                break
+            fi
+        done
+        if [[ -z "${LEGACY_UNIT_DROPINS[$SERVICE]:-}" ]]; then
+            printwarn "${SERVICE}.service is not the unit installed by dSIPRouter ${OLD_VERSION}, it is left as it is"
+        fi
+    done
+fi
+
+DB_CONNECTED=0
+if withRootDBConn mysql -sN -e 'SELECT 1;' </dev/null >/dev/null 2>&1; then
+    DB_CONNECTED=1
+fi
+# the kamailio DB is only in scope when kamailio is installed, otherwise it is never dumped, restored or written
+KAM_DB_EXISTS=0
+if (( KAM_INSTALLED == 1 && DB_CONNECTED == 1 )) && checkDB "$KAM_DB_NAME"; then
+    KAM_DB_EXISTS=1
+fi
+if (( KAM_INSTALLED == 1 )); then
+    if (( DB_CONNECTED == 0 )); then
+        printerr 'kamailio is installed but the root DB connection failed, no changes were made'
+        exit 1
+    fi
+    if (( KAM_DB_EXISTS == 0 )); then
+        printerr "kamailio is installed but the DB ${KAM_DB_NAME} was not found, no changes were made"
+        exit 1
+    fi
+fi
+
+# the kamailio DB user must be a real account that is not the root DB user, restore drops and recreates it
+if (( KAM_DB_EXISTS == 1 )) && [[ -z "$KAM_DB_USER" || "$KAM_DB_USER" == "$ROOT_DB_USER" ]]; then
+    printerr 'the kamailio DB user must be set and must differ from the root DB user, no changes were made'
+    exit 1
+fi
+
+# these names are interpolated into SQL, so only plain identifiers are accepted
+if (( KAM_DB_EXISTS == 1 )) && [[ ! "$KAM_DB_NAME" =~ ^[A-Za-z0-9_]+$ || ! "$KAM_DB_USER" =~ ^[A-Za-z0-9_]+$ ]]; then
+    printerr 'the kamailio DB name and DB user may only contain letters, digits and underscores, no changes were made'
+    exit 1
+fi
+
+# never reuse a backup dir that already has content, it could be stale or partial
+if [[ -e "$CURR_BACKUP_DIR" ]] && [[ -n "$(ls -A "$CURR_BACKUP_DIR" 2>/dev/null)" ]]; then
+    printerr "backup directory already has content, refusing to reuse it: ${CURR_BACKUP_DIR}"
+    exit 1
+fi
+
+# secureBackupsDir() makes the backups directory writable by root only, the installed version does not have it
+# only that function is taken from the dsip_lib.sh of this release, the rest of it is loaded after the reinstall
+unset -f secureBackupsDir
+eval "$(unset DSIP_LIB_IMPORTED; . "${NEW_PROJECT_DIR}/dsiprouter/dsip_lib.sh" &>/dev/null; declare -f secureBackupsDir)"
+if ! declare -F secureBackupsDir >/dev/null; then
+    printerr "could not load secureBackupsDir() from ${NEW_PROJECT_DIR}/dsiprouter/dsip_lib.sh"
+    exit 1
+fi
+
+# copies a directory tree from the system into the backup, mirrored under the same absolute path
+# usage: backupTree <system dir>
+# notes: a tree that does not exist is recorded with a marker, so restore removes whatever the upgrade creates
+function backupTree() {
+    local SRC="$1"
+    local DST="${CURR_BACKUP_DIR}${SRC}"
+
+    if [[ ! -e "$SRC" && ! -L "$SRC" ]]; then
+        mkdir -p "$(dirname "$DST")" && touch "${DST}.absent"
+        return
+    fi
+    mkdir -p "$DST" && cp -afP "${SRC}/." "${DST}/"
+}
+
+# replaces a directory tree in the system with the backed up copy
+# usage: restoreTree <system dir>
+function restoreTree() {
+    local DST="$1"
+    local SRC="${CURR_BACKUP_DIR}${DST}"
+
+    # refuse to wipe anything other than an absolute directory path
+    [[ "$DST" == /* && "$DST" != "/" ]] || {
+        printerr "refusing to restore into an unexpected path: ${DST}"
+        return 1
+    }
+    if [[ -e "${SRC}.absent" ]]; then
+        rm -rf "$DST"
+        return
+    fi
+    [[ -d "$SRC" ]] || {
+        printerr "backup directory is missing, cannot restore: ${SRC}"
+        return 1
+    }
+    rm -rf "$DST" && mkdir -p "$DST" && cp -afP "${SRC}/." "${DST}/"
+}
+
+# copies a single file, symlink or directory from the system into the backup, mirrored under the same path
+# usage: backupEntry <system path>
+# notes: absent entries are skipped, restoreEntry treats an entry missing from the backup as absent
+function backupEntry() {
+    local SRC="$1"
+    local DST_DIR
+
+    [[ -e "$SRC" || -L "$SRC" ]] || return 0
+    DST_DIR="${CURR_BACKUP_DIR}$(dirname "$SRC")"
+    mkdir -p "$DST_DIR" && cp -afP "$SRC" "${DST_DIR}/"
+}
+
+# puts a single file, symlink or directory back, whatever the upgrade left in its place is removed
+# usage: restoreEntry <system path>
+function restoreEntry() {
+    local DST="$1"
+    local SRC="${CURR_BACKUP_DIR}${DST}"
+
+    [[ "$DST" == /* && "$DST" != "/" && -n "${DST##*/}" ]] || {
+        printerr "refusing to restore into an unexpected path: ${DST}"
+        return 1
+    }
+    rm -rf "$DST" || return 1
+    if [[ -e "$SRC" || -L "$SRC" ]]; then
+        mkdir -p "$(dirname "$DST")" || return 1
+        cp -afP "$SRC" "$(dirname "$DST")/" || return 1
+    fi
+}
+
+# snapshots the root crontab, or records that none existed
+function backupCrontab() {
+    local DST="${CURR_BACKUP_DIR}/crontab.root"
+    local STDERR="${CURR_BACKUP_DIR}/crontab.root.stderr"
+    local CRONTAB_ERROR
+
+    mkdir -p "$CURR_BACKUP_DIR" || return 1
+    command -v crontab >/dev/null 2>&1 || {
+        printerr 'crontab is not available, cannot back up root crontab'
+        return 1
+    }
+    if crontab -u root -l >"$DST" 2>"$STDERR"; then
+        rm -f "$STDERR" || return 1
+        return 0
+    fi
+    CRONTAB_ERROR=$(<"$STDERR")
+    rm -f "$DST" "$STDERR" || return 1
+    if [[ "$CRONTAB_ERROR" == *'no crontab for'* ]]; then
+        touch "${DST}.absent"
+        return
+    fi
+    printerr "could not read root crontab: ${CRONTAB_ERROR:-unknown error}"
+    return 1
+}
+
+# restores the root crontab from the snapshot, or removes one the upgrade created
+function restoreCrontab() {
+    local SRC="${CURR_BACKUP_DIR}/crontab.root"
+
+    if [[ -e "${SRC}.absent" ]]; then
+        if command -v crontab >/dev/null 2>&1; then
+            crontab -u root -r >/dev/null 2>&1 || true
+        fi
+        return 0
+    fi
+    [[ -f "$SRC" ]] || {
+        printerr "crontab backup is missing, cannot restore"
+        return 1
+    }
+    command -v crontab >/dev/null 2>&1 || {
+        printerr "crontab is not available, cannot restore"
+        return 1
+    }
+    crontab -u root "$SRC"
+}
+
+# dumps the kamailio DB user accounts so they can be restored
+# output: CREATE USER (when the server supports SHOW CREATE USER) then GRANT statements
+# notes: SHOW CREATE USER carries the password hash on MySQL 8, where SHOW GRANTS does not
+# returns: 0 on success, non zero otherwise
+function dumpKamDBGrants() {
+    local ACCOUNTS CREATE_USER GRANTS ACCOUNT
+    local ACCOUNT_LIST=()
+    local ALL_SQL=''
+
+    ACCOUNTS=$(withRootDBConn mysql -sN -A \
+        -e "SELECT CONCAT(QUOTE(user), '@', QUOTE(host)) FROM mysql.user WHERE user='${KAM_DB_USER}';" \
+        </dev/null 2>/dev/null) || return 1
+    mapfile -t ACCOUNT_LIST <<<"$ACCOUNTS"
+    for ACCOUNT in "${ACCOUNT_LIST[@]}"; do
+        [[ -n "$ACCOUNT" ]] || continue
+        CREATE_USER=$(withRootDBConn mysql -sN -A -e "SHOW CREATE USER ${ACCOUNT};" </dev/null 2>/dev/null) || CREATE_USER=''
+        GRANTS=$(withRootDBConn mysql -sN -A -e "SHOW GRANTS FOR ${ACCOUNT};" </dev/null 2>/dev/null) || return 1
+        [[ -n "$CREATE_USER" ]] && ALL_SQL+="${CREATE_USER}"$'\n'
+        ALL_SQL+="${GRANTS}"$'\n'
+    done
+    [[ -n "$ALL_SQL" ]] && awk 'NF && !x[$0]++ { if ($0 ~ /;$/) print $0; else print $0 ";" }' <<<"$ALL_SQL"
+    printf '%s\n' 'FLUSH PRIVILEGES;'
+}
+
+# dumps the kamailio DB for rollback, DEFINER clauses are kept so restored objects are not root-owned
+# usage: dumpKamDBFull <db>
+# output: dumped database as sql (redirect as needed)
+# returns: 0 on success, non zero otherwise
+function dumpKamDBFull() {
+    withRootDBConn mysqldump --single-transaction --opt --routines --triggers --hex-blob --databases "$1" \
+        2>/dev/null |
+        sed -r -e 's|ENGINE=MyISAM|ENGINE=InnoDB|g' 2>/dev/null
+    return ${PIPESTATUS[0]}
+}
+
+# dumps one view as a replayable CREATE VIEW statement, the original DEFINER is kept so the view does not become root-owned
+# usage: dumpKamDBView <db> <view>
+# output: the statement and a completion line (redirect as needed)
+# returns: 0 on success, non zero otherwise
+function dumpKamDBView() {
+    local DB="$1" NAME="$2"
+    local RAW VIEW_SQL
+
+    RAW=$(withRootDBConn mysql -e "SHOW CREATE VIEW \`${DB}\`.\`${NAME}\`\G" </dev/null 2>/dev/null) || return 1
+    # vertical output right-aligns the labels, so they are matched with leading spaces allowed
+    # the view body keeps its DB qualifier, views are only replayed into the DB they were dumped from (KAM_DB_NAME)
+    VIEW_SQL=$(sed -n '/^ *Create View: /,/^ *character_set_client: /{/^ *character_set_client: /d;s/^ *Create View: //;p}' <<<"$RAW") || return 1
+    [[ -n "$VIEW_SQL" ]] || return 1
+    printf '%s;\n' "$VIEW_SQL"
+    echo '-- Dump completed'
+}
+
+# dumps only the rows of the kamailio DB, with column names so a re-ordered table still loads correctly
+# output: INSERT statements with the -- Dump completed marker on success (redirect as needed)
+# returns: 0 on success, non zero otherwise
+function dumpKamDBData() {
+    # version is not dumped, the reinstall sets the schema versions the reinstalled kamailio needs
+    withRootDBConn mysqldump --single-transaction --no-create-info --no-create-db --complete-insert \
+        --replace --skip-triggers --hex-blob --ignore-table="${1}.version" "$1" 2>/dev/null
+}
+
+# lists the base tables of a DB that are restored from the data dump, version is left out
+# usage: kamDBBaseTables <db>
+# output: one table name per line
+# returns: 0 on success, non zero otherwise
+function kamDBBaseTables() {
+    [[ "$1" =~ ^[A-Za-z0-9_]+$ ]] || return 1
+    withRootDBConn mysql -sN -e "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='${1}' AND TABLE_TYPE='BASE TABLE' AND TABLE_NAME <> 'version';" </dev/null 2>/dev/null
+}
+
+# lists the named tables of a DB that exist as base tables
+# usage: kamDBTablesIn <db> <table>...
+# output: one table name per line, nothing when none exist
+# returns: 0 on success, non zero otherwise
+function kamDBTablesIn() {
+    local DB="$1"
+    local NAME LIST=''
+
+    shift
+    [[ "$DB" =~ ^[A-Za-z0-9_]+$ ]] || return 1
+    for NAME in "$@"; do
+        [[ "$NAME" =~ ^[A-Za-z0-9_]+$ ]] || return 1
+        LIST+="'${NAME}',"
+    done
+    [[ -n "$LIST" ]] || return 0
+    withRootDBConn mysql -sN -e "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='${DB}' AND TABLE_TYPE='BASE TABLE' AND TABLE_NAME IN (${LIST%,});" </dev/null 2>/dev/null
+}
+
+# empties the named tables of a DB, foreign key checks are off so the table order does not matter
+# triggers do not fire on TRUNCATE, so the rows written by triggers are not re-created by emptying
+# usage: truncateKamDBTables <db> <table>...
+# returns: 0 on success, non zero otherwise
+function truncateKamDBTables() {
+    local DB="$1"
+    local NAME SQL='SET FOREIGN_KEY_CHECKS=0;'
+    local COUNT=0
+
+    shift
+    [[ "$DB" =~ ^[A-Za-z0-9_]+$ ]] || return 1
+    for NAME in "$@"; do
+        [[ -n "$NAME" ]] || continue
+        [[ "$NAME" =~ ^[A-Za-z0-9_]+$ ]] || {
+            printerr "unexpected table name in ${DB}: ${NAME}"
+            return 1
+        }
+        SQL+="TRUNCATE TABLE \`${NAME}\`;"
+        COUNT=$((COUNT + 1))
+    done
+    (( COUNT == 0 )) && return 0
+    SQL+='SET FOREIGN_KEY_CHECKS=1;'
+    withRootDBConn --db="$DB" mysql -e "$SQL" </dev/null
+}
+
+# dumps the rows of the derived tables, they are restored from this dump and not from the trigger output
+# output: INSERT statements with the -- Dump completed marker, or only the marker when none of the tables exist
+# returns: 0 on success, non zero otherwise
+function dumpKamDBDerived() {
+    local DB="$1"
+    local TABLES
+    local TABLE_LIST=()
+
+    TABLES=$(kamDBTablesIn "$DB" "${KAMDB_DERIVED_TABLES[@]}") || return 1
+    mapfile -t TABLE_LIST < <(sed '/^$/d' <<<"$TABLES")
+    if (( ${#TABLE_LIST[@]} == 0 )); then
+        echo '-- Dump completed'
+        return 0
+    fi
+    withRootDBConn mysqldump --single-transaction --no-create-info --no-create-db --complete-insert \
+        --replace --skip-triggers --hex-blob "$DB" "${TABLE_LIST[@]}" 2>/dev/null
+}
+
+# lists the tables, views, triggers and routines of a DB, version is left out of the tables
+# usage: kamDBObjectList <db>
+# output: one <kind><TAB><name> line per object, kind is TABLE, VIEW, TRIGGER, PROCEDURE or FUNCTION
+# returns: 0 on success, non zero otherwise
+function kamDBObjectList() {
+    [[ "$1" =~ ^[A-Za-z0-9_]+$ ]] || return 1
+    withRootDBConn mysql -sN -e "SELECT 'TABLE', TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='${1}' AND TABLE_TYPE='BASE TABLE' AND TABLE_NAME <> 'version' UNION ALL SELECT 'VIEW', TABLE_NAME FROM information_schema.VIEWS WHERE TABLE_SCHEMA='${1}' UNION ALL SELECT 'TRIGGER', TRIGGER_NAME FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA='${1}' UNION ALL SELECT ROUTINE_TYPE, ROUTINE_NAME FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA='${1}';" </dev/null 2>/dev/null
+}
+
+# lists the distinct DEFINER accounts of views, triggers and routines in a DB
+# usage: kamDBDefiners <db>
+# output: one user@host line per account
+# returns: 0 on success, non zero otherwise
+function kamDBDefiners() {
+    local DB="$1"
+    local OUT='' PART
+
+    [[ "$DB" =~ ^[A-Za-z0-9_]+$ ]] || return 1
+    PART=$(withRootDBConn mysql -sN -e "SELECT DEFINER FROM information_schema.VIEWS WHERE TABLE_SCHEMA='${DB}' AND DEFINER IS NOT NULL AND DEFINER <> '';" </dev/null 2>/dev/null) || return 1
+    OUT+="${PART}"$'\n'
+    PART=$(withRootDBConn mysql -sN -e "SELECT DEFINER FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA='${DB}' AND DEFINER IS NOT NULL AND DEFINER <> '';" </dev/null 2>/dev/null) || return 1
+    OUT+="${PART}"$'\n'
+    PART=$(withRootDBConn mysql -sN -e "SELECT DEFINER FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA='${DB}' AND DEFINER IS NOT NULL AND DEFINER <> '';" </dev/null 2>/dev/null) || return 1
+    OUT+="${PART}"$'\n'
+    sed '/^$/d' <<<"$OUT" | sort -u
+}
+
+# dumps one trigger, procedure or function as a replayable statement, the original DEFINER is kept so the object does not become root-owned
+# usage: dumpKamDBRoutine <db> <TRIGGER|PROCEDURE|FUNCTION> <name>
+# output: the statement with its SQL mode and a completion line (redirect as needed)
+# returns: 0 on success, non zero otherwise
+function dumpKamDBRoutine() {
+    local DB="$1" KIND="$2" NAME="$3"
+    local LABEL RAW MODE SQL
+
+    case "$KIND" in
+    TRIGGER) LABEL='SQL Original Statement' ;;
+    PROCEDURE) LABEL='Create Procedure' ;;
+    FUNCTION) LABEL='Create Function' ;;
+    *) return 1 ;;
+    esac
+    RAW=$(withRootDBConn mysql -e "SHOW CREATE ${KIND} \`${DB}\`.\`${NAME}\`\G" </dev/null 2>/dev/null) || return 1
+    # the SQL mode is replayed so the body parses the same way it did before the upgrade
+    MODE=$(sed -n 's/^ *sql_mode: //p' <<<"$RAW")
+    MODE=${MODE//\'/\'\'}
+    SQL=$(sed -n "/^ *${LABEL}: /,/^ *character_set_client: /{/^ *character_set_client: /d;s/^ *${LABEL}: //;p}" <<<"$RAW") || return 1
+    [[ -n "$SQL" ]] || return 1
+    printf "SET SESSION sql_mode='%s';\n" "$MODE"
+    printf 'DELIMITER //\n%s//\nDELIMITER ;\n' "$SQL"
+    echo '-- Dump completed'
+}
+
+# dumps the tables, views, triggers and routines of a DB, so the ones the reinstall does not create can be restored
+# usage: dumpKamDBObjects <db> <dir>
+# output: <dir>/manifest.tsv with one <kind><TAB><name> line per object, object N is saved as <dir>/N.sql
+# returns: 0 on success, non zero otherwise
+function dumpKamDBObjects() {
+    local DB="$1" DIR="$2"
+    local LIST KIND NAME OUT
+    local N=0
+
+    LIST=$(kamDBObjectList "$DB") || return 1
+    mkdir -p "$DIR" || return 1
+    : >"${DIR}/manifest.tsv" || return 1
+    while IFS=$'\t' read -r KIND NAME; do
+        [[ -n "$KIND" ]] || continue
+        N=$((N + 1))
+        OUT="${DIR}/${N}.sql"
+        case "$KIND" in
+        TABLE)
+            # structure only, the rows come from the data dump
+            withRootDBConn mysqldump --no-data --skip-triggers --skip-add-drop-table --no-create-db "$DB" "$NAME" </dev/null 2>/dev/null >"$OUT" || return 1
+            ;;
+        VIEW)
+            dumpKamDBView "$DB" "$NAME" >"$OUT" || return 1
+            ;;
+        TRIGGER|PROCEDURE|FUNCTION)
+            dumpKamDBRoutine "$DB" "$KIND" "$NAME" >"$OUT" || return 1
+            ;;
+        *)
+            return 1
+            ;;
+        esac
+        grep -q '^-- Dump completed' "$OUT" || return 1
+        printf '%s\t%s\n' "$KIND" "$NAME" >>"${DIR}/manifest.tsv" || return 1
+    done <<<"$LIST"
+}
+
+# dumps the column definitions of every base table, used to ADD COLUMN extra user columns after the reinstall
+# usage: dumpKamDBColumns <db>
+# output: one <table><TAB><column><TAB><column ddl> line per column (redirect as needed)
+# returns: 0 on success, non zero otherwise
+function dumpKamDBColumns() {
+    local DB="$1"
+    local BASE RAW TABLE COL DDL COL_SQL
+
+    [[ "$DB" =~ ^[A-Za-z0-9_]+$ ]] || return 1
+    BASE=$(kamDBBaseTables "$DB") || return 1
+    # COLUMN_DEFAULT is already a SQL literal on MariaDB 10.2+ (quoted strings, current_timestamp(), numbers)
+    COL_SQL="SELECT TABLE_NAME, COLUMN_NAME, CONCAT('\`', COLUMN_NAME, '\` ', COLUMN_TYPE, IF(CHARACTER_SET_NAME IS NOT NULL AND COLLATION_NAME IS NOT NULL AND DATA_TYPE IN ('char','varchar','tinytext','text','mediumtext','longtext','enum','set'), CONCAT(' CHARACTER SET ', CHARACTER_SET_NAME, ' COLLATE ', COLLATION_NAME), ''), IF(IFNULL(GENERATION_EXPRESSION,'') <> '', CONCAT(IF(IS_NULLABLE='NO', ' NOT NULL', ' NULL'), ' GENERATED ALWAYS AS (', GENERATION_EXPRESSION, ') ', IF(EXTRA LIKE '%STORED%' OR EXTRA LIKE '%PERSISTENT%', 'STORED', 'VIRTUAL')), CONCAT(IF(IS_NULLABLE='NO', ' NOT NULL', ' NULL'), CASE WHEN COLUMN_DEFAULT IS NULL THEN IF(IS_NULLABLE='NO', '', ' DEFAULT NULL') ELSE CONCAT(' DEFAULT ', COLUMN_DEFAULT) END, IF(EXTRA IS NULL OR EXTRA='' OR EXTRA LIKE '%GENERATED%', '', CONCAT(' ', EXTRA))))) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='${DB}' AND TABLE_NAME <> 'version' ORDER BY TABLE_NAME, ORDINAL_POSITION;"
+    RAW=$(withRootDBConn mysql -sN -r -e "$COL_SQL" </dev/null 2>/dev/null) || return 1
+    while IFS=$'\t' read -r TABLE COL DDL; do
+        [[ -n "$TABLE" ]] || continue
+        grep -Fxq -- "$TABLE" <<<"$BASE" || continue
+        [[ "$TABLE" =~ ^[A-Za-z0-9_]+$ && "$COL" =~ ^[A-Za-z0-9_]+$ && -n "$DDL" ]] || return 1
+        printf '%s\t%s\t%s\n' "$TABLE" "$COL" "$DDL"
+    done <<<"$RAW"
+}
+
+# lists the names of one kind of object in a DB, for the kinds the restore replays
+# usage: kamDBExistingNames <db> <TABLE|VIEW|TRIGGER|PROCEDURE|FUNCTION>
+# output: one name per line
+# returns: 0 on success, non zero otherwise
+function kamDBExistingNames() {
+    local DB="$1" KIND="$2"
+
+    [[ "$DB" =~ ^[A-Za-z0-9_]+$ ]] || return 1
+    case "$KIND" in
+    TABLE) kamDBBaseTables "$DB" ;;
+    VIEW) withRootDBConn mysql -sN -e "SELECT TABLE_NAME FROM information_schema.VIEWS WHERE TABLE_SCHEMA='${DB}';" </dev/null 2>/dev/null ;;
+    TRIGGER) withRootDBConn mysql -sN -e "SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA='${DB}';" </dev/null 2>/dev/null ;;
+    PROCEDURE|FUNCTION) withRootDBConn mysql -sN -e "SELECT ROUTINE_NAME FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA='${DB}' AND ROUTINE_TYPE='${KIND}';" </dev/null 2>/dev/null ;;
+    *) return 1 ;;
+    esac
+}
+
+# replays the saved tables, views, triggers or routines that the reinstalled DB does not have
+# usage: restoreKamDBObjects <db> <TABLE|VIEW|TRIGGER|PROCEDURE|FUNCTION>
+# notes: an object the reinstall created is kept as the installer defined it, the saved copy is not replayed over it
+# returns: 0 on success, non zero otherwise
+function restoreKamDBObjects() {
+    local DB="$1" WANT="$2"
+    local KIND NAME EXISTING FILE
+    local N=0
+    local FILES=()
+
+    [[ -f "$KAMDB_OBJECTS_MANIFEST" ]] || {
+        printerr "object dump is missing, cannot restore ${DB}: ${KAMDB_OBJECTS_MANIFEST}"
+        return 1
+    }
+    EXISTING=$(kamDBExistingNames "$DB" "$WANT") || return 1
+    while IFS=$'\t' read -r KIND NAME; do
+        N=$((N + 1))
+        [[ "$KIND" == "$WANT" ]] || continue
+        grep -Fxq -- "$NAME" <<<"$EXISTING" && continue
+        FILES+=("${KAMDB_OBJECTS_DIR}/${N}.sql")
+    done <"$KAMDB_OBJECTS_MANIFEST"
+
+    if (( ${#FILES[@]} == 0 )); then
+        return 0
+    fi
+    if [[ "$WANT" == TABLE ]]; then
+        # foreign keys are off so the tables can be created in any order
+        {
+            echo 'SET FOREIGN_KEY_CHECKS=0;'
+            cat "${FILES[@]}"
+            echo 'SET FOREIGN_KEY_CHECKS=1;'
+        } | withRootDBConn --db="$DB" mysql || return 1
+        return 0
+    fi
+    if [[ "$WANT" == VIEW ]]; then
+        # views are replayed in passes so a view that selects from another custom view or function can be created after its dependency
+        local PENDING=("${FILES[@]}")
+        local NEXT=()
+        local PROGRESS
+        while (( ${#PENDING[@]} > 0 )); do
+            NEXT=()
+            PROGRESS=0
+            for FILE in "${PENDING[@]}"; do
+                if withRootDBConn --db="$DB" mysql <"$FILE" >/dev/null 2>&1; then
+                    PROGRESS=1
+                else
+                    NEXT+=("$FILE")
+                fi
+            done
+            if (( PROGRESS == 0 )); then
+                printerr "could not recreate view(s) in ${DB}"
+                for FILE in "${NEXT[@]}"; do
+                    withRootDBConn --db="$DB" mysql <"$FILE" || return 1
+                done
+                return 1
+            fi
+            PENDING=("${NEXT[@]}")
+        done
+        return 0
+    fi
+    for FILE in "${FILES[@]}"; do
+        withRootDBConn --db="$DB" mysql <"$FILE" || return 1
+    done
+}
+
+# adds saved columns that the reinstalled tables do not have, installer column definitions are never changed
+# usage: addMissingKamDBColumns <db>
+# notes: called after the base tables are emptied so NOT NULL columns without a default can be added
+# returns: 0 on success, non zero otherwise
+function addMissingKamDBColumns() {
+    local DB="$1"
+    local TABLE COL DDL EXISTING_TABLES EXISTING_COLS
+
+    [[ "$DB" =~ ^[A-Za-z0-9_]+$ ]] || return 1
+    [[ -f "$KAMDB_COLUMNS_FILE" ]] || {
+        printerr "column dump is missing, cannot restore ${DB}: ${KAMDB_COLUMNS_FILE}"
+        return 1
+    }
+    EXISTING_TABLES=$(kamDBBaseTables "$DB") || return 1
+    EXISTING_COLS=$(withRootDBConn mysql -sN -e "SELECT CONCAT(TABLE_NAME, '.', COLUMN_NAME) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='${DB}';" </dev/null 2>/dev/null) || return 1
+    while IFS=$'\t' read -r TABLE COL DDL; do
+        [[ -n "$TABLE" && -n "$COL" && -n "$DDL" ]] || continue
+        [[ "$TABLE" =~ ^[A-Za-z0-9_]+$ && "$COL" =~ ^[A-Za-z0-9_]+$ ]] || {
+            printerr "unexpected column name in ${DB}: ${TABLE}.${COL}"
+            return 1
+        }
+        grep -Fxq -- "$TABLE" <<<"$EXISTING_TABLES" || continue
+        grep -Fxq -- "${TABLE}.${COL}" <<<"$EXISTING_COLS" && continue
+        withRootDBConn --db="$DB" mysql -e "ALTER TABLE \`${TABLE}\` ADD COLUMN ${DDL};" </dev/null || {
+            printerr "could not add column ${TABLE}.${COL} in ${DB}"
+            return 1
+        }
+    done <"$KAMDB_COLUMNS_FILE"
+}
+
+# prints the DSIP_ID of this install, the dsip_settings row of this install is matched on it
+# notes: DSIP_ID is hex encoded by the installer, anything else is refused rather than escaped into SQL
+# returns: 0 on success, non zero otherwise
+function getSettingsDsipId() {
+    local DSIP_ID_VALUE
+
+    DSIP_ID_VALUE=$(getConfigAttrib 'DSIP_ID' "$DSIP_CONFIG_FILE")
+    [[ "$DSIP_ID_VALUE" =~ ^[A-Za-z0-9_.+/=-]+$ ]] || {
+        printerr "DSIP_ID is not set to a valid value in ${DSIP_CONFIG_FILE}, cannot find the dsip_settings row of this install"
+        return 1
+    }
+    printf '%s' "$DSIP_ID_VALUE"
+}
+
+# sets VERSION in the saved dsip_settings row of this install, the GUI loads that row over settings.py when LOAD_SETTINGS_FROM is db
+# usage: setKamDBSettingsVersion
+# notes: the row is matched on DSIP_ID from settings.py, a DB without the table is skipped
+# returns: 0 on success, non zero otherwise
+function setKamDBSettingsVersion() {
+    local TABLE_FOUND DSIP_ID_VALUE DB_VERSION
+
+    TABLE_FOUND=$(kamDBTablesIn "$KAM_DB_NAME" dsip_settings) || return 1
+    [[ -n "$TABLE_FOUND" ]] || return 0
+    DSIP_ID_VALUE=$(getSettingsDsipId) || return 1
+    withRootDBConn --db="$KAM_DB_NAME" mysql -e "UPDATE dsip_settings SET VERSION='${NEW_VERSION}' WHERE DSIP_ID='${DSIP_ID_VALUE}';" </dev/null || return 1
+    DB_VERSION=$(withRootDBConn --db="$KAM_DB_NAME" mysql -sN -e "SELECT VERSION FROM dsip_settings WHERE DSIP_ID='${DSIP_ID_VALUE}';" </dev/null) || return 1
+    [[ "$DB_VERSION" == "$NEW_VERSION" ]] || {
+        printerr "could not set VERSION to ${NEW_VERSION} for DSIP_ID in ${KAM_DB_NAME}.dsip_settings"
+        return 1
+    }
+}
+
+# prints DSIP_LICENSE_STORE of the dsip_settings row of this install as hex
+# usage: getKamDBLicenseStoreHex
+# output: the hex encoded value, nothing when the table or the row does not exist
+# returns: 0 on success, non zero otherwise
+function getKamDBLicenseStoreHex() {
+    local TABLE_FOUND DSIP_ID_VALUE
+
+    TABLE_FOUND=$(kamDBTablesIn "$KAM_DB_NAME" dsip_settings) || return 1
+    [[ -n "$TABLE_FOUND" ]] || return 0
+    DSIP_ID_VALUE=$(getSettingsDsipId) || return 1
+    withRootDBConn --db="$KAM_DB_NAME" mysql -sN -e "SELECT HEX(DSIP_LICENSE_STORE) FROM dsip_settings WHERE DSIP_ID='${DSIP_ID_VALUE}';" </dev/null
+}
+
+# sets DSIP_LICENSE_STORE of the dsip_settings row of this install
+# usage: setKamDBLicenseStoreHex <hex encoded value>
+# notes: the statement is passed on stdin, the value can be longer than a command line argument may be
+# returns: 0 on success, non zero otherwise
+function setKamDBLicenseStoreHex() {
+    local HEX="$1"
+    local DSIP_ID_VALUE
+
+    [[ "$HEX" =~ ^[0-9A-Fa-f]+$ ]] || return 1
+    DSIP_ID_VALUE=$(getSettingsDsipId) || return 1
+    withRootDBConn --db="$KAM_DB_NAME" mysql <<<"UPDATE dsip_settings SET DSIP_LICENSE_STORE=UNHEX('${HEX}') WHERE DSIP_ID='${DSIP_ID_VALUE}';"
+}
+
+# lists the installed packages matching PKG_PATTERNS, one per line as: name, version, architecture (tab separated)
+function listTrackedPackages() {
+    if cmdExists 'apt-get'; then
+        dpkg-query -W -f '${db:Status-Abbrev}\t${Package}\t${Version}\t${Architecture}\n' "${PKG_PATTERNS[@]}" 2>/dev/null |
+            awk -F '\t' '$1 ~ /^.i/ { print $2 "\t" $3 "\t" $4 }'
+    else
+        rpm -qa --qf '%{NAME}\t%{EPOCHNUM}:%{VERSION}-%{RELEASE}\t%{ARCH}\n' "${PKG_PATTERNS[@]}"
+    fi
+    return 0
+}
+
+# prints the version of a package file, in the same format as listTrackedPackages
+# usage: packageFileVersion <package file>
+function packageFileVersion() {
+    if cmdExists 'apt-get'; then
+        dpkg-deb -f "$1" Version
+    else
+        rpm -qp --nosignature --qf '%{EPOCHNUM}:%{VERSION}-%{RELEASE}' "$1" 2>/dev/null
+    fi
+}
+
+# saves an installable copy of an installed package as the only file in ${PKG_BACKUP_DIR}/<name>/
+# usage: savePackage <name> <version> <arch>
+# notes: the package is repacked from the installed files when possible, locally built packages are not in any repo
+#        otherwise the installed version is downloaded from the configured repos
+function savePackage() {
+    local NAME="$1" VERSION="$2" ARCH="$3"
+    local DIR="${PKG_BACKUP_DIR}/${NAME}"
+    local FILES=()
+
+    mkdir -p "$DIR" || return 1
+    if cmdExists 'apt-get'; then
+        (
+            cd "$DIR" || exit 1
+            if cmdExists 'dpkg-repack' && dpkg-repack "$NAME" >/dev/null 2>&1; then
+                exit 0
+            fi
+            rm -f ./*.deb
+            apt-get download "${NAME}=${VERSION}" >/dev/null 2>&1
+        ) || return 1
+        FILES=("$DIR"/*.deb)
+    else
+        if cmdExists 'rpmrebuild' && rpmrebuild --batch --notest-install --directory="$DIR" "$NAME" >/dev/null 2>&1; then
+            # the package is written to a subdirectory named after its architecture
+            find "$DIR" -mindepth 2 -name '*.rpm' -exec mv -f {} "$DIR/" \;
+        elif cmdExists 'dnf'; then
+            dnf download -q --destdir "$DIR" "${NAME}-${VERSION#*:}.${ARCH}" >/dev/null 2>&1 || return 1
+        else
+            yumdownloader -q --destdir "$DIR" "${NAME}-${VERSION#*:}.${ARCH}" >/dev/null 2>&1 || return 1
+        fi
+        FILES=("$DIR"/*.rpm)
+    fi
+
+    # exactly one package file of the installed version must have been saved
+    [[ ${#FILES[@]} -eq 1 && -f "${FILES[0]}" && "$(packageFileVersion "${FILES[0]}")" == "$VERSION" ]]
+}
+
+# saves every installed package matching PKG_PATTERNS so restorePackages can reinstall it
+# notes: the repack tool is installed if it is missing, it is the only way to save a locally built package
+function backupPackages() {
+    local NAME VERSION ARCH
+
+    mkdir -p "$PKG_BACKUP_DIR" || return 1
+    listTrackedPackages >"$PKG_MANIFEST" || return 1
+    [[ -s "$PKG_MANIFEST" ]] || return 0
+
+    if cmdExists 'apt-get'; then
+        cmdExists 'dpkg-repack' || apt-get install -y dpkg-repack >/dev/null 2>&1
+    elif cmdExists 'dnf'; then
+        cmdExists 'rpmrebuild' || dnf install -y rpmrebuild >/dev/null 2>&1
+    else
+        cmdExists 'rpmrebuild' || yum install -y rpmrebuild yum-utils >/dev/null 2>&1
+    fi
+
+    while IFS=$'\t' read -r NAME VERSION ARCH; do
+        savePackage "$NAME" "$VERSION" "$ARCH" || {
+            printerr "could not save a copy of the installed package ${NAME} ${VERSION}"
+            return 1
+        }
+    done <"$PKG_MANIFEST"
+}
+
+# puts the saved packages back: packages the upgrade added are removed, packages it changed or removed are reinstalled
+# notes: a package still at its saved version is left alone, so nothing happens when the upgrade failed before the reinstall
+#        dependencies are not checked while removing, the reinstall that follows puts every tracked package back at one version
+function restorePackages() {
+    local NAME VERSION ARCH CURRENT RETVAL
+    local FILES=() ADDED=()
+    local PKG_EXT='rpm'
+    local -A SAVED=()
+    local POLICY_FILE='/usr/sbin/policy-rc.d'
+    local POLICY_CREATED=0
+
+    [[ -f "$PKG_MANIFEST" ]] || {
+        printerr "package manifest is missing, cannot restore packages: ${PKG_MANIFEST}"
+        return 1
+    }
+    cmdExists 'apt-get' && PKG_EXT='deb'
+    CURRENT=$(listTrackedPackages)
+
+    while IFS=$'\t' read -r NAME VERSION ARCH; do
+        [[ -n "$NAME" ]] || continue
+        SAVED["$NAME"]=1
+        grep -qxF "${NAME}"$'\t'"${VERSION}"$'\t'"${ARCH}" <<<"$CURRENT" && continue
+        FILES+=("${PKG_BACKUP_DIR}/${NAME}"/*."${PKG_EXT}")
+    done <"$PKG_MANIFEST"
+    while IFS=$'\t' read -r NAME VERSION ARCH; do
+        [[ -n "$NAME" ]] || continue
+        [[ -n "${SAVED[$NAME]:-}" ]] || ADDED+=("$NAME")
+    done <<<"$CURRENT"
+
+    if (( ${#FILES[@]} == 0 && ${#ADDED[@]} == 0 )); then
+        return 0
+    fi
+    printwarn 'restoring the packages changed by the upgrade'
+
+    if cmdExists 'apt-get'; then
+        if (( ${#ADDED[@]} > 0 )); then
+            dpkg --purge --force-depends "${ADDED[@]}" || return 1
+        fi
+        if (( ${#FILES[@]} > 0 )); then
+            # the package scripts fail if a service does not start, and it may not with the configs of the failed upgrade
+            # service starts are denied while reinstalling, the services are started once everything is restored
+            if [[ ! -e "$POLICY_FILE" ]]; then
+                printf '#!/bin/sh\nexit 101\n' >"$POLICY_FILE" && chmod 755 "$POLICY_FILE" && POLICY_CREATED=1
+            fi
+            DEBIAN_FRONTEND=noninteractive dpkg -i --force-confold --force-confdef "${FILES[@]}"
+            RETVAL=$?
+            if (( POLICY_CREATED == 1 )); then
+                rm -f "$POLICY_FILE"
+            fi
+            (( RETVAL == 0 )) || return 1
+        fi
+    else
+        if (( ${#ADDED[@]} > 0 )); then
+            rpm -e --nodeps "${ADDED[@]}" || return 1
+        fi
+        if (( ${#FILES[@]} > 0 )); then
+            rpm -U --oldpackage --replacepkgs "${FILES[@]}" || return 1
+        fi
+    fi
+
+    # every saved package must be back at its saved version
+    CURRENT=$(listTrackedPackages)
+    [[ "$(sort <<<"$CURRENT")" == "$(sort "$PKG_MANIFEST")" ]]
+}
+
+# usage: backupFailed <message>
+# notes: only called before any system change, so nothing needs restoring
+function backupFailed() {
+    printerr "backup failed: $*"
+    printerr "no system changes were made, incomplete backup will not be used: ${CURR_BACKUP_DIR}"
+    exit 1
+}
+
+# usage: stopAndMaskService <unit>
+# notes: absent units are skipped, changed units are recorded for resetConfigsHandler
+function stopAndMaskService() {
+    local UNIT="$1"
+
+    if ! systemctl cat "$UNIT" >/dev/null 2>&1; then
+        printdbg "${UNIT} is not installed, skipping"
+        return 0
+    fi
+    if systemctl is-active --quiet "$UNIT"; then
+        STOPPED_UNITS+=("$UNIT")
+        systemctl stop "$UNIT" || return 1
+    fi
+    # recorded before masking so a partial mask is still unmasked on restore
+    MASKED_UNITS+=("$UNIT")
+    systemctl mask "$UNIT" || return 1
+}
+
+# restores the kamailio DB and its user accounts from the dumps taken before the upgrade
+# notes: the DB is dropped and re-imported so views and routines match the dump, accounts created by the upgrade are removed
+function restoreKamDB() {
+    local ACCOUNTS ACCOUNT
+    local ACCOUNT_LIST=()
+    local RESTORE_FAILED=0
+
+    [[ -s "$KAMDB_DUMP_FILE" && -s "$KAMDB_USER_DUMP_FILE" ]] || {
+        printerr "DB or grants dump is missing, cannot restore ${KAM_DB_NAME}: ${CURR_BACKUP_DIR}"
+        return 1
+    }
+    # the dump is only imported into a DB that was dropped, never into a DB that still has the upgraded tables
+    if withRootDBConn mysql -e "DROP DATABASE IF EXISTS \`${KAM_DB_NAME}\`;"; then
+        withRootDBConn mysql <"$KAMDB_DUMP_FILE" || RESTORE_FAILED=1
+    else
+        RESTORE_FAILED=1
+    fi
+
+    # accounts are reset even if the DB import failed, so no account created by the upgrade survives
+    ACCOUNTS=$(withRootDBConn mysql -sN -A \
+        -e "SELECT CONCAT(QUOTE(user), '@', QUOTE(host)) FROM mysql.user WHERE user='${KAM_DB_USER}';" \
+        </dev/null 2>/dev/null) || RESTORE_FAILED=1
+    mapfile -t ACCOUNT_LIST <<<"$ACCOUNTS"
+    for ACCOUNT in "${ACCOUNT_LIST[@]}"; do
+        [[ -n "$ACCOUNT" ]] || continue
+        withRootDBConn mysql -e "DROP USER ${ACCOUNT};" || RESTORE_FAILED=1
+    done
+    withRootDBConn mysql <"$KAMDB_USER_DUMP_FILE" || RESTORE_FAILED=1
+
+    (( RESTORE_FAILED == 0 ))
+}
+
+# copies the output of a failed upgrade to the log the GUI of the restored version shows, securing the backups directory moved that log away
+# usage: publishFailedUpgradeLog
+# notes: only when the output is written to a file and the restored GUI keeps its log in the backups directory
+#        called before the restored services are started, until then only root can write to that directory
+# returns: 0 on success, non zero otherwise
+function publishFailedUpgradeLog() {
+    [[ -f /dev/stdout ]] || return 0
+    [[ "$(getConfigAttrib 'BACKUP_FOLDER' "$DSIP_CONFIG_FILE")" == "$BACKUPS_DIR" ]] || return 0
+    cp -f /dev/stdout "${BACKUPS_DIR}/upgrade.log"
+}
+
+# restores the system to the state captured in the backup
+# notes: only runs after a change started and the backup was verified complete
+resetConfigsHandler() {
+    local EXIT_CODE="$1"
+    local RESTORE_FAILED=0
+    local UNIT
+
+    # ignore repeated signals while restoring, a partial restore is worse than a slow one
+    trap '' SIGHUP SIGINT SIGQUIT SIGTERM
+    trap - EXIT
+
+    if (( MIGRATION_COMPLETE == 1 )); then
+        trap - SIGHUP SIGINT SIGQUIT SIGTERM
+        exit 0
+    fi
+    printerr "upgrade did not complete (exit code: ${EXIT_CODE})"
+
+    if (( CHANGES_STARTED == 0 )); then
+        printwarn 'no system changes were made, nothing to restore'
+        exit 1
+    fi
+    if (( BACKUP_COMPLETE == 0 )); then
+        printerr "system was changed but the backup is incomplete, restore manually from ${CURR_BACKUP_DIR}"
+        exit 1
+    fi
+
+    printwarn 'upgrade failed, resetting system to previous state'
+    # packages are put back first, their install scripts can start the services and replace the units and configs restored below
+    for FILE in "${PKG_SOURCE_FILES[@]}"; do
+        restoreEntry "$FILE" || RESTORE_FAILED=1
+    done
+    if (( PKG_BACKED_UP == 1 )); then
+        restorePackages || {
+            printerr "could not restore packages, the saved copies are here: ${PKG_BACKUP_DIR}"
+            RESTORE_FAILED=1
+        }
+    fi
+    # every masked unit is stopped before the restore, the installer may have started it with the upgraded config and code
+    # a start on a running unit does nothing, so only the units that were running before the upgrade are started after the restore
+    for UNIT in "${MASKED_UNITS[@]}"; do
+        systemctl unmask "$UNIT" || RESTORE_FAILED=1
+        systemctl stop "$UNIT" || RESTORE_FAILED=1
+    done
+
+    for TREE in "$OLD_PROJECT_DIR" "$DSIP_LIB_DIR" "$DSIP_SYSTEM_CONFIG_DIR" "$SYSTEM_KAMAILIO_CONFIG_DIR" "$SYSTEM_RTPENGINE_CONFIG_DIR" "$SYSTEM_NGINX_CONFIG_DIR"; do
+        restoreTree "$TREE" || RESTORE_FAILED=1
+    done
+    # after the packages, so the modules built by the installer replace the ones shipped in the packages
+    if [[ -n "$KAM_MODULES_DIR" ]]; then
+        restoreTree "$KAM_MODULES_DIR" || RESTORE_FAILED=1
+    fi
+    # request queues the upgrade installed are stopped and disabled before their unit files are removed
+    for UNIT in "${REQUEST_SOCKET_UNITS[@]}"; do
+        if [[ ! -e "${CURR_BACKUP_DIR}/lib/systemd/system/${UNIT}" && -e "/lib/systemd/system/${UNIT}" ]]; then
+            systemctl stop "$UNIT" || RESTORE_FAILED=1
+            systemctl disable "$UNIT" || RESTORE_FAILED=1
+        fi
+    done
+    for SYS_DIR in /etc/systemd/system /lib/systemd/system; do
+        for NAME in "${SYSTEMD_UNITS[@]}" "${SYSTEMD_DROPINS[@]}"; do
+            restoreEntry "${SYS_DIR}/${NAME}" || RESTORE_FAILED=1
+        done
+    done
+    # defaults files: remove the ones the upgrade created, then put back every backed up one (including deleted ones)
+    shopt -s nullglob
+    for FILE in /etc/default/kamailio* /etc/default/rtpengine* "${CURR_BACKUP_DIR}"/etc/default/kamailio* "${CURR_BACKUP_DIR}"/etc/default/rtpengine*; do
+        restoreEntry "/etc/default/${FILE##*/}" || RESTORE_FAILED=1
+    done
+    for FILE in /etc/profile.d/dsip_*.sh "${CURR_BACKUP_DIR}"/etc/profile.d/dsip_*.sh; do
+        restoreEntry "/etc/profile.d/${FILE##*/}" || RESTORE_FAILED=1
+    done
+    shopt -u nullglob
+    for FILE in "${MANAGED_FILES[@]}"; do
+        restoreEntry "$FILE" || RESTORE_FAILED=1
+    done
+    restoreCrontab || RESTORE_FAILED=1
+    systemctl daemon-reload || RESTORE_FAILED=1
+
+    # only restore the DB if a stage may have changed it, the dump is the only copy of the old state
+    if (( KAM_DB_BACKED_UP == 1 && KAM_DB_TOUCHED == 1 )); then
+        # a kamailio that was not reinstalled was never stopped, its DB is not dropped and imported while it runs
+        if (( REINSTALL_KAMAILIO == 0 )) && systemctl is-active --quiet kamailio.service; then
+            systemctl stop kamailio.service || RESTORE_FAILED=1
+            STOPPED_UNITS+=(kamailio.service)
+        fi
+        restoreKamDB || RESTORE_FAILED=1
+    fi
+
+    publishFailedUpgradeLog || printwarn "could not copy the output of the upgrade to ${BACKUPS_DIR}/upgrade.log"
+
+    if (( RESTORE_FAILED == 0 )); then
+        for UNIT in "${STOPPED_UNITS[@]}"; do
+            systemctl start "$UNIT" || RESTORE_FAILED=1
+        done
+    fi
+
+    if (( RESTORE_FAILED == 1 )); then
+        printerr "restore was incomplete, manual recovery required from: ${CURR_BACKUP_DIR}"
+    else
+        printwarn "system restored to previous state, backup is here: ${CURR_BACKUP_DIR}"
+    fi
+    trap - SIGHUP SIGINT SIGQUIT SIGTERM
+    exit 1
+}
+
+# applies schema.sql, then restores the saved accounts and rows into the reinstalled kamailio DB
+# notes: tables the reinstall does not create are recreated first, every base table is then emptied before extra columns and the data replay
+#        routines are created before views so a view that calls a custom function can be created, views retry unresolved dependencies
+#        triggers are created last so the data replay does not fire them
+#        the VERSION of the saved dsip_settings row is set to this release, the view dsip_prefix_mapping is checked, the upgrade fails if it is missing
+# replay a data file and fail on a mysql error or a data-alteration warning (the dump header relaxes sql_mode so changes can otherwise be silent)
+function importKamDBDataFile() {
+    local FILE="$1" OUT RC
+
+    OUT=$(withRootDBConn --db="$KAM_DB_NAME" mysql --show-warnings <"$FILE" 2>&1)
+    RC=$?
+    [[ -n "$OUT" ]] && printf '%s\n' "$OUT" >&2
+    if (( RC != 0 )); then
+        printerr "importing ${FILE} failed with exit code ${RC}"
+        return 1
+    fi
+    if grep -qE '^Warning \(Code (1048|1263|1264|1265|1292|1366|1406)\)' <<<"$OUT"; then
+        printerr "importing ${FILE} would lose or alter data: $(grep -E '^Warning \(Code (1048|1263|1264|1265|1292|1366|1406)\)' <<<"$OUT" | head -n 3 | tr '\n' ' ')"
+        printerr 'the import warning indicates saved data may not be preserved, the upgrade is rolled back'
+        return 1
+    fi
+    return 0
+}
+
+function restoreKamDBAfterReinstall() {
+    local ACCOUNTS ACCOUNT TABLES DERIVED
+    local ACCOUNT_LIST=() TABLE_LIST=() DERIVED_LIST=()
+    local LICENSE_STORE_HEX=''
+
+    withRootDBConn --db="$KAM_DB_NAME" mysql <"${UPGRADE_DIR}/schema.sql" || return 1
+
+    # read before the tables are emptied, the reinstalled GUI wrote the license store of settings.py to its row
+    if (( LEGACY_LICENSE_STORE == 1 )); then
+        LICENSE_STORE_HEX=$(getKamDBLicenseStoreHex) || return 1
+    fi
+
+    # custom tables the saved DB had are recreated empty, the installer tables that exist are kept as the installer defined them
+    restoreKamDBObjects "$KAM_DB_NAME" TABLE || return 1
+
+    # the reinstall recreates the kamailio user, it is dropped so the saved account and its grants replace it
+    ACCOUNTS=$(withRootDBConn mysql -sN -A \
+        -e "SELECT CONCAT(QUOTE(user), '@', QUOTE(host)) FROM mysql.user WHERE user='${KAM_DB_USER}';" \
+        </dev/null 2>/dev/null) || return 1
+    mapfile -t ACCOUNT_LIST <<<"$ACCOUNTS"
+    for ACCOUNT in "${ACCOUNT_LIST[@]}"; do
+        [[ -n "$ACCOUNT" ]] || continue
+        withRootDBConn mysql -e "DROP USER ${ACCOUNT};" || return 1
+    done
+    withRootDBConn mysql <"$KAMDB_USER_DUMP_FILE" || return 1
+    # the saved grants predate GUI backups being made by the kamailio DB user
+    grantKamDBRoutinePrivs ||
+        printwarn 'could not allow the kamailio DB user to read stored routines, backups from the GUI will fail'
+
+    # the installer seeds rows (dispatcher, gateways, rules, ...), so every base table is emptied before extra columns and the saved rows are loaded
+    TABLES=$(kamDBBaseTables "$KAM_DB_NAME") || return 1
+    mapfile -t TABLE_LIST < <(sed '/^$/d' <<<"$TABLES")
+    truncateKamDBTables "$KAM_DB_NAME" "${TABLE_LIST[@]}" || return 1
+    # extra user columns on installer tables, added on empty tables so NOT NULL columns without a default succeed
+    addMissingKamDBColumns "$KAM_DB_NAME" || return 1
+    importKamDBDataFile "$KAMDB_DATA_FILE" || return 1
+
+    # the triggers on dr_gw_lists and dr_rules wrote derived rows during the data load, so the derived tables are emptied and replaced from their dump
+    DERIVED=$(kamDBTablesIn "$KAM_DB_NAME" "${KAMDB_DERIVED_TABLES[@]}") || return 1
+    mapfile -t DERIVED_LIST < <(sed '/^$/d' <<<"$DERIVED")
+    truncateKamDBTables "$KAM_DB_NAME" "${DERIVED_LIST[@]}" || return 1
+    importKamDBDataFile "$KAMDB_DERIVED_FILE" || return 1
+
+    # the saved row has the license store in the encoding of 0.78, which the GUI of this release does not decode
+    if (( LEGACY_LICENSE_STORE == 1 )); then
+        if [[ -n "$LICENSE_STORE_HEX" ]]; then
+            setKamDBLicenseStoreHex "$LICENSE_STORE_HEX" || {
+                printerr "could not set DSIP_LICENSE_STORE in ${KAM_DB_NAME}.dsip_settings"
+                return 1
+            }
+        else
+            printwarn "DSIP_LICENSE_STORE in ${KAM_DB_NAME}.dsip_settings is kept in the encoding of ${OLD_VERSION}, import the license keys again if they are not loaded"
+        fi
+    fi
+
+    # routines before views: a view that calls a custom function cannot be created until the function exists
+    restoreKamDBObjects "$KAM_DB_NAME" PROCEDURE || return 1
+    restoreKamDBObjects "$KAM_DB_NAME" FUNCTION || return 1
+    restoreKamDBObjects "$KAM_DB_NAME" VIEW || return 1
+    # triggers last, the saved triggers would otherwise fire during the data replay
+    restoreKamDBObjects "$KAM_DB_NAME" TRIGGER || return 1
+
+    setKamDBSettingsVersion || return 1
+    withRootDBConn --db="$KAM_DB_NAME" mysql -sN -e "SELECT 1 FROM information_schema.VIEWS WHERE TABLE_SCHEMA='${KAM_DB_NAME}' AND TABLE_NAME='dsip_prefix_mapping';" </dev/null | grep -q 1
+}
+
+# lists the settings the new template defines that the installed settings file does not
+# usage: missingSettings <new template> <installed settings file>
+# output: the source of each missing setting, one block per setting
+# notes: only literal values are copied, a non-literal missing setting fails so it is never guessed
+# returns: 0 on success, non zero otherwise
+function missingSettings() {
+    "$PYTHON_CMD" - "$1" "$2" <<'EOF'
+import ast
+import sys
+
+with open(sys.argv[1]) as f:
+    template_src = f.read()
+with open(sys.argv[2]) as f:
+    installed = {t.id for node in ast.parse(f.read()).body if isinstance(node, ast.Assign) for t in node.targets if isinstance(t, ast.Name)}
+
+for node in ast.parse(template_src).body:
+    if not isinstance(node, ast.Assign) or len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
+        continue
+    name = node.targets[0].id
+    # VERSION is owned by this upgrade, the template value must never be copied in
+    if name in installed or name == 'VERSION':
+        continue
+    try:
+        ast.literal_eval(node.value)
+    except ValueError:
+        sys.exit(f'non-literal setting cannot be migrated automatically: {name}')
+    print(ast.get_source_segment(template_src, node))
+EOF
+}
+
+# appends the settings the installed settings file lacks, existing lines are never changed
+# usage: addMissingSettings <new template> <installed settings file>
+# returns: 0 on success, non zero otherwise
+function addMissingSettings() {
+    local MISSING
+
+    MISSING=$(missingSettings "$1" "$2") || {
+        printerr "could not compare the settings in ${2} with the new template"
+        return 1
+    }
+    if [[ -n "$MISSING" ]]; then
+        printf '\n# added by the v%s upgrade, existing values were kept\n%s\n' "$NEW_VERSION" "$MISSING" >>"$2" || return 1
+    fi
+    # nothing may be missing after the append, a failed comparison must not pass as an empty result
+    MISSING=$(missingSettings "$1" "$2") || return 1
+    [[ -z "$MISSING" ]] || {
+        printerr "settings still missing from ${2} after the upgrade"
+        return 1
+    }
+}
+
+# removes the project files this release no longer has from the migrated project dir
+# usage: removeStaleProjectFiles
+# returns: 0 on success, non zero otherwise
+function removeStaleProjectFiles() {
+    local FILE
+
+    for FILE in "${REMOVED_PROJECT_FILES[@]}"; do
+        rm -f "${DSIP_PROJECT_DIR:?}/${FILE}" || return 1
+    done
+}
+
+# replaces the installed copies of project scripts that no reinstall of this upgrade writes
+# usage: refreshInstalledScripts
+# notes: a script that is not installed is skipped, the previous copies are put back with the other managed files when the upgrade fails
+# returns: 0 on success, non zero otherwise
+function refreshInstalledScripts() {
+    local DST
+
+    for DST in "${!INSTALLED_SCRIPT_COPIES[@]}"; do
+        [[ -f "$DST" ]] || continue
+        install -m 755 "${DSIP_PROJECT_DIR}/${INSTALLED_SCRIPT_COPIES[$DST]}" "$DST" || return 1
+    done
+}
+
+# adds the drop-in of this release to the units found in LEGACY_UNIT_DROPINS, the same files the installer of this release writes
+# usage: installLegacyUnitDropins
+# notes: the caller reloads systemd, the unit file of 0.78 stays in place and the drop-in sets every directive of it again
+# returns: 0 on success, non zero otherwise
+function installLegacyUnitDropins() {
+    local SERVICE DROPIN_DIR
+
+    for SERVICE in "${!LEGACY_UNIT_DROPINS[@]}"; do
+        DROPIN_DIR="/etc/systemd/system/${SERVICE}.service.d"
+        mkdir -p "$DROPIN_DIR" &&
+            cp -f "${DSIP_PROJECT_DIR}/${SERVICE}/systemd/${LEGACY_UNIT_DROPINS[$SERVICE]}" "${DROPIN_DIR}/override.conf" &&
+            chmod 755 "$DROPIN_DIR" &&
+            chmod 644 "${DROPIN_DIR}/override.conf" || return 1
+    done
+}
+
+# copies the output of this upgrade to the log the GUI of this release shows, with the result of the upgrade
+# usage: publishUpgradeLog
+# notes: only when the output is written to a file, which is how the GUI of the installed version started the upgrade
+#        the log shows credentials, of the service users only the dsiprouter user can read it
+# returns: 0 on success, non zero otherwise
+function publishUpgradeLog() {
+    [[ -f /dev/stdout ]] || return 0
+    id -u dsiprouter &>/dev/null || return 0
+    mkdir -p "$(dirname "$DSIP_UPGRADE_LOG")" &&
+        install -o dsiprouter -g root -m 600 /dev/stdout "$DSIP_UPGRADE_LOG" &&
+        echo '0' >"${DSIP_UPGRADE_LOG}.exitcode"
+}
+
+# reinstalls the services that were masked and stopped, then restores the kamailio DB, sets VERSION
+# notes: exits through the caller on failure, resetConfigsHandler restores the backup
+function applyUpgrade() {
+    local INSTALL_OPTS=()
+    local INSTALL_ENV=()
+    local VAR UNIT
+
+    printdbg 'migrating dSIPRouter project files'
+    cp -rf "${NEW_PROJECT_DIR}/." "${OLD_PROJECT_DIR}/" || return 1
+    export DSIP_PROJECT_DIR="$OLD_PROJECT_DIR"
+    # the stages below use the new definitions, the same as v0.77 re-sources after the sync
+    [[ -f "${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh" ]] || return 1
+    export PYTHON_CMD="${DSIP_PROJECT_DIR}/venv/bin/python"
+    . "${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh"
+    removeStaleProjectFiles || return 1
+
+    # the dsiprouter user no longer runs commands as root, the GUI files its requests in the queues of the dsip-request units
+    # the installer of this release does not know the file, it is put back with the other managed files when the upgrade fails
+    printdbg 'removing the sudoers file of the installed version'
+    rm -f "$DSIP_SUDOERS_FILE" || return 1
+
+    printdbg 'adding new settings to the dSIPRouter config'
+    addMissingSettings "${NEW_PROJECT_DIR}/gui/settings.py" "${DSIP_CONFIG_FILE}" || return 1
+
+    # set before the installer runs, the regenerated kamailio config takes DSIP_VERSION from VERSION
+    printdbg 'setting installed version'
+    setConfigAttrib 'VERSION' "$NEW_VERSION" "${DSIP_CONFIG_FILE}" -q || return 1
+    # sed only rewrites an existing VERSION line, so the value is read back to confirm it was written
+    [[ "$(getConfigAttrib 'VERSION' "${DSIP_CONFIG_FILE}")" == "$NEW_VERSION" ]] || {
+        printerr "could not set VERSION to ${NEW_VERSION} in ${DSIP_CONFIG_FILE}"
+        return 1
+    }
+
+    printdbg 'updating installed scripts and systemd units'
+    refreshInstalledScripts || return 1
+    installLegacyUnitDropins || return 1
+
+    # the conditional markers and source dirs are removed so the installer runs the reinstall
+    if (( REINSTALL_KAMAILIO == 1 )); then
+        INSTALL_OPTS+=(-kam)
+        rm -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" || return 1
+        rm -rf "${SRC_DIR}/kamailio" || return 1
+        rm -f "${DSIP_SYSTEM_CONFIG_DIR}/kamailio/kamailio.cfg" || return 1
+    fi
+    if (( REINSTALL_DSIPROUTER == 1 )); then
+        INSTALL_OPTS+=(-dsip)
+        rm -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" || return 1
+    fi
+    if (( REINSTALL_RTPENGINE == 1 )); then
+        INSTALL_OPTS+=(-rtp)
+        rm -rf "${SRC_DIR}/rtpengine" || return 1
+        rm -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" || return 1
+    fi
+    # the CLI is a copy of dsiprouter.sh, every run of the installer replaces it once its marker is removed
+    # when nothing is reinstalled only that copy is replaced here, tab completion and man page stay as they are
+    if (( ${#INSTALL_OPTS[@]} > 0 )); then
+        rm -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled" || return 1
+    elif [[ -f /usr/bin/dsiprouter && ! -L /usr/bin/dsiprouter ]]; then
+        install -o root -g root -m 755 "${DSIP_PROJECT_DIR}/dsiprouter.sh" /usr/bin/dsiprouter || return 1
+    fi
+
+    # the installer restarts the units it reinstalls and fails on a masked unit, so they are unmasked before it runs
+    printdbg 'unmasking services'
+    for UNIT in "${MASKED_UNITS[@]}"; do
+        systemctl unmask "$UNIT" || return 1
+    done
+    systemctl daemon-reload || return 1
+
+    # the installer and the config update run with a cleared environment, so the values they need are passed explicitly
+    # no SET_* credentials are forwarded: with RUNNING_UPGRADE=1 the installer keeps the stored secrets from settings.py
+    # forwarding an empty SET_ROOT_DB_PASS makes setCredentials rewrite the root DB account, which opens it to passwordless login
+    INSTALL_ENV=(CURR_BACKUP_DIR="$CURR_BACKUP_DIR" RUNNING_UPGRADE=1 DSIP_PROJECT_DIR="$DSIP_PROJECT_DIR"
+        HOME="$HOME" LANG="$LANG" LANGUAGE="$LANGUAGE" LC_ALL="$LC_ALL" PATH="$PATH" PWD="$PWD" USER="root")
+
+    # a kamailio that is not reinstalled keeps its config, only the values taken from settings.py (DSIP_VERSION) are updated
+    # done before the installer runs, it restarts kamailio when it reinstalls dSIPRouter
+    if (( KAM_INSTALLED == 1 && REINSTALL_KAMAILIO == 0 )); then
+        printdbg 'updating kamailio config'
+        env -i "${INSTALL_ENV[@]}" "${DSIP_PROJECT_DIR}/dsiprouter.sh" updatekamconfig || {
+            printerr 'failed updating kamailio config'
+            return 1
+        }
+    fi
+
+    # set before the first step that writes to a DB that is not recreated, a reinstall of dSIPRouter updates accounts and settings in it
+    if (( KAM_DB_EXISTS == 1 )); then
+        KAM_DB_TOUCHED=1
+    fi
+
+    # an empty flag list must not reach the installer, 'install' with no flags installs everything
+    if (( ${#INSTALL_OPTS[@]} > 0 )); then
+        printdbg 'upgrading services'
+        env -i "${INSTALL_ENV[@]}" "${DSIP_PROJECT_DIR}/dsiprouter.sh" install "${INSTALL_OPTS[@]}" || {
+            printerr 'failed upgrading services'
+            return 1
+        }
+    fi
+
+    if (( REINSTALL_KAMAILIO == 1 )); then
+        printdbg 'migrating kamailio database'
+        restoreKamDBAfterReinstall || {
+            printerr "failed migrating kamailio database, restore from: ${CURR_BACKUP_DIR}"
+            return 1
+        }
+    elif (( KAM_DB_EXISTS == 1 )); then
+        # the DB was not recreated, it only gets the tables it may lack and the version of this release
+        printdbg 'updating kamailio database'
+        withRootDBConn --db="$KAM_DB_NAME" mysql <"${UPGRADE_DIR}/schema.sql" && setKamDBSettingsVersion || {
+            printerr "failed updating kamailio database, restore from: ${CURR_BACKUP_DIR}"
+            return 1
+        }
+    fi
+
+    # the installer may rewrite the settings file, so VERSION is checked again after it ran
+    [[ "$(getConfigAttrib 'VERSION' "${DSIP_CONFIG_FILE}")" == "$NEW_VERSION" ]] || {
+        printerr "VERSION is not ${NEW_VERSION} after the reinstall in ${DSIP_CONFIG_FILE}"
+        return 1
+    }
+
+    if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]]; then
+        printwarn 'kamailio service requires restarting'
+    fi
+    if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+        printwarn 'dsiprouter service requires restarting'
+    fi
+    if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
+        printwarn 'rtpengine service requires restarting'
+    fi
+    return 0
+}
+
+# the names of the kamailio DB objects are interpolated into SQL and file paths, so anything outside plain identifiers stops the upgrade before any change
+# only checked when kamailio is reinstalled, otherwise the DB is not recreated and no object of it is replayed
+if (( KAM_DB_EXISTS == 1 && REINSTALL_KAMAILIO == 1 )); then
+    KAM_OBJECTS_PREFLIGHT=$(kamDBObjectList "$KAM_DB_NAME") || {
+        printerr "could not list the objects of ${KAM_DB_NAME}, no changes were made"
+        exit 1
+    }
+    while IFS=$'\t' read -r KIND NAME; do
+        [[ -n "$KIND" ]] || continue
+        [[ "$NAME" =~ ^[A-Za-z0-9_]+$ ]] || {
+            printerr "unsupported ${KIND} name in ${KAM_DB_NAME}: ${NAME}, rename it before upgrading, no changes were made"
+            exit 1
+        }
+    done <<<"$KAM_OBJECTS_PREFLIGHT"
+
+    KAM_COLUMNS_PREFLIGHT=$(withRootDBConn mysql -sN -e "SELECT DISTINCT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='${KAM_DB_NAME}' AND TABLE_NAME IN (SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='${KAM_DB_NAME}' AND TABLE_TYPE='BASE TABLE');" </dev/null 2>/dev/null) || {
+        printerr "could not list the columns of ${KAM_DB_NAME}, no changes were made"
+        exit 1
+    }
+    while IFS= read -r NAME; do
+        [[ -n "$NAME" ]] || continue
+        [[ "$NAME" =~ ^[A-Za-z0-9_]+$ ]] || {
+            printerr "unsupported column name in ${KAM_DB_NAME}: ${NAME}, rename it before upgrading, no changes were made"
+            exit 1
+        }
+    done <<<"$KAM_COLUMNS_PREFLIGHT"
+
+    KAM_EVENTS_PREFLIGHT=$(withRootDBConn mysql -sN -e "SELECT EVENT_NAME FROM information_schema.EVENTS WHERE EVENT_SCHEMA='${KAM_DB_NAME}';" </dev/null 2>/dev/null) || {
+        printerr "could not list the events of ${KAM_DB_NAME}, no changes were made"
+        exit 1
+    }
+    if [[ -n "$KAM_EVENTS_PREFLIGHT" ]]; then
+        printerr "scheduled EVENT objects in ${KAM_DB_NAME} are not supported by this upgrade: ${KAM_EVENTS_PREFLIGHT//$'\n'/, }"
+        printerr 'drop them before upgrading, no changes were made'
+        exit 1
+    fi
+
+    KAM_DEFINERS_PREFLIGHT=$(kamDBDefiners "$KAM_DB_NAME") || {
+        printerr "could not list the DEFINER accounts of ${KAM_DB_NAME}, no changes were made"
+        exit 1
+    }
+    while IFS= read -r DEFINER; do
+        [[ -n "$DEFINER" ]] || continue
+        [[ "$DEFINER" =~ ^[A-Za-z0-9_.$-]+@[A-Za-z0-9_.:%-]+$ ]] || {
+            printerr "unsupported DEFINER in ${KAM_DB_NAME}: ${DEFINER}, no changes were made"
+            exit 1
+        }
+        checkDBUserExists "$DEFINER"
+        case $? in
+        0) ;;
+        2)
+            printerr "DEFINER account ${DEFINER} does not exist, create it before upgrading, no changes were made"
+            exit 1
+            ;;
+        *)
+            printerr "could not verify DEFINER account ${DEFINER}, no changes were made"
+            exit 1
+            ;;
+        esac
+    done <<<"$KAM_DEFINERS_PREFLIGHT"
+fi
+
+# armed before the backup so a signal during the backup is handled, nothing is restored until CHANGES_STARTED
+# each signal reports its own exit status so the restore message shows what interrupted the upgrade
+trap 'resetConfigsHandler 129' SIGHUP
+trap 'resetConfigsHandler 130' SIGINT
+trap 'resetConfigsHandler 131' SIGQUIT
+trap 'resetConfigsHandler 143' SIGTERM
+trap 'resetConfigsHandler $?' EXIT
+
+printdbg 'backing up configs and databases before making any change'
+# from here on only root can add to the backups, the backup directory must be new
+secureBackupsDir "$BACKUPS_DIR" &&
+    mkdir -m 700 "$CURR_BACKUP_DIR" || backupFailed "could not create ${CURR_BACKUP_DIR}"
+backupTree "$OLD_PROJECT_DIR" || backupFailed "${OLD_PROJECT_DIR}"
+backupTree "$DSIP_LIB_DIR" || backupFailed "${DSIP_LIB_DIR}"
+backupTree "$DSIP_SYSTEM_CONFIG_DIR" || backupFailed "${DSIP_SYSTEM_CONFIG_DIR}"
+backupTree "$SYSTEM_KAMAILIO_CONFIG_DIR" || backupFailed "${SYSTEM_KAMAILIO_CONFIG_DIR}"
+backupTree "$SYSTEM_RTPENGINE_CONFIG_DIR" || backupFailed "${SYSTEM_RTPENGINE_CONFIG_DIR}"
+backupTree "$SYSTEM_NGINX_CONFIG_DIR" || backupFailed "${SYSTEM_NGINX_CONFIG_DIR}"
+for SYS_DIR in /etc/systemd/system /lib/systemd/system; do
+    for NAME in "${SYSTEMD_UNITS[@]}" "${SYSTEMD_DROPINS[@]}"; do
+        backupEntry "${SYS_DIR}/${NAME}" || backupFailed "${SYS_DIR}/${NAME}"
+    done
+done
+shopt -s nullglob
+for FILE in /etc/default/kamailio* /etc/default/rtpengine*; do
+    backupEntry "$FILE" || backupFailed "${FILE}"
+done
+for FILE in /etc/profile.d/dsip_*.sh; do
+    backupEntry "$FILE" || backupFailed "${FILE}"
+done
+shopt -u nullglob
+for FILE in "${MANAGED_FILES[@]}" "${PKG_SOURCE_FILES[@]}"; do
+    backupEntry "$FILE" || backupFailed "${FILE}"
+done
+backupCrontab || backupFailed "root crontab"
+if [[ -n "$KAM_MODULES_DIR" ]]; then
+    backupTree "$KAM_MODULES_DIR" || backupFailed "${KAM_MODULES_DIR}"
+fi
+# only a reinstall of kamailio or rtpengine changes the packages
+if (( REINSTALL_KAMAILIO == 1 || REINSTALL_RTPENGINE == 1 )); then
+    backupPackages || backupFailed "installed packages"
+    PKG_BACKED_UP=1
+fi
+
+if (( KAM_DB_EXISTS == 1 )); then
+    dumpKamDBFull "$KAM_DB_NAME" >"$KAMDB_DUMP_FILE" || backupFailed "${KAM_DB_NAME} DB dump"
+    grep -q '^-- Dump completed' "$KAMDB_DUMP_FILE" || backupFailed "${KAM_DB_NAME} DB dump is incomplete"
+    dumpKamDBGrants >"$KAMDB_USER_DUMP_FILE" || backupFailed "${KAM_DB_USER} grants dump"
+    # the dumps below are replayed into the DB a reinstall of kamailio recreates, the dumps above are for the restore
+    if (( REINSTALL_KAMAILIO == 1 )); then
+        dumpKamDBData "$KAM_DB_NAME" >"$KAMDB_DATA_FILE" || backupFailed "${KAM_DB_NAME} data dump"
+        grep -q '^-- Dump completed' "$KAMDB_DATA_FILE" || backupFailed "${KAM_DB_NAME} data dump is incomplete"
+        dumpKamDBDerived "$KAM_DB_NAME" >"$KAMDB_DERIVED_FILE" || backupFailed "${KAM_DB_NAME} derived tables dump"
+        grep -q '^-- Dump completed' "$KAMDB_DERIVED_FILE" || backupFailed "${KAM_DB_NAME} derived tables dump is incomplete"
+        dumpKamDBObjects "$KAM_DB_NAME" "$KAMDB_OBJECTS_DIR" || backupFailed "${KAM_DB_NAME} tables, views, triggers and routines dump"
+        [[ -f "$KAMDB_OBJECTS_MANIFEST" ]] || backupFailed "${KAM_DB_NAME} object manifest is missing"
+        dumpKamDBColumns "$KAM_DB_NAME" >"$KAMDB_COLUMNS_FILE" || backupFailed "${KAM_DB_NAME} column dump"
+        [[ -f "$KAMDB_COLUMNS_FILE" ]] || backupFailed "${KAM_DB_NAME} column dump is missing"
+    fi
+    KAM_DB_BACKED_UP=1
+fi
+
+# only a verified backup is marked complete, and only then can the handler restore from it
+date '+%s' >"${CURR_BACKUP_DIR}/.complete" || backupFailed "could not write backup marker"
+BACKUP_COMPLETE=1
+printdbg "files were backed up here: ${CURR_BACKUP_DIR}/"
+
+printdbg 'stopping and masking services before reinstall'
+CHANGES_STARTED=1
+if (( REINSTALL_DSIPROUTER == 1 )); then
+    stopAndMaskService dsiprouter.service || { printerr 'failed stopping or masking dsiprouter.service'; exit 1; }
+fi
+if (( REINSTALL_KAMAILIO == 1 )); then
+    stopAndMaskService kamailio.service || { printerr 'failed stopping or masking kamailio.service'; exit 1; }
+fi
+if (( REINSTALL_RTPENGINE == 1 )); then
+    stopAndMaskService rtpengine.service || { printerr 'failed stopping or masking rtpengine.service'; exit 1; }
+fi
+
+# set before any reinstall so resetConfigsHandler knows the DB may have changed
+# a DB that is not recreated is marked by applyUpgrade, right before the first step that writes to it
+if (( KAM_DB_EXISTS == 1 && REINSTALL_KAMAILIO == 1 )); then
+    KAM_DB_TOUCHED=1
+fi
+applyUpgrade || { printerr 'upgrade stage failed'; exit 1; }
+
+MIGRATION_COMPLETE=1
+printdbg 'upgrade completed successfully'
+publishUpgradeLog || printwarn "could not copy the output of the upgrade to ${DSIP_UPGRADE_LOG}"
+exit 0

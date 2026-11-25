@@ -53,6 +53,35 @@ Review its content and move those files back to ``/var/backups/dsiprouter`` befo
 Upgrades and reloads requested from the UI restart the services.
 A request of the same kind made less than 60 seconds after the last one is started once the 60 seconds have passed.
 
+Upgrade to 0.794
+--------------------
+
+Upgrading from version 0.78, 0.79, 0.791, 0.792, or 0.793 to 0.794 can be done using the auto upgrade feature via the UI or CLI.
+
+To upgrade using the UI click the "Upgrade Now" button:
+
+.. image:: images/upgrade_available.png
+        :align: center
+
+Or by using the CLI:
+
+.. code-block:: bash
+
+   dsiprouter upgrade -rel 0.794
+
+What is reinstalled depends on the installed version:
+
+- From 0.793 dSIPRouter is reinstalled. Kamailio keeps its config and its database, both are only updated to the new version.
+- From 0.79, 0.791 and 0.792 Kamailio is reinstalled as well, if it is installed. The data of its database is saved before and restored after the reinstall.
+- From 0.78 RTPEngine is reinstalled too, if it is installed, and its config is generated again.
+  The systemd units of nginx and dnsmasq get the drop-in newer versions install, unless a unit was changed after 0.78 installed it.
+  An install of 0.78 that is not located in ``/opt/dsiprouter`` can not be upgraded.
+- From every version RTPEngine is also reinstalled when the installed RTPEngine is not the version this release installs for the operating system.
+
+The upgrade lists the services that have to be restarted when it is done.
+The ``sudoers`` file of previous versions (``/etc/sudoers.d/99-dsiprouter``) is removed by the upgrade.
+When the upgrade was started from the UI its output can be viewed on the upgrade page afterwards, also when the upgrade failed and the previous version was restored.
+
 Upgrade to 0.793
 --------------------
 
