@@ -3611,7 +3611,7 @@ function upgrade() {
     UPGRADE_VER=$(jq -r -e '.version' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json")
     # the installed version is read from the project files, the dsiprouter config is owned by the dsiprouter user
     CURRENT_VERSION=$(getConfigAttrib "VERSION" "${DSIP_PROJECT_DIR}/gui/settings.py")
-    UPGRADE_DEPENDS=( $(jq -r -e '.depends[]' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json") )
+    UPGRADE_DEPENDS=( $(jq -r -e '.depends | if type == "array" then .[] else . end' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json") )
     (
         for VER in ${UPGRADE_DEPENDS[@]}; do
             if [[ "$CURRENT_VERSION" == "$VER" ]]; then

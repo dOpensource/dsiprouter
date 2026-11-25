@@ -3764,12 +3764,17 @@ def uploadCertificates(domain=None):
         key_base64 = base64.b64encode(pkey_bytes)
         cert_base64 = base64.b64encode(cert_bytes)
 
-        # Store Certificate in dSIPCertificate Table
-        certificate = dSIPCertificates(domain, "uploaded", None, cert_base64, key_base64)
-        db.add(certificate)
+        # Store Certificate in dSIPCertificate Table, re-uploads replace the existing entry
+        certificate = db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).first()
+        if certificate is not None:
+            db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).update(
+                {'email': None, 'type': "uploaded", 'cert': cert_base64, 'key': key_base64})
+        else:
+            certificate = dSIPCertificates(domain, "uploaded", None, cert_base64, key_base64)
+            db.add(certificate)
 
-        if not replace_default_cert:
-            # Write the Kamailio TLS Configuration if it's not the default
+        if replace_default_cert != "true" and domain not in (kamtls.getCustomTLSConfigs() or {}):
+            # Write the Kamailio TLS Configuration if it's not the default and not already there
             if not kamtls.addCustomTLSConfig(domain, ip, port, server_name_mode):
                 raise Exception('Failed to add Certificate to Kamailio')
 

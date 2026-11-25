@@ -96,7 +96,12 @@ class UpdateUtils():
         :raises ReleaseLookupPending:   if the first lookup with the current upgrade settings has not finished
         """
 
-        latest, error, _ = UpdateUtils.latest_version.get(loadUpgradeSettings()['GIT_RELEASE_URL'])
+        try:
+            release_url = loadUpgradeSettings()['GIT_RELEASE_URL']
+        except (OSError, SyntaxError, ValueError, KeyError) as ex:
+            return None, ReleaseLookupError('could not read GIT_RELEASE_URL from the upgrade settings ({})'.format(type(ex).__name__))
+
+        latest, error, _ = UpdateUtils.latest_version.get(release_url)
         if error is not None:
             # the release found by an earlier lookup is returned with the error
             return latest, ReleaseLookupError('{}: {}'.format(type(error).__name__, error))
