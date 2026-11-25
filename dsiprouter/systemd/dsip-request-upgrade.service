@@ -1,0 +1,21 @@
+# Started by dsip-request-upgrade.socket when a request is written to its FIFO
+# the command is fixed and takes no arguments from the request, the handler validates the request before it is used
+
+[Unit]
+Description=dSIPRouter request handler: upgrade dSIPRouter
+# requests are rare, the handler must never be blocked by the start rate limit
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+# the same as StartLimitIntervalSec above, for systemd versions that only know this name
+StartLimitInterval=0
+# exists while the request is handled, the dsiprouter user can not ask systemd for the state of this unit
+RuntimeDirectory=dsip-request-upgrade
+Environment='HOME=/root'
+# handling a request can take longer than the default start timeout of older systemd versions
+TimeoutStartSec=0
+# the handler reads the requests that are queued, it must not wait for more
+NonBlocking=true
+# a failed request is logged by the handler, the unit does not stay failed
+ExecStart=-/usr/bin/dsiprouter handlerequest upgrade

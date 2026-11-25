@@ -27,15 +27,30 @@
     <div class="row">
       <div class="col-sm-12">
         <p>Current Version: {{ upgrade_settings["current_version"] }}</p>
-        <p>Latest Version: {{ upgrade_settings["latest_version"] }}</p>
+        {% if upgrade_settings["lookup_pending"] %}
+          <p>Latest Version: looking up the latest release...</p>
+        {% elif upgrade_settings["latest_version"] is none %}
+          <p>Latest Version: unknown</p>
+        {% elif upgrade_settings["lookup_error"] %}
+          <p>Latest Version: {{ upgrade_settings["latest_version"] }} (found by an earlier lookup)</p>
+        {% else %}
+          <p>Latest Version: {{ upgrade_settings["latest_version"] }}</p>
+        {% endif %}
+        {% if upgrade_settings["lookup_error"] %}
+          <div class="alert alert-danger" id="lookup_error">
+            <p class="mb-0">The latest release could not be looked up: {{ upgrade_settings["lookup_error"] }}</p>
+            <p class="mb-0">Load the page again to retry.</p>
+          </div>
+        {% endif %}
       </div>
     </div>
 
 
-    <form action="/upgrade" method="POST" role="form" id="upgrade_form">
+    <form action="/upgrade" method="POST" role="form" id="upgrade_form"
+          data-lookup-pending="{{ 1 if upgrade_settings["lookup_pending"] else 0 }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input type="hidden" name="current_version" value="{{ upgrade_settings["current_version"] }}"/>
-      <input type="hidden" name="latest_version" value="{{ upgrade_settings["latest_version"] }}"/>
+      <input type="hidden" name="latest_version" value="{{ upgrade_settings["latest_version"] or '' }}"/>
 
       {% if upgrade_settings["upgrade_available"] == 1 %}
         <div class="row">
@@ -59,7 +74,7 @@
             </button>
           </div>
         </div>
-      {% else %}
+      {% elif upgrade_settings["latest_version"] is not none %}
         <div class="row mt-4">
           <div class="col-sm-12">
             <div class="alert alert-success text-center">

@@ -15,7 +15,7 @@
 import os, sys
 sys.path.insert(0, os.path.abspath('../../gui'))
 sys.path.insert(0, '/etc/dsiprouter/gui')
-import settings
+import settings, upgrade_settings
 sys.setrecursionlimit(1500)
 
 # -- Project information -----------------------------------------------------
@@ -93,7 +93,7 @@ html_theme = 'piccolo_theme'
 # documentation.
 #
 html_theme_options = {
-    "source_url": f'{settings.GIT_REPO_URL.rsplit(".", 1)[0]}/',
+    "source_url": f'{upgrade_settings.GIT_REPO_URL.rsplit(".", 1)[0]}/',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

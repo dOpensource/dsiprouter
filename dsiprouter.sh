@@ -94,6 +94,8 @@ function setStaticScriptSettings() {
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/kamailio.cfg"
     export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/tls.cfg"
     export DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
+    # upgrades are run as root from these settings, they are kept apart from the config the dsiprouter user owns
+    export DSIP_UPGRADE_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/upgrade_settings.py"
     export DSIP_RUN_DIR="/run/dsiprouter"
     export DSIP_LIB_DIR="/var/lib/dsiprouter"
     export DSIP_CERTS_DIR="${DSIP_SYSTEM_CONFIG_DIR}/certs"
@@ -105,9 +107,15 @@ function setStaticScriptSettings() {
     export SYSTEM_RTPENGINE_CONFIG_FILE="${SYSTEM_RTPENGINE_CONFIG_DIR}/rtpengine.conf"
     export PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh" # updates paths required
     GIT_UPDATE_FILE="/etc/profile.d/dsip_git.sh" # extends git command
-    DSIP_SUDOERS_FILE="/etc/sudoers.d/99-dsiprouter"
+    # request queues of the dsip-request systemd units, the dsiprouter user writes its requests to them
+    export DSIP_REQUESTS_DIR="/run/dsiprouter-requests"
+    # seconds between two restart requests and between two upgrade requests, the services are restarted for each of them
+    DSIP_REQUEST_INTERVAL=60
+    export DSIP_UPGRADE_LOG="/var/log/dsiprouter/upgrade.log"
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
+    # backups the dsiprouter user creates and receives through the GUI, root never restores from this directory
+    export DSIP_GUI_BACKUPS_DIR="${DSIP_LIB_DIR}/gui-backups"
     IMAGE_BUILD=${IMAGE_BUILD:-0}
     # TODO: marked for review in v0.78
     #       we should move these settings to the OS specific install scripts
@@ -366,8 +374,10 @@ function setDynamicScriptSettings() {
     # find the repo where we are getting upgrades from
     # note that remote is assumed to be "origin"
     # note that the VCS is assumed to be git
-    GIT_REPO_URL=$(getConfigAttrib 'GIT_REPO_URL' ${DSIP_CONFIG_FILE})
-    GIT_RELEASE_URL=$(getConfigAttrib 'GIT_RELEASE_URL' ${DSIP_CONFIG_FILE})
+    if [[ -f "$DSIP_UPGRADE_CONFIG_FILE" ]]; then
+        GIT_REPO_URL=$(getConfigAttrib 'GIT_REPO_URL' ${DSIP_UPGRADE_CONFIG_FILE})
+        GIT_RELEASE_URL=$(getConfigAttrib 'GIT_RELEASE_URL' ${DSIP_UPGRADE_CONFIG_FILE})
+    fi
 
     export CURR_BACKUP_DIR=${CURR_BACKUP_DIR:-"${BACKUPS_DIR}/$(date '+%s')"}
 }
@@ -722,7 +732,7 @@ function updateDsiprouterConfig() {
     [[ -n "$MAIL_DEFAULT_SUBJECT" ]] && setConfigAttrib 'MAIL_DEFAULT_SUBJECT' "$MAIL_DEFAULT_SUBJECT" ${DSIP_CONFIG_FILE} -q
     [[ -n "$RTPENGINE_URI" ]] && setConfigAttrib 'RTPENGINE_URI' "$RTPENGINE_URI" ${DSIP_CONFIG_FILE} -q
     [[ -n "$CLOUD_PLATFORM" ]] && setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
-    [[ -n "$BACKUPS_DIR" ]] && setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
+    [[ -n "$DSIP_GUI_BACKUPS_DIR" ]] && setConfigAttrib 'BACKUP_FOLDER' "$DSIP_GUI_BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
     [[ -n "$DID_PREFIX_ALLOWED_CHARS" ]] && setConfigAttrib 'DID_PREFIX_ALLOWED_CHARS' "$DID_PREFIX_ALLOWED_CHARS" ${DSIP_CONFIG_FILE}
     [[ -n "$LOAD_SETTINGS_FROM" ]] && setConfigAttrib 'LOAD_SETTINGS_FROM' "$LOAD_SETTINGS_FROM" ${DSIP_CONFIG_FILE} -q
     [[ -n "$DSIP_LICENSE_STORE" ]] && setConfigAttrib 'DSIP_LICENSE_STORE' "$DSIP_LICENSE_STORE" ${DSIP_CONFIG_FILE}
@@ -745,8 +755,6 @@ function updateDsiprouterConfig() {
     setConfigAttrib 'PUBLIC_IFACE' "$PUBLIC_IFACE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'PRIVATE_IFACE' "$PRIVATE_IFACE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'UAC_REG_ADDR' "$UAC_REG_ADDR" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'GIT_REPO_URL' "$GIT_REPO_URL" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'GIT_RELEASE_URL' "$GIT_RELEASE_URL" ${DSIP_CONFIG_FILE} -q
 
     # TODO: the following are updated in setCredentials() and the config file should only be updated here
     #		i.e. settings the variables elsewhere is fine but any changes to the config file or DB should be centralised here
@@ -788,7 +796,7 @@ function updateDsiprouterConfig() {
     # TODO: workaround to update DB settings until next major release (v0.80)
     if [[ "$LOAD_SETTINGS_FROM" == "db" ]]; then
         setConfigAttrib 'LOAD_SETTINGS_FROM' 'file' ${DSIP_CONFIG_FILE} -q
-        ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from dsiprouter import syncSettings; syncSettings();"
+        withConfigOwner ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from dsiprouter import syncSettings; syncSettings();"
         setConfigAttrib 'LOAD_SETTINGS_FROM' 'db' ${DSIP_CONFIG_FILE} -q
     fi
 
@@ -1606,6 +1614,12 @@ function setupScriptRequiredFiles() {
     # make sure dirs exist required for this script
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}{,/gui,/kamailio,/rtpengine} ${SRC_DIR} ${DSIP_RUN_DIR} ${DSIP_LIB_DIR} ${DSIP_CERTS_DIR}{,/ca} ${BACKUPS_DIR}
 
+    # the commands of this script save to and restore from the backups, they are secured before any of them runs
+    if ! secureBackupsDir "$BACKUPS_DIR"; then
+        printerr "Could not secure the backups directory: ${BACKUPS_DIR}"
+        exit 1
+    fi
+
     # only copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exist
     if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
         # copy over the template settings.py to be worked on (used throughout this script as well)
@@ -1947,23 +1961,10 @@ function installDsiprouterCli() {
         return 0
     fi
 
-    # TODO: add support for 'su' privilege escalation
     printdbg "Installing dSIPRouter CLI"
-    if cmdExists 'apt-get'; then
-        apt-get install -y sudo
-    elif cmdExists 'dnf'; then
-        dnf install -y sudo
-    elif cmdExists 'yum'; then
-        yum install -y sudo
-    else
-        printerr 'Could not install dSIPRouter CLI - failed installing required packages'
-        exit 1
-    fi
 
     # add dsiprouter CLI command to the path
     install -o root -g root -m 755 ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
-    # add specific commands to sudoers that dsiprouter can run with escalated privileges
-    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/sudoers.d/99-dsiprouter ${DSIP_SUDOERS_FILE}
 
     printdbg "Installing 'dsiprouter' tab completion"
     if cmdExists 'apt-get'; then
@@ -2025,9 +2026,6 @@ function uninstallDsiprouterCli() {
     # remove command line completion for dsiprouter.sh
     rm -f /etc/bash_completion.d/dsiprouter
 
-    # remove dsiprouter sudoers file
-    rm -f ${DSIP_SUDOERS_FILE}
-
     printdbg "uninstalling dsiprouter manpages"
     rm -f ${MAN_PROGS_DIR}/dsiprouter.1
     rm -f ${MAN_PROGS_DIR}/dsiprouter.1.gz
@@ -2043,6 +2041,307 @@ function uninstallDsiprouterCli() {
 # we should be starting the web server as root and dropping root privilege after
 # this is standard practice, but we would have to consider file permissions
 # it would be easier to manage if we moved dsiprouter configs to /etc/dsiprouter
+# the dsiprouter user can not restart services or install software
+# it writes a request to a FIFO only it can write to, systemd starts the handler of the request as root
+function installRequestUnits() {
+    local NAME UNIT STATE RETVAL
+
+    for NAME in restart upgrade provisioner; do
+        for UNIT in dsip-request-${NAME}.socket dsip-request-${NAME}.service; do
+            perl -pe "s|DSIP_REQUESTS_DIR|${DSIP_REQUESTS_DIR}|g;" \
+                ${DSIP_PROJECT_DIR}/dsiprouter/systemd/${UNIT} >/lib/systemd/system/${UNIT} &&
+            chmod 644 /lib/systemd/system/${UNIT} || return 1
+        done
+    done
+    systemctl daemon-reload
+
+    for NAME in restart upgrade provisioner; do
+        systemctl enable dsip-request-${NAME}.socket || return 1
+        # a socket can not be restarted while its handler runs, an upgrade requested by the GUI runs this function from its handler
+        STATE=$(systemctl is-active dsip-request-${NAME}.service)
+        if [[ "$STATE" == "activating" || "$STATE" == "active" ]]; then
+            timeout 60 systemctl start dsip-request-${NAME}.socket
+        else
+            timeout 60 systemctl restart dsip-request-${NAME}.socket
+        fi
+        RETVAL=$?
+        # a handler that was started in the meantime can be waiting for the upgrade running this function to finish
+        # systemd applies the change once that handler is done, waiting for it here would never end
+        if (( $RETVAL == 124 )); then
+            printwarn "dsip-request-${NAME}.socket is updated once its handler finished"
+        elif (( $RETVAL != 0 )); then
+            return 1
+        fi
+    done
+    return 0
+}
+
+# the request handlers are not stopped, one of them may be running this function
+function uninstallRequestUnits() {
+    local NAME
+
+    for NAME in restart upgrade provisioner; do
+        systemctl stop dsip-request-${NAME}.socket
+        systemctl disable dsip-request-${NAME}.socket
+        rm -f /lib/systemd/system/dsip-request-${NAME}.socket /lib/systemd/system/dsip-request-${NAME}.service
+    done
+    systemctl daemon-reload
+
+    rm -rf ${DSIP_REQUESTS_DIR}
+}
+
+# usage:    writeProvisionerSite <file>
+# notes:    the file lists the FusionPBX servers phones are provisioned from, one host per line
+#           the nginx site is generated from the hosts that are valid, without any host the site is removed
+# returns:  0 if the site was generated or removed, 1 if the list is not valid or the site could not be written
+function writeProvisionerSite() {
+    local SERVERS_FILE="$1"
+    local SITE_TEMPLATE="${DSIP_PROJECT_DIR}/gui/modules/fusionpbx/dsiprouter-provisioner.tpl"
+    local SITE_FILE="/etc/nginx/sites-available/dsiprouter-provisioner.conf"
+    local SITE_LINK="/etc/nginx/sites-enabled/dsiprouter-provisioner.conf"
+    local SITE_PLACEHOLDER='##SERVERLIST##'
+    # hostnames, IPv4 addresses and IPv6 addresses in square brackets
+    local HOST_REGEX='^([A-Za-z0-9]([A-Za-z0-9._-]{0,251}[A-Za-z0-9])?|\[[0-9A-Fa-f:.]{2,45}\])$'
+    local HOST SITE_CONFIG TMP_FILE RETVAL
+    local SERVER_LIST=''
+    local -a HOSTS
+
+    mapfile -t -n 257 HOSTS <"$SERVERS_FILE" || return 1
+    if (( ${#HOSTS[@]} > 256 )); then
+        printerr 'too many servers in the provisioning site request'
+        return 1
+    fi
+    for HOST in "${HOSTS[@]}"; do
+        [[ -z "$HOST" ]] && continue
+        # nginx reads a server starting with unix: as a socket path
+        if ! [[ "$HOST" =~ $HOST_REGEX ]] || [[ "${HOST,,}" == "unix" ]]; then
+            printerr 'invalid server in the provisioning site request'
+            return 1
+        fi
+        SERVER_LIST+="server ${HOST}:443;"$'\n\t'
+    done
+
+    if [[ -z "$SERVER_LIST" ]]; then
+        rm -f "$SITE_LINK" "$SITE_FILE"
+        return 0
+    fi
+
+    SITE_CONFIG=$(<"$SITE_TEMPLATE") || return 1
+    TMP_FILE=$(mktemp) || return 1
+    printf '%s\n' "${SITE_CONFIG//"$SITE_PLACEHOLDER"/${SERVER_LIST%$'\n\t'}}" >"$TMP_FILE" &&
+    install -o root -g root -m 644 "$TMP_FILE" "$SITE_FILE" &&
+    ln -sfn "$SITE_FILE" "$SITE_LINK"
+    RETVAL=$?
+    rm -f "$TMP_FILE"
+    return $RETVAL
+}
+export -f writeProvisionerSite
+
+# usage:    updateProvisionerSite <file>
+# notes:    generates the nginx provisioning site from the file and reloads nginx
+#           the previous site is put back when nginx does not accept the new one
+# returns:  0 if nginx is running with the new site, 1 otherwise
+function updateProvisionerSite() {
+    local SERVERS_FILE="$1"
+    local SITE_FILE="/etc/nginx/sites-available/dsiprouter-provisioner.conf"
+    local SITE_LINK="/etc/nginx/sites-enabled/dsiprouter-provisioner.conf"
+    local BACKUP_DIR RETVAL
+
+    BACKUP_DIR=$(mktemp -d) || return 1
+    cp -af "$SITE_FILE" "${BACKUP_DIR}/site" 2>/dev/null
+
+    writeProvisionerSite "$SERVERS_FILE" && nginx -t
+    RETVAL=$?
+    if (( $RETVAL != 0 )); then
+        printerr 'the provisioning site was not updated'
+        if [[ -f "${BACKUP_DIR}/site" ]]; then
+            cp -af "${BACKUP_DIR}/site" "$SITE_FILE" && ln -sfn "$SITE_FILE" "$SITE_LINK"
+        else
+            rm -f "$SITE_LINK" "$SITE_FILE"
+        fi
+    fi
+    rm -rf "$BACKUP_DIR"
+    (( $RETVAL != 0 )) && return 1
+
+    systemctl reload nginx
+    return $?
+}
+
+# usage:    waitRequestInterval <restart|upgrade>
+# notes:    the dsiprouter user can file these requests at any rate, the services are restarted for each of them
+#           a request is held back until DSIP_REQUEST_INTERVAL seconds passed since the last one was handled
+#           the time the last one was handled is kept where only root can write
+function waitRequestInterval() {
+    local NAME="$1"
+    local NOW LAST WAIT
+
+    LAST=$(head -c 16 "${DSIP_REQUESTS_DIR}.${NAME}.done" 2>/dev/null)
+    [[ "$LAST" =~ ^[1-9][0-9]*$ ]] || return 0
+    NOW=$(date '+%s')
+    WAIT=$(( DSIP_REQUEST_INTERVAL - (NOW - LAST) ))
+    # the clock was set back
+    (( WAIT > DSIP_REQUEST_INTERVAL )) && WAIT=$DSIP_REQUEST_INTERVAL
+    if (( WAIT > 0 )); then
+        printwarn "the last ${NAME} request was handled less than ${DSIP_REQUEST_INTERVAL} seconds ago, this one is handled in ${WAIT} seconds"
+        sleep "$WAIT"
+    fi
+    return 0
+}
+
+# usage:    handleRequest <restart|upgrade|provisioner>
+# notes:    run as root by the dsip-request systemd units, acts on a request written by the dsiprouter user
+#           the name of the request selects a fixed command, a request is one line that is validated before use
+function handleRequest() {
+    local NAME="$1"
+    local RELEASE_REGEX='^v[0-9]+\.[0-9]+-[a-z0-9]+$'
+    local LOCK_FILE="${DSIP_REQUESTS_DIR}.lock"
+    local REQUEST=''
+    local DATA TMP_FILE RETVAL LOCK_FD READS
+
+    case "$NAME" in
+        restart|upgrade|provisioner)
+            ;;
+        *)
+            printerr "Invalid request [$NAME]"
+            return 1
+            ;;
+    esac
+
+    # systemd passes the request queue as file descriptor 3
+    if [[ "$LISTEN_FDS" != "1" || "$LISTEN_PID" != "$$" ]]; then
+        printerr 'requests are handled by the dsip-request systemd units'
+        return 1
+    fi
+
+    # the queue is emptied, the last request in it is the one that is handled
+    # a request is written in one piece, so the data that was read ends with a complete request
+    for (( READS=0; READS<64; READS++ )); do
+        DATA=$(dd iflag=nonblock bs=65536 count=1 <&3 2>/dev/null) && [[ -n "$DATA" ]] || break
+        REQUEST="${DATA##*$'\n'}"
+    done
+    # systemd can start this handler again for requests that were read by a previous run
+    if [[ -z "$REQUEST" ]]; then
+        return 0
+    fi
+    if (( ${#REQUEST} > 4096 )); then
+        printerr "the ${NAME} request is too long"
+        return 1
+    fi
+
+    ( umask 077 && : >>"$LOCK_FILE" ) && exec {LOCK_FD}<"$LOCK_FILE" || {
+        printerr 'failed opening the lock of the request handlers'
+        return 1
+    }
+
+    # a request is validated and held back before the handlers are locked, the other requests are handled in the meantime
+    case "$NAME" in
+        restart)
+            if [[ "$REQUEST" != "restart" ]]; then
+                printerr 'invalid restart request'
+                return 1
+            fi
+            waitRequestInterval restart
+            ;;
+        upgrade)
+            # the log and the result of the last upgrade are replaced while no upgrade is running
+            flock "$LOCK_FD" || {
+                printerr 'failed locking the request handlers'
+                return 1
+            }
+            # the log and the result are written where only root can create files
+            # the log shows the credentials reset by the upgrade, of the service users only the dsiprouter user can read it
+            mkdir -p "$(dirname "$DSIP_UPGRADE_LOG")" &&
+            rm -f "${DSIP_UPGRADE_LOG}.exitcode" &&
+            install -o dsiprouter -g root -m 600 /dev/null "$DSIP_UPGRADE_LOG" || {
+                printerr 'failed creating the upgrade log'
+                return 1
+            }
+            # a request with an invalid release is held back like the others, it replaces the log as well
+            flock -u "$LOCK_FD"
+            waitRequestInterval upgrade &>>"$DSIP_UPGRADE_LOG"
+            ;;
+    esac
+
+    # one request is handled at a time, a restart or a change of the provisioning site waits for a running upgrade
+    # the commands run without the lock file and the queue open, a process they leave behind can not hold on to them
+    flock "$LOCK_FD" || {
+        printerr 'failed locking the request handlers'
+        return 1
+    }
+
+    case "$NAME" in
+        restart)
+            "$0" restart -all {LOCK_FD}>&- 3<&-
+            RETVAL=$?
+            ;;
+        upgrade)
+            # the release is the only value taken from the request
+            # the upgrade checks it against the supported releases of the repo set in the upgrade settings
+            if [[ "$REQUEST" =~ $RELEASE_REGEX ]]; then
+                "$0" upgrade -rel "${REQUEST%-*}" &>>"$DSIP_UPGRADE_LOG" {LOCK_FD}>&- 3<&-
+                RETVAL=$?
+            else
+                # a request that is turned down is recorded as a failed upgrade, what was requested is not written to the log
+                printerr 'invalid release in the upgrade request' | tee -a "$DSIP_UPGRADE_LOG" >&2
+                RETVAL=1
+            fi
+            echo "$RETVAL" >"${DSIP_UPGRADE_LOG}.exitcode"
+            ;;
+        provisioner)
+            # the servers of the site, separated by commas
+            TMP_FILE=$(mktemp) || return 1
+            tr ',' '\n' <<<"$REQUEST" >"$TMP_FILE" &&
+            updateProvisionerSite "$TMP_FILE" {LOCK_FD}>&- 3<&-
+            RETVAL=$?
+            rm -f "$TMP_FILE"
+            return $RETVAL
+            ;;
+    esac
+
+    date '+%s' >"${DSIP_REQUESTS_DIR}.${NAME}.done"
+
+    # requests made while this one was held back and while the services were restarted or upgraded are dropped
+    for (( READS=0; READS<64; READS++ )); do
+        DATA=$(dd iflag=nonblock bs=65536 count=1 <&3 2>/dev/null) && [[ -n "$DATA" ]] || break
+    done
+    return $RETVAL
+}
+
+# the settings upgrades are run from are installed where only root can change them
+# previous versions read them from the dsiprouter config, which the dsiprouter user owns
+function installUpgradeConfig() {
+    local TEMPLATE="${DSIP_PROJECT_DIR}/gui/upgrade_settings.py"
+    local URL_REGEX='^https://[A-Za-z0-9._~%@:/+-]+$'
+    local NAME VALUE
+    local -a NAMES
+
+    mapfile -t NAMES < <(grep -oP '^[A-Z_]+(?=[ \t]*=)' "$TEMPLATE")
+    if (( ${#NAMES[@]} == 0 )); then
+        return 1
+    fi
+
+    if [[ ! -f "$DSIP_UPGRADE_CONFIG_FILE" ]]; then
+        install -o root -g root -m 644 "$TEMPLATE" "$DSIP_UPGRADE_CONFIG_FILE" || return 1
+        # the settings made in the dsiprouter config of a previous version are carried over once
+        for NAME in "${NAMES[@]}"; do
+            grep -q "^${NAME}[ \t]*=" "$DSIP_CONFIG_FILE" 2>/dev/null || continue
+            VALUE=$(getConfigAttrib "$NAME" "$DSIP_CONFIG_FILE")
+            if [[ "$VALUE" == "True" || "$VALUE" == "False" ]]; then
+                setConfigAttrib "$NAME" "$VALUE" "$DSIP_UPGRADE_CONFIG_FILE"
+            elif [[ "$VALUE" =~ $URL_REGEX ]]; then
+                setConfigAttrib "$NAME" "$VALUE" "$DSIP_UPGRADE_CONFIG_FILE" -q
+            fi
+        done
+    fi
+    chown root:root "$DSIP_UPGRADE_CONFIG_FILE" && chmod 644 "$DSIP_UPGRADE_CONFIG_FILE" || return 1
+
+    # the settings are not read from the dsiprouter config any more
+    for NAME in "${NAMES[@]}"; do
+        sed -i -e "/^${NAME}[ \t]*=/d" "$DSIP_CONFIG_FILE" 2>/dev/null
+    done
+    return 0
+}
+
 function installDsiprouter() {
     local DSIP_CURRENT_PYTHON_VER
 
@@ -2073,19 +2372,26 @@ function installDsiprouter() {
     if [[ ! -f "$DSIP_CONFIG_FILE" ]]; then
         generateDsiprouterConfig
     fi
+    installUpgradeConfig || {
+        printerr "dSIPRouter install failed - could not install the upgrade settings"
+        exit 1
+    }
 
     # Set dsip private key (used for encryption across services) by following precedence:
     # 1:    set via cmdline arg
     # 2:    set prior to externally
     # 3:    generate new key
-    # TODO: create bash-native equivalent function for creating the private key
     if [[ -n ${SET_DSIP_PRIV_KEY+set} ]]; then
         printf '%s' "${SET_DSIP_PRIV_KEY}" > ${DSIP_PRIV_KEY}
     elif [ -f "${DSIP_PRIV_KEY}" ]; then
         :
     elif (( ${RUNNING_UPGRADE:-0} == 0 )); then
         # only generate if running a fresh install
-        ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
+        head -c "$AES_CTR_KEY_SIZE" /dev/urandom >"$DSIP_PRIV_KEY" || {
+            rm -f "$DSIP_PRIV_KEY"
+            printerr "dSIPRouter install failed - could not generate private key"
+            exit 1
+        }
     fi
 
     # Set credentials for our services, will either use credentials from CLI or generate them
@@ -2131,6 +2437,11 @@ function installDsiprouter() {
 
     # update systemd startup dependencies
     updateDsiprouterStartup
+
+    installRequestUnits || {
+        printerr "dSIPRouter install failed - could not install the request handlers"
+        exit 1
+    }
 
     # NOTE: some of the previous files/dirs get updated here to allow dsiprouter access
     updatePermissions -certs -kamailio -dsiprouter
@@ -2245,6 +2556,8 @@ function uninstallDsiprouter() {
         printerr "dsiprouter uninstall failed"
         exit 1
     fi
+
+    uninstallRequestUnits
 
     # Remove all dsiprouter crontab entries
     printdbg "Removing dsiprouter crontab entries"
@@ -2610,7 +2923,7 @@ function start() {
             # perform pre-startup commands systemd would normally do in dsiprouter.service
             updatePermissions -dsiprouter
             # keep dSIPRouter in the foreground, only used for debugging issues (blocking)
-            sudo -E -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
+            runuser -u dsiprouter -g dsiprouter -- ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
             exit $?
         else
             # start the reverse proxy first
@@ -3266,8 +3579,21 @@ function upgrade() {
     local REPO_URL=${UPGRADE_REPO:-"$GIT_REPO_URL"}
     REPO_URL=${REPO_URL:-https://github.com/dOpensource/dsiprouter.git}
     local TAG_NAME="${UPGRADE_RELEASE}-rel"
-    export NEW_PROJECT_DIR=/tmp/dsiprouter
     export RUNNING_UPGRADE=1
+
+    # the upgrade runs the files it downloads, git is limited to the https transport
+    if ! [[ "$REPO_URL" =~ ^https://[A-Za-z0-9._~%@:/+-]+$ ]]; then
+        printerr 'the upgrade repo must be an https url'
+        exit 1
+    fi
+
+    # the new project files are run as root, so they are downloaded to a directory only root can access
+    UPGRADE_TMP_DIR=$(mktemp -d) || {
+        printerr 'failed creating temporary directory for the new project files'
+        exit 1
+    }
+    trap 'rm -rf "$UPGRADE_TMP_DIR"' EXIT
+    export NEW_PROJECT_DIR="${UPGRADE_TMP_DIR}/dsiprouter"
 
     # make sure mask is reset to be more permissive
     # repo must be created with permissions set in the remote repo
@@ -3275,15 +3601,16 @@ function upgrade() {
     umask 022
 
     printdbg 'downloading new dSIPRouter project files'
-    rm -rf "$NEW_PROJECT_DIR" 2>/dev/null
-    git clone --depth 1 -c advice.detachedHead=false -b "$TAG_NAME" "$REPO_URL" "$NEW_PROJECT_DIR" || {
+    git -c protocol.allow=never -c protocol.https.allow=always \
+        clone --depth 1 -c advice.detachedHead=false -b "$TAG_NAME" -- "$REPO_URL" "$NEW_PROJECT_DIR" || {
         printerr 'failed downloading new project files'
         exit 1
     }
 
     printdbg 'verifying version requirements'
     UPGRADE_VER=$(jq -r -e '.version' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json")
-    CURRENT_VERSION=$(getConfigAttrib "VERSION" "${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py")
+    # the installed version is read from the project files, the dsiprouter config is owned by the dsiprouter user
+    CURRENT_VERSION=$(getConfigAttrib "VERSION" "${DSIP_PROJECT_DIR}/gui/settings.py")
     UPGRADE_DEPENDS=( $(jq -r -e '.depends[]' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json") )
     (
         for VER in ${UPGRADE_DEPENDS[@]}; do
@@ -3299,7 +3626,7 @@ function upgrade() {
 
     if systemctl is-active -q dsiprouter; then
         # check shared memory
-        if [[ $(${PYTHON_CMD} -c "
+        if [[ $(withConfigOwner ${PYTHON_CMD} -c "
 import os
 os.chdir('${DSIP_PROJECT_DIR}/gui')
 from modules.api.licensemanager.functions import getLicenseStatus
@@ -3310,7 +3637,7 @@ print(getLicenseStatus(license_tag='DSIP_CORE'))
         fi
     else
         # manually grab license status
-        if [[ $(${PYTHON_CMD} -c "
+        if [[ $(withConfigOwner ${PYTHON_CMD} -c "
 import os, sys
 os.chdir('${DSIP_PROJECT_DIR}/gui')
 sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui')
@@ -3324,7 +3651,7 @@ print(getLicenseStatusFromStateDict(licenseDictToStateDict(settings.DSIP_LICENSE
     fi
 
     printdbg "starting migration from $CURRENT_VERSION to $UPGRADE_VER"
-    ${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/scripts/migrate.sh
+    "${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/scripts/migrate.sh"
     return $?
 }
 
@@ -3780,7 +4107,22 @@ EOSSH
 # $@ == subset of permissions to update
 # TODO: update systemd ExecStartPre commands to use this logic instead
 function updatePermissions() {
-    local OPT STI_CERTS
+    local PROVISIONER_SITE="/etc/nginx/sites-enabled/dsiprouter-provisioner.conf"
+    local OPT SERVERS_FILE
+
+    # sets the mode of the files in a tree owned by the dsiprouter user, as that user
+    # the user can replace a file in its tree with a link at any time, root would change the mode of the file the link points to
+    # usage: chmodOwnedFiles <mode> <dir> [find tests...]
+    chmodOwnedFiles() {
+        local MODE="$1" DIR="$2"
+        shift 2
+
+        if id -u dsiprouter &>/dev/null; then
+            ( cd / && runuser -u dsiprouter -- find "$DIR" -type f "$@" -exec chmod "$MODE" {} + )
+        else
+            find "$DIR" -type f "$@" -exec chmod "$MODE" {} +
+        fi
+    }
 
     # set permissions on the X509 certs used by dsiprouter and kamailio
     # [special use case]: testing kamailio service startup
@@ -3794,10 +4136,11 @@ function updatePermissions() {
             # dsiprouter user does not yet exist so make sure kamailio user has access
             chown -R root:kamailio ${DSIP_CERTS_DIR}
         fi
-        find ${DSIP_CERTS_DIR}/ -type f -exec chmod 640 {} +
+        chmodOwnedFiles 640 "${DSIP_CERTS_DIR}/"
         # STIR/SHAKEN certs need to be globally readable for nginx
-        STI_CERTS=$(grep -rl --include='*' 'BEGIN CERTIFICATE' "${DSIP_CERTS_DIR}/stirshaken/") &&
-        chmod 644 $STI_CERTS
+        if [[ -d "${DSIP_CERTS_DIR}/stirshaken/" ]]; then
+            chmodOwnedFiles 644 "${DSIP_CERTS_DIR}/stirshaken/" -exec grep -q 'BEGIN CERTIFICATE' {} \;
+        fi
     }
     # set permissions for files/dirs used by dnsmasq
     setDnsmasqPerms() {
@@ -3811,9 +4154,18 @@ function updatePermissions() {
         chown -R nginx:nginx /run/nginx
         chmod 770 /run/nginx
 
-        # dsiprouter needs to be able to dynamically update the provisioning site
-        chown root:dsiprouter /etc/nginx/sites-enabled/
-        chmod 775 /etc/nginx/sites-enabled/
+        # the nginx master process runs as root, only root can change the sites it loads
+        chown -R root:root /etc/nginx/sites-enabled/ /etc/nginx/sites-available/
+        chmod 755 /etc/nginx/sites-enabled/ /etc/nginx/sites-available/
+        find /etc/nginx/sites-enabled/ /etc/nginx/sites-available/ -type f -exec chmod 644 {} +
+        # a provisioning site written by the dsiprouter user is replaced by one generated from its server list
+        if [[ -f "$PROVISIONER_SITE" && ! -L "$PROVISIONER_SITE" ]]; then
+            SERVERS_FILE=$(mktemp) &&
+            { grep -oP '^\s*server\s+\K\S+(?=:443;)' "$PROVISIONER_SITE" >"$SERVERS_FILE"; rm -f "$PROVISIONER_SITE"; } &&
+            writeProvisionerSite "$SERVERS_FILE" ||
+                printwarn 'the provisioning site was removed, it is generated again on the next FusionPBX sync'
+            rm -f "$SERVERS_FILE"
+        fi
     }
     # set permissions for files/dirs used by kamailio
     setKamailioPerms() {
@@ -3830,7 +4182,7 @@ function updatePermissions() {
         else
             chown -R root:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
         fi
-        find ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/ -type f -exec chmod 640 {} +
+        chmodOwnedFiles 640 "${DSIP_SYSTEM_CONFIG_DIR}/kamailio/"
     }
     # set permissions for files/dirs used by dsiprouter
     setDsiprouterPerms() {
@@ -3838,14 +4190,20 @@ function updatePermissions() {
         chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
         chmod 770 ${DSIP_RUN_DIR}
 
-        # dsiprouter user is the only one making backups
-        chown -R dsiprouter:root ${BACKUPS_DIR}
+        # the backups are restored by root (system files, package sources, the state before an upgrade)
+        # only root can add to or change them, the dsiprouter user has its own directory for the backups made in the GUI
+        secureBackupsDir "$BACKUPS_DIR" || printerr "Could not secure the backups directory: ${BACKUPS_DIR}"
+        if [[ -L "$DSIP_GUI_BACKUPS_DIR" || ! -d "$DSIP_GUI_BACKUPS_DIR" ]]; then
+            rm -f "$DSIP_GUI_BACKUPS_DIR"
+        fi
+        install -d -o dsiprouter -g dsiprouter -m 700 "$DSIP_GUI_BACKUPS_DIR"
+        chown -R dsiprouter:dsiprouter "$DSIP_GUI_BACKUPS_DIR"
         # dsiprouter private key only readable by dsiprouter
         chown dsiprouter:root ${DSIP_PRIV_KEY}
         chmod 400 ${DSIP_PRIV_KEY}
         # dsiprouter gui files readable and writable only by dsiprouter
         chown -R dsiprouter:root ${DSIP_SYSTEM_CONFIG_DIR}/gui/
-        find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
+        chmodOwnedFiles 600 "${DSIP_SYSTEM_CONFIG_DIR}/gui/"
 
         # project files can only be edited by root
         chown -R root:root "$DSIP_PROJECT_DIR/"
@@ -3869,7 +4227,7 @@ function updatePermissions() {
         else
             chown -R root:rtpengine ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
         fi
-        find ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/ -type f -exec chmod 640 {} +
+        chmodOwnedFiles 640 "${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/"
     }
 
     # no args given set permissions for all services
@@ -3979,7 +4337,13 @@ function removeSwapFile() {
 }
 
 function licenseManager() {
-    ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/modules/api/licensemanager/cli.py "$@"
+    # the keys file is passed on stdin, the user the license manager runs as may not have access to it
+    if [[ "$1" == "-import" && -r "$2" ]] && (( $# == 2 )); then
+        withConfigOwner ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/modules/api/licensemanager/cli.py -import - <"$2"
+        return $?
+    fi
+
+    withConfigOwner ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/modules/api/licensemanager/cli.py "$@"
     return $?
 }
 
@@ -4131,7 +4495,7 @@ function preprocessCMD() {
     # Do not run the extra prep on these commands
     # we only need a portion of the script settings
     case "$1" in
-        chown|exec|clusterinstall|licensemanager|version|-v|--version|help|-h|--help)
+        chown|exec|handlerequest|clusterinstall|licensemanager|version|-v|--version|help|-h|--help)
             setStaticScriptSettings
             ;;
         *)
@@ -4766,6 +5130,15 @@ function processCMD() {
         # internal command, replace this process with the GUI server immediately
         exec)
             exec ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
+            ;;
+        # internal command, run by the dsip-request systemd units
+        handlerequest)
+            validateRootPriv
+            handleRequest "$2"
+            RETVAL=$?
+            # systemd stops a request queue that starts its handler too often, a handler that takes this long stays below that limit
+            sleep 0.2
+            exit $RETVAL
             ;;
         chown)
             shift

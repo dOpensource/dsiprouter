@@ -134,7 +134,8 @@ def cmdImport(args):
     else:
         state_dict = licenseDictToStateDict(settings.DSIP_LICENSE_STORE)
 
-    with open(args[0], 'r') as fp:
+    # the keys are read from stdin when the file is given as "-"
+    with (sys.stdin if args[0] == '-' else open(args[0], 'r')) as fp:
         license_keys = [line.strip() for line in fp]
 
     for license_key in license_keys:

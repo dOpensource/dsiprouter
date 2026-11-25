@@ -6,8 +6,12 @@
 NEW_PROJECT_DIR=${NEW_PROJECT_DIR:-/tmp/dsiprouter}
 # project dir where previous repo was located
 OLD_PROJECT_DIR=${DSIP_PROJECT_DIR:-/opt/dsiprouter}
-# the backup directory set by dsiprouter.sh
-CURR_BACKUP_DIR=${CURR_BACKUP_DIR:-"/var/backups/dsiprouter/$(date '+%s')"}
+# the backup is restored as root when the upgrade fails, so it is kept where only root can write
+# the backup directory set by previous versions of dsiprouter.sh is not used
+# it has a name that can be predicted, in a directory those versions handed to the dsiprouter user
+BACKUPS_DIR='/var/backups/dsiprouter'
+CURR_BACKUP_DIR="${BACKUPS_DIR}/$(date '+%s').$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+export CURR_BACKUP_DIR
 # system config files for dsiprouter
 DSIP_SYSTEM_CONFIG_DIR='/etc/dsiprouter'
 DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
@@ -33,13 +37,19 @@ KAMDB_OBJECTS_MANIFEST="${KAMDB_OBJECTS_DIR}/manifest.tsv"
 # column definitions of every kamailio base table, used to ADD COLUMN extra user columns after the reinstall
 KAMDB_COLUMNS_FILE="${CURR_BACKUP_DIR}/kam_columns.tsv"
 # systemd units and drop-in dirs the reinstall can change, each is backed up and restored as one entry
-SYSTEMD_UNITS=(dsiprouter.service kamailio.service rtpengine.service dsip-init.service mariadb.service nginx-watcher.service nginx-watcher.path)
+SYSTEMD_UNITS=(dsiprouter.service kamailio.service rtpengine.service dsip-init.service mariadb.service nginx-watcher.service nginx-watcher.path
+    dsip-request-restart.service dsip-request-upgrade.service dsip-request-provisioner.service)
+# queues for the requests of the dsiprouter user, installed and enabled by the reinstall, each is also backed up and restored as a unit
+REQUEST_SOCKET_UNITS=(dsip-request-restart.socket dsip-request-upgrade.socket dsip-request-provisioner.socket)
+SYSTEMD_UNITS+=("${REQUEST_SOCKET_UNITS[@]}")
 SYSTEMD_DROPINS=(dsiprouter.service.d kamailio.service.d rtpengine.service.d dsip-init.service.d mariadb.service.d nginx.service.d)
 SYSTEM_NGINX_CONFIG_DIR='/etc/nginx'
+# installed by previous versions, removed by this upgrade
+DSIP_SUDOERS_FILE='/etc/sudoers.d/99-dsiprouter'
 # installer-managed files restored as individual entries so unrelated files in the same directory survive
 MANAGED_FILES=(
     /usr/bin/dsiprouter
-    /etc/sudoers.d/99-dsiprouter
+    "$DSIP_SUDOERS_FILE"
     /etc/bash_completion.d/dsiprouter
     /etc/bash.bashrc
     /usr/share/man/man1/dsiprouter.1
@@ -307,6 +317,15 @@ fi
 # never reuse a backup dir that already has content, it could be stale or partial
 if [[ -e "$CURR_BACKUP_DIR" ]] && [[ -n "$(ls -A "$CURR_BACKUP_DIR" 2>/dev/null)" ]]; then
     printerr "backup directory already has content, refusing to reuse it: ${CURR_BACKUP_DIR}"
+    exit 1
+fi
+
+# secureBackupsDir() makes the backups directory writable by root only, the installed version does not have it
+# only that function is taken from the dsip_lib.sh of this release, the rest of it is loaded after the reinstall
+unset -f secureBackupsDir
+eval "$(unset DSIP_LIB_IMPORTED; . "${NEW_PROJECT_DIR}/dsiprouter/dsip_lib.sh" &>/dev/null; declare -f secureBackupsDir)"
+if ! declare -F secureBackupsDir >/dev/null; then
+    printerr "could not load secureBackupsDir() from ${NEW_PROJECT_DIR}/dsiprouter/dsip_lib.sh"
     exit 1
 fi
 
@@ -891,6 +910,13 @@ resetConfigsHandler() {
     for TREE in "$OLD_PROJECT_DIR" "$DSIP_LIB_DIR" "$DSIP_SYSTEM_CONFIG_DIR" "$SYSTEM_KAMAILIO_CONFIG_DIR" "$SYSTEM_RTPENGINE_CONFIG_DIR" "$SYSTEM_NGINX_CONFIG_DIR"; do
         restoreTree "$TREE" || RESTORE_FAILED=1
     done
+    # request queues the upgrade installed are stopped and disabled before their unit files are removed
+    for UNIT in "${REQUEST_SOCKET_UNITS[@]}"; do
+        if [[ ! -e "${CURR_BACKUP_DIR}/lib/systemd/system/${UNIT}" && -e "/lib/systemd/system/${UNIT}" ]]; then
+            systemctl stop "$UNIT"
+            systemctl disable "$UNIT"
+        fi
+    done
     for SYS_DIR in /etc/systemd/system /lib/systemd/system; do
         for NAME in "${SYSTEMD_UNITS[@]}" "${SYSTEMD_DROPINS[@]}"; do
             restoreEntry "${SYS_DIR}/${NAME}" || RESTORE_FAILED=1
@@ -1069,6 +1095,11 @@ function applyUpgrade() {
     export PYTHON_CMD="${DSIP_PROJECT_DIR}/venv/bin/python"
     . "${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh"
 
+    # the dsiprouter user no longer runs commands as root, the GUI files its requests in the queues of the dsip-request units
+    # the installer of this release does not know the file, it is put back with the other managed files when the upgrade fails
+    printdbg 'removing the sudoers file of the installed version'
+    rm -f "$DSIP_SUDOERS_FILE" || return 1
+
     printdbg 'adding new settings to the dSIPRouter config'
     addMissingSettings "${NEW_PROJECT_DIR}/gui/settings.py" "${DSIP_CONFIG_FILE}" || return 1
 
@@ -1216,7 +1247,9 @@ trap 'resetConfigsHandler 143' SIGTERM
 trap 'resetConfigsHandler $?' EXIT
 
 printdbg 'backing up configs and databases before making any change'
-mkdir -p "$CURR_BACKUP_DIR" || backupFailed "could not create ${CURR_BACKUP_DIR}"
+# from here on only root can add to the backups, the backup directory must be new
+secureBackupsDir "$BACKUPS_DIR" &&
+    mkdir -m 700 "$CURR_BACKUP_DIR" || backupFailed "could not create ${CURR_BACKUP_DIR}"
 backupTree "$OLD_PROJECT_DIR" || backupFailed "${OLD_PROJECT_DIR}"
 backupTree "$DSIP_LIB_DIR" || backupFailed "${DSIP_LIB_DIR}"
 backupTree "$DSIP_SYSTEM_CONFIG_DIR" || backupFailed "${DSIP_SYSTEM_CONFIG_DIR}"

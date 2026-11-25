@@ -25,6 +25,14 @@ You can find the new passwords displayed; either on the CLI after completion, or
 .. image:: images/upgrading-log-02.png
         :align: center
 
+Root restores system files from the backups in ``/var/backups/dsiprouter``.
+Previous versions let the ``dsiprouter`` user write to that directory, so what it holds from then is moved to ``/var/backups/dsiprouter/untrusted.<random>`` by the upgrade.
+Nothing is restored from that directory, also not the system files that were saved when dSIPRouter was installed (package sources, DNS and network settings, motd).
+Review its content and move those files back to ``/var/backups/dsiprouter`` before dSIPRouter is uninstalled, otherwise the uninstall does not put them back.
+
+Upgrades and reloads requested from the UI restart the services.
+A request of the same kind made less than 60 seconds after the last one is started once the 60 seconds have passed.
+
 Upgrade to 0.793
 --------------------
 
