@@ -39,6 +39,41 @@
     }
   }
 
+  /**
+   * Parse a CDR call_start_time ("YYYY-MM-DD HH:MM:SS", UTC) into epoch ms
+   * @param dt {string}
+   * @returns {number} epoch ms or NaN
+   */
+  function parseCallStart(dt) {
+    if (typeof dt !== "string") {
+      return NaN;
+    }
+    var ms = Date.parse(dt.replace(" ", "T") + "Z");
+    return isNaN(ms) ? Date.parse(dt) : ms;
+  }
+
+  /**
+   * Render the Call ID as a link to the call in Homer (opens in a new tab)
+   * Format: https://HOMER_HEP_HOST/?call_id=<call_id>&from=<start>&to=<start + duration>
+   */
+  function renderCallId(data, type, row) {
+    if (type !== "display" || !data) {
+      return data;
+    }
+    var escaped = $("<div>").text(data).html();
+    var from = parseCallStart(row.call_start_time);
+    if (!window.HOMER_HEP_HOST || isNaN(from)) {
+      return escaped;
+    }
+    var duration = parseInt(row.call_duration, 10);
+    // zero-length (failed) calls: give Homer a 5 minute window
+    var to = from + (isNaN(duration) || duration <= 0 ? 5 * 60 * 1000 : duration * 1000);
+    // start the Homer window 60 seconds before the call start
+    var url = "https://" + window.HOMER_HEP_HOST + "/?call_id=" + encodeURIComponent(data) +
+      "&from=" + (from - 60 * 1000) + "&to=" + to;
+    return '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + escaped + '</a>';
+  }
+
   function loadCDRDataTable(gwgroupid) {
     changeLoadingState(true);
 
@@ -89,7 +124,7 @@
           {"data": "dst_username"},
           {"data": "src_address"},
           {"data": "dst_address"},
-          {"data": "call_id", "orderable": false}
+          {"data": "call_id", "orderable": false, "render": renderCallId}
         ],
         "order": [[1, 'desc']],
         "pageLength": 100,

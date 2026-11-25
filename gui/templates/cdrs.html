@@ -55,6 +55,12 @@
 
 
 {% block custom_js %}
+  <script>
+    Object.defineProperty(window, "HOMER_HEP_HOST", {
+      value: {{ settings.HOMER_HEP_HOST|tojson }},
+      writable: false
+    });
+  </script>
   {{ script_tag('jquery.tabledit') }}
   {{ script_tag('cdrs') }}
 {% endblock %}
