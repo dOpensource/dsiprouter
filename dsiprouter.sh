@@ -2278,7 +2278,7 @@ function handleRequest() {
             # the release is the only value taken from the request
             # the upgrade checks it against the supported releases of the repo set in the upgrade settings
             if [[ "$REQUEST" =~ $RELEASE_REGEX ]]; then
-                "$0" upgrade -rel "${REQUEST%-*}" &>>"$DSIP_UPGRADE_LOG" {LOCK_FD}>&- 3<&-
+                "$0" upgrade -rel "$REQUEST" &>>"$DSIP_UPGRADE_LOG" {LOCK_FD}>&- 3<&-
                 RETVAL=$?
             else
                 # a request that is turned down is recorded as a failed upgrade, what was requested is not written to the log
@@ -3575,17 +3575,63 @@ function removeInitService() {
 }
 
 function upgrade() {
-    local UPGRADE_VER CURRENT_VERSION UPGRADE_DEPENDS
+    local UPGRADE_VER CURRENT_VERSION UPGRADE_DEPENDS TMP TAG
     local REPO_URL=${UPGRADE_REPO:-"$GIT_REPO_URL"}
     REPO_URL=${REPO_URL:-https://github.com/dOpensource/dsiprouter.git}
-    local TAG_NAME="${UPGRADE_RELEASE}-rel"
+    local REPO_URL_REGEX='^https://[A-Za-z0-9._~%@:/+-]+$'
+    local TRACK_BETA_RELEASES=''
+    local TAG_NAME=''
+    local -a SUPPORTED_TAGS RELEASES_ARGS
     export RUNNING_UPGRADE=1
 
     # the upgrade runs the files it downloads, git is limited to the https transport
-    if ! [[ "$REPO_URL" =~ ^https://[A-Za-z0-9._~%@:/+-]+$ ]]; then
+    if ! [[ "$REPO_URL" =~ $REPO_URL_REGEX ]]; then
         printerr 'the upgrade repo must be an https url'
         exit 1
     fi
+    # the repo, the beta setting and the installed version are read from files only root can change
+    # the dsiprouter config is owned by the dsiprouter user, it must not decide what root installs
+    if [[ -f "$DSIP_UPGRADE_CONFIG_FILE" ]]; then
+        TRACK_BETA_RELEASES=$(getConfigAttrib 'GIT_TRACK_BETA_RELEASES' ${DSIP_UPGRADE_CONFIG_FILE})
+    fi
+    CURRENT_VERSION=$(getConfigAttrib "VERSION" "${DSIP_PROJECT_DIR}/gui/settings.py")
+
+    # the releases of the repo that have upgrade settings listing the installed version
+    RELEASES_ARGS=(--repo "$REPO_URL" --current "$CURRENT_VERSION")
+    if [[ "$TRACK_BETA_RELEASES" == "True" ]]; then
+        RELEASES_ARGS+=(--prereleases)
+    fi
+    if [[ -z "$UPGRADE_REPO" && -n "$GIT_RELEASE_URL" ]]; then
+        RELEASES_ARGS+=(--release-api "$GIT_RELEASE_URL")
+    fi
+    TMP=$(${PYTHON_CMD} -I "${DSIP_PROJECT_DIR}/gui/modules/upgrade/releases.py" "${RELEASES_ARGS[@]}") || {
+        printerr 'could not retrieve the releases supported for upgrade'
+        exit 1
+    }
+    mapfile -t SUPPORTED_TAGS < <(sed '/^$/d' <<<"$TMP")
+
+    if (( ${UPGRADE_LIST:-0} == 1 )); then
+        (( ${#SUPPORTED_TAGS[@]} > 0 )) && printf '%s\n' "${SUPPORTED_TAGS[@]}"
+        exit 0
+    fi
+
+    # the latest supported release is installed if none was specified
+    if [[ -z "$UPGRADE_RELEASE" ]] && (( ${#SUPPORTED_TAGS[@]} > 0 )); then
+        TAG_NAME="${SUPPORTED_TAGS[${#SUPPORTED_TAGS[@]}-1]}"
+    fi
+    # a release can be specified by its tag (v0.793-rel) or its version (v0.793)
+    for TAG in "${SUPPORTED_TAGS[@]}"; do
+        if [[ "$TAG" == "$UPGRADE_RELEASE" || "${TAG%-*}" == "$UPGRADE_RELEASE" ]]; then
+            TAG_NAME="$TAG"
+        fi
+    done
+    if [[ -z "$TAG_NAME" ]]; then
+        printerr "no supported upgrade found for version ${CURRENT_VERSION}${UPGRADE_RELEASE:+ (requested ${UPGRADE_RELEASE})}"
+        echo "supported releases: ${SUPPORTED_TAGS[*]:-none}"
+        exit 1
+    fi
+    # the upgrade resources are stored under the version of the release
+    UPGRADE_RELEASE="${TAG_NAME%-*}"
 
     # the new project files are run as root, so they are downloaded to a directory only root can access
     UPGRADE_TMP_DIR=$(mktemp -d) || {
@@ -3609,8 +3655,6 @@ function upgrade() {
 
     printdbg 'verifying version requirements'
     UPGRADE_VER=$(jq -r -e '.version' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json")
-    # the installed version is read from the project files, the dsiprouter config is owned by the dsiprouter user
-    CURRENT_VERSION=$(getConfigAttrib "VERSION" "${DSIP_PROJECT_DIR}/gui/settings.py")
     UPGRADE_DEPENDS=( $(jq -r -e '.depends | if type == "array" then .[] else . end' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json") )
     (
         for VER in ${UPGRADE_DEPENDS[@]}; do
@@ -4371,7 +4415,7 @@ function usageOptions() {
     printf "%-30s %s\n" \
         "clusterinstall" "[-debug] [-i <ssh key file>] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [INSTALL OPTIONS]"
     printf "%-30s %s\n" \
-        "upgrade" "[-debug|-dsipcid <num>|--dsip-clusterid=<num>|-url <repo url>|--repo-url=<repo url>] <-rel <release number>|--release=<release number>>"
+        "upgrade" "[-debug|-dsipcid <num>|--dsip-clusterid=<num>|-url <repo url>|--repo-url=<repo url>|-list|--list|-rel <release>|--release=<release>]"
     printf "%-30s %s\n" \
         "start" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
@@ -4935,6 +4979,10 @@ function processCMD() {
                             shift
                         fi
                         ;;
+                    -list|--list)
+                        UPGRADE_LIST=1
+                        shift
+                        ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
@@ -4944,21 +4992,12 @@ function processCMD() {
                 esac
             done
 
-            # repo we are upgrading from could have been provided on the CLI
-            if [[ -n "$UPGRADE_REPO" ]]; then
-                UPGRADE_RELEASE_URL="https://api.github.com/repos/$(rev <<<"$UPGRADE_REPO" | cut -d '/' -f -2 | cut -d '.' -f 2- | rev)/releases"
-            else
-                UPGRADE_RELEASE_URL="$GIT_RELEASE_URL"
-            fi
-
-            # use latest release if none specified
-            if [[ -z "$UPGRADE_RELEASE" ]]; then
-                TMP=$(curl -s "$UPGRADE_RELEASE_URL") &&
-                TMP=$(jq -e -r  '.[].tag_name | gsub("^(?<rel>v[0-9]+\\.[0-9]+).*?$"; .rel)' <<<"$TMP") &&
-                UPGRADE_RELEASE=$(sort -gur <<<"$TMP" | head -1) || {
-                    printerr "Could not retrieve latest release candidate"
-                    exit 1
-                }
+            # the release is used to build the git tag and the migration script path
+            # the releases the installed version can be upgraded to are resolved by upgrade()
+            if [[ -n "$UPGRADE_RELEASE" ]] && ! [[ "$UPGRADE_RELEASE" =~ ^v[0-9]+\.[0-9]+(-[a-z0-9]+)?$ ]]; then
+                printerr "Invalid upgrade release specified"
+                usageOptions
+                exit 1
             fi
             ;;
         start)

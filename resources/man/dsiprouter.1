@@ -131,8 +131,18 @@ Debug mode to display upgrade step by step.
 -dsipcid <num>|--dsip-clusterid=<num>
 Set the dsiprouter cluster id.
 
--rel|--release <release number>
-The release number to upgrade to.
+-rel|--release <release>
+The release to upgrade to, given as a version (0.793) or a release tag (v0.793-rel).
+Only a release that lists the installed version in its upgrade settings can be upgraded to.
+Defaults to the latest supported release of the upgrade repo.
+
+-list|--list
+List the releases the installed version can be upgraded to and exit.
+
+-url|--repo-url <repo url>
+The git repo to upgrade from, must be an https url.
+Defaults to the repo set in the upgrade settings (GIT_REPO_URL in /etc/dsiprouter/upgrade_settings.py).
+Beta releases are only supported when GIT_TRACK_BETA_RELEASES is enabled in the upgrade settings.
 
 .IP "start options"
 -debug

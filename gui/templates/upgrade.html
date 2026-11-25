@@ -28,17 +28,17 @@
       <div class="col-sm-12">
         <p>Current Version: {{ upgrade_settings["current_version"] }}</p>
         {% if upgrade_settings["lookup_pending"] %}
-          <p>Latest Version: looking up the latest release...</p>
-        {% elif upgrade_settings["latest_version"] is none %}
-          <p>Latest Version: unknown</p>
+          <p>Latest Version: looking up the available releases...</p>
+        {% elif upgrade_settings["releases"] and upgrade_settings["lookup_error"] %}
+          <p>Latest Version: {{ upgrade_settings["releases"][0]["version"] }} (found by an earlier lookup)</p>
+        {% elif upgrade_settings["releases"] %}
+          <p>Latest Version: {{ upgrade_settings["releases"][0]["version"] }}</p>
         {% elif upgrade_settings["lookup_error"] %}
-          <p>Latest Version: {{ upgrade_settings["latest_version"] }} (found by an earlier lookup)</p>
-        {% else %}
-          <p>Latest Version: {{ upgrade_settings["latest_version"] }}</p>
+          <p>Latest Version: unknown</p>
         {% endif %}
         {% if upgrade_settings["lookup_error"] %}
           <div class="alert alert-danger" id="lookup_error">
-            <p class="mb-0">The latest release could not be looked up: {{ upgrade_settings["lookup_error"] }}</p>
+            <p class="mb-0">The available releases could not be looked up: {{ upgrade_settings["lookup_error"] }}</p>
             <p class="mb-0">Load the page again to retry.</p>
           </div>
         {% endif %}
@@ -47,12 +47,11 @@
 
 
     <form action="/upgrade" method="POST" role="form" id="upgrade_form"
+          data-upgrade-ongoing="{{ 1 if upgrade_settings["upgrade_ongoing"] else 0 }}"
           data-lookup-pending="{{ 1 if upgrade_settings["lookup_pending"] else 0 }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-      <input type="hidden" name="current_version" value="{{ upgrade_settings["current_version"] }}"/>
-      <input type="hidden" name="latest_version" value="{{ upgrade_settings["latest_version"] or '' }}"/>
 
-      {% if upgrade_settings["upgrade_available"] == 1 %}
+      {% if upgrade_settings["releases"] %}
         <div class="row">
           <div class="col-sm-12">
             {% with messages = get_flashed_messages() %}
@@ -68,17 +67,28 @@
               <p>Please note that upgrades for cluster installations are not supported at this time.</p>
             </div>
 
+            <div class="form-group">
+              <label for="release">Upgrade to</label>
+              <select class="form-control" id="release" name="release" style="max-width: 20em;">
+                {% for release in upgrade_settings["releases"] %}
+                  <option value="{{ release["tag"] }}">
+                    {{ release["version"] }}{% if release["prerelease"] %} (pre-release){% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
             <button class="btn btn-primary"
                     onclick="return confirm('Are you sure you want to start the upgrade process. This will temporarily take your server offline.')">
               Upgrade Now
             </button>
           </div>
         </div>
-      {% elif upgrade_settings["latest_version"] is not none %}
+      {% elif not upgrade_settings["lookup_pending"] and not upgrade_settings["lookup_error"] %}
         <div class="row mt-4">
           <div class="col-sm-12">
             <div class="alert alert-success text-center">
-              <p class="mb-0">Your system is up to date.</p>
+              <p class="mb-0">No upgrade is available for your version.</p>
             </div>
           </div>
         </div>

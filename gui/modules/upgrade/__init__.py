@@ -1,9 +1,8 @@
 import ast
 import os
-import re
-import requests
 
 import settings
+from modules.upgrade.releases import ReleasesError, getSupportedReleases
 from util.pyasync import BackgroundResult
 
 # upgrades are run as root from these settings, the file can only be changed by root
@@ -19,13 +18,18 @@ def loadUpgradeSettings():
 
     :return:    upgrade settings by name
     :rtype:     dict
+    :raises modules.upgrade.releases.ReleasesError: if the settings could not be read
     """
 
     settings_file = UPGRADE_SETTINGS_FILE if os.path.isfile(UPGRADE_SETTINGS_FILE) else UPGRADE_SETTINGS_TEMPLATE
     upgrade_settings = {}
 
-    with open(settings_file, 'r') as fp:
-        nodes = ast.parse(fp.read()).body
+    try:
+        with open(settings_file, 'r') as fp:
+            nodes = ast.parse(fp.read()).body
+    except (OSError, SyntaxError, ValueError) as ex:
+        raise ReleasesError('could not read the upgrade settings: {}'.format(settings_file)) from ex
+
     for node in nodes:
         if not isinstance(node, ast.Assign) or len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
             continue
@@ -49,62 +53,38 @@ class ReleaseLookupError(Exception):
 
 
 class UpdateUtils():
-    # seconds the releases API is given to connect and to send the next part of its response
-    LOOKUP_TIMEOUT = (5, 15)
     # seconds a lookup is given as a whole, the upgrade page stops waiting for it after that
-    LOOKUP_DEADLINE = 60
-
-    @staticmethod
-    def get_repo_version_list(release_url):
-        headers = {
-            'Accept': 'application/vnd.github+json'
-        }
-        params = {
-            "per_page": 100
-        }
-        r = requests.get(release_url, params=params, headers=headers, timeout=UpdateUtils.LOOKUP_TIMEOUT)
-        r.raise_for_status()
-        return r.json()
-
-    @staticmethod
-    def lookup_latest_version(release_url):
-        latest = {
-            'tag_name': '',
-            'ver_num': 0
-        }
-        for rel in UpdateUtils.get_repo_version_list(release_url):
-            tag_name = rel['tag_name']
-            ver_num = float(re.sub(r'^v([0-9]+\.[0-9]+).*?$', r'\1', tag_name, flags=re.MULTILINE))
-            if ver_num > latest['ver_num']:
-                latest = {
-                    'tag_name': tag_name,
-                    'ver_num': ver_num
-                }
-        return latest
+    # the lookup lists the tags of the repo, asks the releases API and fetches the settings of up to 50 releases
+    LOOKUP_DEADLINE = 300
 
     # the GUI handles one request at a time, the lookup over the network is not run while a request is handled
-    latest_version = BackgroundResult(lookup_latest_version.__func__, ttl=300, error_ttl=30, timeout=LOOKUP_DEADLINE)
+    supported_releases = BackgroundResult(getSupportedReleases, ttl=300, error_ttl=30, timeout=LOOKUP_DEADLINE)
 
-    @staticmethod
-    def get_latest_version():
+    @classmethod
+    def get_supported_releases(cls):
         """
-        Get the latest release of the repo in the upgrade settings\n
+        Get the releases the installed version can be upgraded to, oldest first\n
+        The releases are tracked from the repo in the upgrade settings, each release lists the versions it can be upgraded from\n
         The last result of the lookup is returned, the lookup is run again in the background when that result is too old
 
-        :return:    tag and version number of the latest release (None if no lookup succeeded), why the last lookup failed (None if it did not)
-        :rtype:     tuple[dict|None, ReleaseLookupError|None]
+        :return:    supported releases (None if no lookup succeeded), why the last lookup failed (None if it did not)
+        :rtype:     tuple[list[modules.upgrade.releases.Release]|None, ReleaseLookupError|None]
         :raises ReleaseLookupPending:   if the first lookup with the current upgrade settings has not finished
         """
 
         try:
-            release_url = loadUpgradeSettings()['GIT_RELEASE_URL']
-        except (OSError, SyntaxError, ValueError, KeyError) as ex:
-            return None, ReleaseLookupError('could not read GIT_RELEASE_URL from the upgrade settings ({})'.format(type(ex).__name__))
+            upgrade_settings = loadUpgradeSettings()
+        except ReleasesError as ex:
+            return None, ReleaseLookupError(str(ex))
+        repo_url = upgrade_settings.get('GIT_REPO_URL', '')
+        track_beta = upgrade_settings.get('GIT_TRACK_BETA_RELEASES', False) is True
+        release_api_url = upgrade_settings.get('GIT_RELEASE_URL', '') or None
 
-        latest, error, _ = UpdateUtils.latest_version.get(release_url)
+        releases, error, _ = cls.supported_releases.get(repo_url, str(settings.VERSION), track_beta, release_api_url)
         if error is not None:
-            # the release found by an earlier lookup is returned with the error
-            return latest, ReleaseLookupError('{}: {}'.format(type(error).__name__, error))
-        if latest is None:
+            # the releases found by an earlier lookup are returned with the error
+            reason = str(error) if isinstance(error, ReleasesError) else '{}: {}'.format(type(error).__name__, error)
+            return (list(releases) if releases is not None else None), ReleaseLookupError(reason)
+        if releases is None:
             raise ReleaseLookupPending()
-        return latest, None
+        return list(releases), None

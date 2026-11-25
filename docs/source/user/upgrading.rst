@@ -16,6 +16,26 @@ A core license can be purchased from the `dSIPRouter Marketplace <https://dopens
 .. image:: images/upgrade_up_to_date.png
         :align: center
 
+Upgrading from the UI requires the ``dsip_admin`` role.
+Both the UI and the CLI offer every release the installed version can be upgraded to.
+A release can be upgraded to when its upgrade settings (``resources/upgrade/<release>/settings.json``) list the installed version under ``depends``.
+From the CLI the supported releases are listed with ``dsiprouter upgrade -list`` and one is installed with ``dsiprouter upgrade -rel <release>``.
+Without ``-rel`` the latest supported release is installed.
+
+The releases are tracked from the repo set in the upgrade settings (``/etc/dsiprouter/upgrade_settings.py``).
+Upgrades are run as root from that repo, so the file can only be changed by root:
+
+- ``GIT_REPO_URL`` is the git repo releases are tracked from, it must be an https url. Releases are tagged ``v<version>-rel``.
+- ``GIT_TRACK_BETA_RELEASES`` enables upgrading to beta releases, which are releases published as a pre-release on GitHub and tags such as ``v0.794-beta``. It is disabled by default.
+- ``GIT_RELEASE_URL`` is only needed for a repo that is not hosted on github.com but provides a releases API in the GitHub format. It is used to find the releases published as a pre-release.
+
+An upgrade installs software and restarts services, which the dSIPRouter UI is not allowed to do itself.
+The UI requests the upgrade and the ``dsip-request-upgrade`` systemd service runs it.
+The output of the upgrade is written to ``/var/log/dsiprouter/upgrade.log``.
+
+If an upgrade fails the system is restored to its previous state.
+This includes the kamailio and rtpengine packages, which are reinstalled at the versions that were installed before the upgrade.
+
 Note that during upgrades, the hashed passwords have to be reset (such as dsiprouter admin password).
 You can find the new passwords displayed; either on the CLI after completion, or by viewing the upgrade log in the UI:
 
