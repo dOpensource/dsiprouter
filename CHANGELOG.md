@@ -5,6 +5,9 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
+71c371faccbb5cdf053e4c7e9daccc9f11d11236
+131475eb6ce71623f366bd60cdb4dd68c2a77222
+7919a29985e7b4c3a0a2d342f3fb7a6935b1d25f
 ad1013550a40a015a6758446e5aa53b32c0d1baf
 1d63fb526a3efbd855b97e5c19dc2662b9733753
 f0afb8dda3788b5166b4c3df4d052656baa9e4b9
@@ -2722,6 +2725,61 @@ END_SECTION COMMITS)
 
 
 [//]: # (END_SECTION UNRELEASED)
+[//]: # (START_SECTION 71c371faccbb5cdf053e4c7e9daccc9f11d11236)
+### docs(gui): document users, CDRs, backups, limits
+
+> Commit: [71c371faccbb5cdf053e4c7e9daccc9f11d11236](https://github.com/dOpensource/dsiprouter/commit/71c371faccbb5cdf053e4c7e9daccc9f11d11236)  
+> Date: Wed, 25 Nov 2026 13:02:15 -0700  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (General Signing Key) <tmoore@goflyball.com>  
+
+
+- Adds the pages that were missing from the GUI documentation:
+- - users and roles: what each role can access and how users are managed
+- - call detail records: the CDR page and the link to the call in Homer
+- - backup and restore of the kamailio DB from the UI
+- - rate limiting: the pike settings and the banned hosts
+
+
+---
+
+[//]: # (END_SECTION 71c371faccbb5cdf053e4c7e9daccc9f11d11236)
+[//]: # (START_SECTION 131475eb6ce71623f366bd60cdb4dd68c2a77222)
+### chore(release): set release number to 0.794
+
+> Commit: [131475eb6ce71623f366bd60cdb4dd68c2a77222](https://github.com/dOpensource/dsiprouter/commit/131475eb6ce71623f366bd60cdb4dd68c2a77222)  
+> Date: Wed, 25 Nov 2026 13:02:15 -0700  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (General Signing Key) <tmoore@goflyball.com>  
+
+
+- The v0.794 migration only runs from project files that carry this
+- version, the next upgrade reads the installed version from them.
+
+
+---
+
+[//]: # (END_SECTION 131475eb6ce71623f366bd60cdb4dd68c2a77222)
+[//]: # (START_SECTION 7919a29985e7b4c3a0a2d342f3fb7a6935b1d25f)
+### docs(changelog): update and group by release
+
+> Commit: [7919a29985e7b4c3a0a2d342f3fb7a6935b1d25f](https://github.com/dOpensource/dsiprouter/commit/7919a29985e7b4c3a0a2d342f3fb7a6935b1d25f)  
+> Date: Wed, 25 Nov 2026 12:57:47 -0700  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (General Signing Key) <tmoore@goflyball.com>  
+
+
+- Adds the commits since the last update and groups all commits under
+- the release they were first part of. The existing entries are
+- unchanged.
+
+
+---
+
+[//]: # (END_SECTION 7919a29985e7b4c3a0a2d342f3fb7a6935b1d25f)
 [//]: # (START_SECTION ad1013550a40a015a6758446e5aa53b32c0d1baf)
 ### fix(changelog): rework changelog update logic
 
