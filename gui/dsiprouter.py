@@ -196,7 +196,41 @@ def displayError():
     return showError(type, code, msg)
 
 
+def has_permissions(required_groups):
+    """
+    Check whether the session user has one of the given roles.
+
+    :param required_groups:     list of role names to check for
+    :type required_groups:      list
+    :return:                    whether the session user has one of the roles
+    :rtype:                     bool
+    """
+    return bool(set(session.get('user_groups', []) or []).intersection(required_groups))
+
+
+def require_permissions(required_groups):
+    """
+    Deny access to a route unless the session user has one of the given roles.
+
+    :param required_groups:     list of role names that may access the route
+    :type required_groups:      list
+    :return:                    decorated route handler
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if not session.get('logged_in'):
+                return render_template('index.html', version=settings.VERSION)
+            if not has_permissions(required_groups):
+                flash('You do not have permission to access this page')
+                return redirect(url_for('index'))
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 @app.route('/backupandrestore')
+@require_permissions(['dsip_admin'])
 def backupandrestore():
     try:
         if (settings.DEBUG):
@@ -215,28 +249,6 @@ def backupandrestore():
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
         return showError(type=error)
-
-
-def require_permissions(required_groups):
-    """
-    Deny access to a route unless the session user has one of the given roles.
-
-    :param required_groups:     list of role names that may access the route
-    :type required_groups:      list
-    :return:                    decorated route handler
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            if not session.get('logged_in'):
-                return render_template('index.html', version=settings.VERSION)
-            user_groups = set(session.get('user_groups', []) or [])
-            if not user_groups.intersection(required_groups):
-                flash('You do not have permission to access this page')
-                return redirect(url_for('index'))
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
 
 
 @app.route('/settings')
@@ -259,6 +271,7 @@ def ui_settings():
 
 
 @app.route('/certificates')
+@require_permissions(['dsip_admin', 'dsip_engineer'])
 def certificates():
     try:
         if (settings.DEBUG):
@@ -2169,6 +2182,7 @@ def addUpdateStirShaken():
 
 
 @app.route('/upgrade')
+@require_permissions(['dsip_admin'])
 def displayUpgrade(msg=None):
     """
     Display Upgrade settings in view
@@ -2241,6 +2255,8 @@ def startUpgrade():
     try:
         if not session.get('logged_in'):
             return redirect(url_for('index'))
+        if not has_permissions(['dsip_admin']):
+            raise http_exceptions.Forbidden('You do not have permission to upgrade dSIPRouter')
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -2319,6 +2335,8 @@ def getUpgradeStatus():
     try:
         if not session.get('logged_in'):
             return 'Unauthorized', 401
+        if not has_permissions(['dsip_admin']):
+            return 'Forbidden', StatusCodes.HTTP_FORBIDDEN
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -2342,6 +2360,8 @@ def getUpgradeLog():
     try:
         if not session.get('logged_in'):
             return 'Unauthorized', 401
+        if not has_permissions(['dsip_admin']):
+            return 'Forbidden', StatusCodes.HTTP_FORBIDDEN
 
         if (settings.DEBUG):
             debugEndpoint()

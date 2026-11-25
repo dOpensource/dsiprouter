@@ -4,7 +4,7 @@ import sys
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os, time, random, subprocess, requests, csv, base64, codecs, re, socket, json, urllib3
+import os, time, random, requests, csv, base64, codecs, re, socket, json, urllib3, tempfile
 from contextlib import closing
 from datetime import datetime
 from flask import Blueprint, jsonify, request, send_file, g
@@ -20,10 +20,12 @@ from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, debugE
     strFieldsToDict, getRequestData, IO, objToDict, getAllowedSettings,updateDsipLocalSettingsFromDict, \
     updateConfig
 from util.pyasync import daemonize
+from util.kamdb_backup import dumpKamDB, restoreKamDB
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
-from modules.api.api_functions import createApiResponse, showApiError, api_security
+from modules.api.api_functions import createApiResponse, showApiError, api_security, api_require_roles
 from modules.api.kamailio.functions import reloadKamailio
-from util.networking import getExternalIP, hostToIP, isValidIP, parseGenericUri, safeUriToHost, safeStripPort, check_host_type
+from util.networking import getExternalIP, hostToIP, isValidIP, isValidHostname, parseGenericUri, safeUriToHost, safeStripPort, \
+    check_host_type
 from util.notifications import sendEmail
 from util.security import AES_CTR, urandomChars, KeyCertPair
 from util.file_handling import change_owner
@@ -3245,6 +3247,7 @@ def getGatewayCDRS(gwid=None):
 
 @api.route("/api/v1/backupandrestore/backup", methods=['GET'])
 @api_security
+@api_require_roles(['dsip_admin'])
 def createBackup():
     """
     Generate a backup of the database
@@ -3257,15 +3260,9 @@ def createBackup():
         if (settings.DEBUG):
             debugEndpoint()
 
-        backup_path = os.path.join(settings.BACKUP_FOLDER, f'{time.strftime("%s")}-db.sql')
-
-        dumpcmd = ['sudo', 'dsiprouter', 'backup', '-f', backup_path]
-        proc = subprocess.run(
-            dumpcmd,
-            capture_output=True,
-            text=True
-        )
-        proc.check_returncode()
+        backup_fd, backup_path = tempfile.mkstemp(prefix=f'{time.strftime("%s")}-', suffix='-db.sql', dir=settings.BACKUP_FOLDER)
+        with os.fdopen(backup_fd, 'wb') as backup_file:
+            dumpKamDB(backup_file)
 
         return send_file(backup_path, as_attachment=True), StatusCodes.HTTP_OK
 
@@ -3278,6 +3275,7 @@ def createBackup():
 
 @api.route("/api/v1/backupandrestore/restore", methods=['POST'])
 @api_security
+@api_require_roles(['dsip_admin'])
 def restoreBackup():
     """
     Restore backup of the database
@@ -3305,13 +3303,7 @@ def restoreBackup():
         else:
             raise http_exceptions.BadRequest("Improper file upload")
 
-        restorecmd = ['sudo', 'dsiprouter', 'restore', '-f', restore_path]
-        proc = subprocess.run(
-            restorecmd,
-            capture_output=True,
-            text=True
-        )
-        proc.check_returncode()
+        restoreKamDB(restore_path)
 
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
@@ -3494,6 +3486,7 @@ def testConnectivity(domain):
 @api.route("/api/v1/certificates", methods=['GET'])
 @api.route("/api/v1/certificates/<string:domain>", methods=['GET'])
 @api_security
+@api_require_roles(['dsip_admin', 'dsip_engineer'])
 def getCertificates(domain=None):
     db = DummySession()
 
@@ -3540,6 +3533,7 @@ def getCertificates(domain=None):
 
 @api.route("/api/v1/certificates", methods=['POST', 'PUT'])
 @api_security
+@api_require_roles(['dsip_admin', 'dsip_engineer'])
 def createCertificate():
     """
     Create TLS cert for a domain
@@ -3584,6 +3578,8 @@ def createCertificate():
         domain = request_payload['domain']
         if domain == "default":
             domain = socket.gethostname()
+        elif not isValidHostname(domain):
+            raise http_exceptions.BadRequest("Value for Request Argument 'domain' is Not Valid")
         ip = request_payload['ip'] if 'ip' in request_payload else settings.EXTERNAL_IP_ADDR
         port = request_payload['port'] if 'port' in request_payload else 5061
         server_name_mode = request_payload['server_name_mode'] \
@@ -3652,6 +3648,7 @@ def createCertificate():
 
 @api.route("/api/v1/certificates/<string:domain>", methods=['DELETE'])
 @api_security
+@api_require_roles(['dsip_admin', 'dsip_engineer'])
 def deleteCertificates(domain=None):
     db = DummySession()
 
@@ -3670,7 +3667,9 @@ def deleteCertificates(domain=None):
         Certificates.delete(synchronize_session=False)
 
         # Remove the certificate from the file system
-        letsencrypt.deleteCertificate(domain)
+        # invalid domains are still purged from the DB and TLS config, but never resolved to a path
+        if isValidHostname(domain):
+            letsencrypt.deleteCertificate(domain)
 
         # Remove from Kamailio TLS
         kamtls.deleteCustomTLSConfig(domain)
@@ -3693,6 +3692,7 @@ def deleteCertificates(domain=None):
 
 @api.route("/api/v1/certificates/upload/<string:domain>", methods=['POST'])
 @api_security
+@api_require_roles(['dsip_admin', 'dsip_engineer'])
 def uploadCertificates(domain=None):
     db = DummySession()
 
@@ -3706,9 +3706,12 @@ def uploadCertificates(domain=None):
 
         if 'domain' in data.keys():
             domain = data['domain'][0]
-            print(domain)
         else:
             domain = "default"
+
+        # the domain is used to build filesystem paths and TLS config entries
+        if not isValidHostname(domain):
+            raise http_exceptions.BadRequest("Value for Request Argument 'domain' is Not Valid")
 
         if 'replace_default_cert' in data.keys():
             replace_default_cert = data['replace_default_cert'][0]

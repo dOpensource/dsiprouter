@@ -2119,6 +2119,10 @@ function installDsiprouter() {
     setCredentials
     unset SERVICE_RELOAD_DISABLED
 
+    # the GUI backs up the kamailio DB as the kamailio DB user
+    grantKamDBRoutinePrivs ||
+        printwarn 'Could not allow the kamailio DB user to read stored routines, backups from the GUI will fail'
+
     # configure dsiprouter modules (must be run after potential credential updates above)
     installModules
 
@@ -3028,6 +3032,12 @@ function setCredentials() {
     export ROOT_DB_HOST=${SET_ROOT_DB_HOST:-$ROOT_DB_HOST}
     export ROOT_DB_PORT=${SET_ROOT_DB_PORT:-$ROOT_DB_PORT}
     export ROOT_DB_NAME=${SET_ROOT_DB_NAME:-$ROOT_DB_NAME}
+
+    # the kamailio DB user may have been recreated above
+    if (( ${RUN_SQL_STATEMENTS} == 1 )); then
+        grantKamDBRoutinePrivs ||
+            printwarn 'Could not allow the kamailio DB user to read stored routines, backups from the GUI will fail'
+    fi
 
     # reload/synchronize settings for each service
     # note: we reload the service only if it is currently running (otherwise it messes with boot ordering)
@@ -5329,8 +5339,24 @@ function processCMD() {
                 DUMP_FILE=${CURR_BACKUP_DIR}/db.sql
             fi
 
+            # the dump must not be able to run programs or access files through the client
+            RESTORE_OPTS=(--local-infile=0)
+            if mysql --help 2>/dev/null | grep -q -- '--sandbox'; then
+                RESTORE_OPTS+=(--sandbox)
+            else
+                # clients without a sandbox mode: a dump using a client command that runs a program or opens a file is refused
+                if mysql --help 2>/dev/null | grep -q -- '--system-command'; then
+                    RESTORE_OPTS+=(--system-command=OFF)
+                fi
+                if grep -qE '(^|[^\\])(\\\\)*\\[!.PTe]' "$DUMP_FILE" ||
+                    grep -qiE '^[[:space:]]*(system|source|pager|tee|edit)([[:space:]]|$)' "$DUMP_FILE"; then
+                    printerr 'refusing to restore database, the backup contains client commands'
+                    exit 1
+                fi
+            fi
+
             printdbg "restoring database from $DUMP_FILE"
-            withRootDBConn mysql <"$DUMP_FILE"
+            withRootDBConn mysql "${RESTORE_OPTS[@]}" <"$DUMP_FILE"
             (( $? != 0 )) && {
                 printerr 'failed restoring database'
                 exit 1

@@ -1251,6 +1251,22 @@ function dumpDB() {
 }
 export -f dumpDB
 
+# usage: grantKamDBRoutinePrivs
+# notes: the kamailio DB user backs up the kamailio DB for the GUI
+#        a dump includes the stored routines, their definitions can only be read by their definer or with this grant
+# returns: 0 on success, non zero otherwise
+function grantKamDBRoutinePrivs() {
+    local GRANTS
+
+    GRANTS=$(withRootDBConn mysql -sN \
+        -e "SELECT CONCAT('GRANT SELECT ON mysql.proc TO ', QUOTE(user), '@', QUOTE(host), ';') FROM mysql.user WHERE user='${KAM_DB_USER}';" \
+        </dev/null 2>/dev/null) &&
+    [[ -n "$GRANTS" ]] &&
+    withRootDBConn mysql -e "$GRANTS" </dev/null 2>/dev/null
+    return $?
+}
+export -f grantKamDBRoutinePrivs
+
 # usage: dumpDBUser <user>@<host>|<user>
 # output: dumped database user as sql (redirect as needed)
 # returns: 0 on success, non zero otherwise
