@@ -759,6 +759,31 @@ function getInternalIP() {
 }
 export -f getInternalIP
 
+# $1 == internal ip address
+# output: the first public IPv4 address assigned to the same interface as the internal IP
+# notes: prints the address, or empty string if not available
+# returns: 0 on success, 1 if no address was found
+function getSecondaryIP() {
+    local INTERNAL_IP="$1" ADDR=""
+
+    [[ -n "$INTERNAL_IP" ]] || return 1
+
+    for ADDR in $(
+        ip -4 -json address show scope global 2>/dev/null |
+        jq -r --arg ip "$INTERNAL_IP" '.[] | select(any(.addr_info[]; .local == $ip)) | .addr_info[].local | select(. != $ip)'
+    ); do
+        # skip private, carrier-grade NAT and link-local addresses
+        if ipv4TestRFC1918 "$ADDR" || ipv4AddrInSubnet "$ADDR" '100.64.0.0/10' || ipv4AddrInSubnet "$ADDR" '169.254.0.0/16'; then
+            continue
+        fi
+        printf '%s' "$ADDR"
+        return 0
+    done
+
+    return 1
+}
+export -f getSecondaryIP
+
 # $1 == [-4|-6] to force specific IP version
 # $2 == network interface 
 # output: the IP for the given interface

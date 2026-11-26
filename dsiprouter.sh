@@ -335,6 +335,13 @@ function setDynamicScriptSettings() {
         export SIGNAL_SERVERNAT6=0
     fi
 
+    # a public address assigned next to the NAT'd internal address is served directly (i.e. DO droplet with a reserved IP)
+    if (( $NETWORK_MODE == 0 )) && (( $SIGNAL_SERVERNAT == 1 )); then
+        export SECONDARY_IP_ADDR=$(getSecondaryIP "$INTERNAL_IP_ADDR")
+    else
+        export SECONDARY_IP_ADDR=""
+    fi
+
     # grab root db settings from env or settings file
     export ROOT_DB_USER=${ROOT_DB_USER:-$(getConfigAttrib 'ROOT_DB_USER' ${DSIP_CONFIG_FILE})}
     export ROOT_DB_PASS=${ROOT_DB_PASS:-$(decryptConfigAttrib 'ROOT_DB_PASS' ${DSIP_CONFIG_FILE})}
@@ -1014,6 +1021,11 @@ function updateKamailioConfig() {
     else
         disableKamailioConfigAttrib 'WITH_SIGNAL_SERVERNAT6' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
+    if [[ -n "$SECONDARY_IP_ADDR" ]]; then
+        enableKamailioConfigAttrib 'WITH_SECONDARY_ADDR' ${DSIP_KAMAILIO_CONFIG_FILE}
+    else
+        disableKamailioConfigAttrib 'WITH_SECONDARY_ADDR' ${DSIP_KAMAILIO_CONFIG_FILE}
+    fi
     if (( $IPV6_ENABLED == 1 )); then
         enableKamailioConfigAttrib 'WITH_IPV6' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
@@ -1061,6 +1073,7 @@ function updateKamailioConfig() {
     setKamailioConfigSubst 'INTERNAL_IP6_NET' "${INTERNAL_IP_NET6}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP_ADDR}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'EXTERNAL_IP6_ADDR' "${EXTERNAL_IP6_ADDR}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'SECONDARY_IP_ADDR' "${SECONDARY_IP_ADDR}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'INTERNAL_FQDN' "${INTERNAL_FQDN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'EXTERNAL_FQDN' "${EXTERNAL_FQDN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'UAC_REG_ADDR' "${UAC_REG_ADDR}" ${DSIP_KAMAILIO_CONFIG_FILE}
