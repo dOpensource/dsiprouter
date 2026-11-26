@@ -4,7 +4,7 @@ import sys
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os, time, random, subprocess, requests, csv, base64, codecs, re, socket, json, urllib3
+import os, time, random, requests, csv, base64, codecs, re, socket, json, urllib3, tempfile
 from contextlib import closing
 from datetime import datetime
 from flask import Blueprint, jsonify, request, send_file, g
@@ -14,16 +14,18 @@ from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from database import startSession, DummySession, Address, dSIPNotification, dSIPMultiDomainMapping, Gateways, \
     GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, dSIPCallSettings, InboundMapping, dSIPCDRInfo, \
-    dSIPCertificates, Dispatcher, dSIPDNIDEnrichment, getDsipSettingsTableAsDict, updateDsipSettingsTable
+    dSIPCertificates, Dispatcher, dSIPDNIDEnrichment, getDsipSettingsTableAsDict, updateDsipSettingsTable, dSIPHardFwd
 from modules.numbers.db.dsip_number import dSIPNumber
 from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, debugEndpoint, StatusCodes, \
     strFieldsToDict, getRequestData, IO, objToDict, getAllowedSettings,updateDsipLocalSettingsFromDict, \
     updateConfig
-from util.pyasync import daemonize
+from util.sysrequests import fileRequest, isRequestOngoing
+from util.kamdb_backup import dumpKamDB, restoreKamDB
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
-from modules.api.api_functions import createApiResponse, showApiError, api_security
+from modules.api.api_functions import createApiResponse, showApiError, api_security, api_require_roles
 from modules.api.kamailio.functions import reloadKamailio
-from util.networking import getExternalIP, hostToIP, isValidIP, parseGenericUri, safeUriToHost, safeStripPort, check_host_type
+from util.networking import getExternalIP, hostToIP, isValidIP, isValidHostname, parseGenericUri, safeUriToHost, safeStripPort, \
+    check_host_type
 from util.notifications import sendEmail
 from util.security import AES_CTR, urandomChars, KeyCertPair
 from util.file_handling import change_owner
@@ -275,13 +277,20 @@ def handleReloadDsiprouter():
                     msg='dSIPRouter reload in progress',
                     status_code=StatusCodes.HTTP_ACCEPTED,
                 )
+            # the services are stopped and started by the upgrade
+            if isRequestOngoing('upgrade'):
+                raise http_exceptions.Conflict('dSIPRouter can not be reloaded while an upgrade is in progress')
 
             # update globals before we reload so server stores them on teardown
             getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_ongoing'] = True
             getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = False
             getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_required'] = False
 
-            daemonize(['sudo', 'dsiprouter', 'restart', '-all', '-daemonize'])
+            try:
+                fileRequest('restart', 'restart')
+            except OSError:
+                getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_ongoing'] = False
+                raise
 
             return createApiResponse(
                 msg='dSIPRouter reload started',
@@ -490,7 +499,7 @@ def handleInboundMapping():
     VALID_REQUEST_ARGS = {'ruleid', 'did'}
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
-    VALID_REQUEST_DATA_ARGS = {'did', 'servers', 'name'}
+    VALID_REQUEST_DATA_ARGS = {'did', 'servers', 'name', 'hard-forward'}
 
     payload = {'data': []}
 
@@ -520,6 +529,18 @@ def handleInboundMapping():
                             'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(
                                 data['description']) else '',
                             'servers': data['gwlist'].split(',')}
+                    hfwd = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(data['ruleid'])).first()
+                    if hfwd:
+                        hf_carrier_group = None
+                        if str(hfwd.dr_groupid) != str(settings.FLT_OUTBOUND):
+                            fwd_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hfwd.dr_groupid).first()
+                            if fwd_rule and fwd_rule.gwlist:
+                                gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == fwd_rule.gwlist.lstrip('#')).first()
+                                if gwgroup:
+                                    hf_carrier_group = strFieldsToDict(gwgroup.description).get('name', '')
+                        data['hard-forward'] = {'did': hfwd.did, 'carrier_group': hf_carrier_group}
+                    else:
+                        data['hard-forward'] = None
                     payload['data'].append(data)
                     payload['msg'] = 'Rule Found'
                 else:
@@ -538,6 +559,18 @@ def handleInboundMapping():
                                 'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(
                                     data['description']) else '',
                                 'servers': data['gwlist'].split(',')}
+                        hfwd = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(data['ruleid'])).first()
+                        if hfwd:
+                            hf_carrier_group = None
+                            if str(hfwd.dr_groupid) != str(settings.FLT_OUTBOUND):
+                                fwd_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hfwd.dr_groupid).first()
+                                if fwd_rule and fwd_rule.gwlist:
+                                    gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == fwd_rule.gwlist.lstrip('#')).first()
+                                    if gwgroup:
+                                        hf_carrier_group = strFieldsToDict(gwgroup.description).get('name', '')
+                            data['hard-forward'] = {'did': hfwd.did, 'carrier_group': hf_carrier_group}
+                        else:
+                            data['hard-forward'] = None
                         payload['data'].append(data)
                         payload['msg'] = 'DID Found'
                     else:
@@ -554,6 +587,18 @@ def handleInboundMapping():
                                     'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(
                                         data['description']) else '',
                                     'servers': data['gwlist'].split(',')}
+                            hfwd = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(data['ruleid'])).first()
+                            if hfwd:
+                                hf_carrier_group = None
+                                if str(hfwd.dr_groupid) != str(settings.FLT_OUTBOUND):
+                                    fwd_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hfwd.dr_groupid).first()
+                                    if fwd_rule and fwd_rule.gwlist:
+                                        gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == fwd_rule.gwlist.lstrip('#')).first()
+                                        if gwgroup:
+                                            hf_carrier_group = strFieldsToDict(gwgroup.description).get('name', '')
+                                data['hard-forward'] = {'did': hfwd.did, 'carrier_group': hf_carrier_group}
+                            else:
+                                data['hard-forward'] = None
                             payload['data'].append(data)
                         payload['msg'] = 'Rules Found'
                     else:
@@ -602,7 +647,28 @@ def handleInboundMapping():
                 raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
             db.add(IMap)
+            db.flush()
             _sync_number_status_from_inbound_route(db, prefix, gwlist)
+
+            if data.get('hard-forward'):
+                hf = data['hard-forward']
+                hf_did = hf.get('did', '')
+                hf_carrier_group = hf.get('carrier_group', '')
+                fwdgroupid = settings.FLT_OUTBOUND
+                hf_inserts = []
+                if hf_carrier_group:
+                    gwgroup = next((g for g in db.query(GatewayGroups).filter(
+                        GatewayGroups.description.regexp_match(GatewayGroups.FILTER.ENDPOINT_OR_CARRIER.value)
+                    ).all() if strFieldsToDict(g.description).get('name') == hf_carrier_group), None)
+                    if gwgroup is None:
+                        raise http_exceptions.BadRequest(f"Carrier group not found: {hf_carrier_group}")
+                    lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(
+                        InboundMapping.groupid.desc()).first()
+                    fwdgroupid = settings.FLT_FWD_MIN if lastfwd is None else int(lastfwd.groupid) + 1
+                    hf_inserts.append(InboundMapping(fwdgroupid, '', '#{}'.format(gwgroup.id),
+                        'name:Hard Forward from {} to DID {}'.format(prefix, hf_did)))
+                hf_inserts.append(dSIPHardFwd(IMap.ruleid, hf_did, fwdgroupid))
+                db.add_all(hf_inserts)
 
             db.commit()
             getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
@@ -627,7 +693,7 @@ def handleInboundMapping():
                 if arg not in VALID_REQUEST_DATA_ARGS:
                     raise http_exceptions.BadRequest("Request data argument not recognized")
 
-            if 'did' not in data and 'servers' not in data and 'name' not in data:
+            if 'did' not in data and 'servers' not in data and 'name' not in data and 'hard-forward' not in data:
                 raise http_exceptions.BadRequest("No data args supplied, {did, and servers} is required")
             # TODO: we should be checking dr_gateways table to make sure the servers exist
             if 'servers' in data:
@@ -693,6 +759,64 @@ def handleInboundMapping():
             if route_row is not None:
                 _sync_number_status_from_inbound_route(db, route_row.prefix, route_row.gwlist)
 
+            if 'hard-forward' in data:
+                effective_ruleid = rule_id if rule_id is not None else (str(route_row.ruleid) if route_row else None)
+                if effective_ruleid:
+                    hf = data['hard-forward']
+                    hf_entry = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == effective_ruleid).first()
+                    hardfwd_exists = hf_entry is not None
+
+                    if not hf:
+                        if hardfwd_exists:
+                            if str(hf_entry.dr_groupid) != str(settings.FLT_OUTBOUND):
+                                db.query(InboundMapping).filter(InboundMapping.groupid == hf_entry.dr_groupid).delete(synchronize_session=False)
+                            db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == effective_ruleid).delete(synchronize_session=False)
+                    else:
+                        hf_did = hf.get('did', '')
+                        hf_carrier_group = hf.get('carrier_group', '')
+                        hf_gwgroupid = None
+                        if hf_carrier_group:
+                            gwgroup = next((g for g in db.query(GatewayGroups).filter(
+                                GatewayGroups.description.regexp_match(GatewayGroups.FILTER.ENDPOINT_OR_CARRIER.value)
+                            ).all() if strFieldsToDict(g.description).get('name') == hf_carrier_group), None)
+                            if gwgroup is None:
+                                raise http_exceptions.BadRequest(f"Carrier group not found: {hf_carrier_group}")
+                            hf_gwgroupid = str(gwgroup.id)
+
+                        curr_prefix = updates.get('prefix') or (route_row.prefix if route_row else '')
+                        fwdgroupid = settings.FLT_OUTBOUND
+
+                        if not hardfwd_exists:
+                            hf_inserts = []
+                            if hf_gwgroupid:
+                                lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(
+                                    InboundMapping.groupid.desc()).first()
+                                fwdgroupid = settings.FLT_FWD_MIN if lastfwd is None else int(lastfwd.groupid) + 1
+                                hf_inserts.append(InboundMapping(fwdgroupid, '', '#{}'.format(hf_gwgroupid),
+                                    'name:Hard Forward from {} to DID {}'.format(curr_prefix, hf_did)))
+                            hf_inserts.append(dSIPHardFwd(effective_ruleid, hf_did, fwdgroupid))
+                            db.add_all(hf_inserts)
+                        else:
+                            existing_groupid = str(hf_entry.dr_groupid)
+                            if existing_groupid != str(settings.FLT_OUTBOUND):
+                                if hf_gwgroupid:
+                                    db.query(InboundMapping).filter(InboundMapping.groupid == existing_groupid).update(
+                                        {'gwlist': '#{}'.format(hf_gwgroupid),
+                                         'description': 'name:Hard Forward from {} to DID {}'.format(curr_prefix, hf_did)},
+                                        synchronize_session=False)
+                                    fwdgroupid = int(existing_groupid)
+                                else:
+                                    db.query(InboundMapping).filter(InboundMapping.groupid == existing_groupid).delete(synchronize_session=False)
+                            else:
+                                if hf_gwgroupid:
+                                    lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(
+                                        InboundMapping.groupid.desc()).first()
+                                    fwdgroupid = settings.FLT_FWD_MIN if lastfwd is None else int(lastfwd.groupid) + 1
+                                    db.add(InboundMapping(fwdgroupid, '', '#{}'.format(hf_gwgroupid),
+                                        'name:Hard Forward from {} to DID {}'.format(curr_prefix, hf_did)))
+                            db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == effective_ruleid).update(
+                                {'did': hf_did, 'dr_groupid': fwdgroupid}, synchronize_session=False)
+
             db.commit()
             getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
             payload['kamreload'] = getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required']
@@ -718,6 +842,11 @@ def handleInboundMapping():
                     payload['status_code'] = StatusCodes.HTTP_NOT_FOUND
                 elif rule_row is not None:
                     _sync_number_status_from_inbound_route(db, rule_row.prefix, '')
+                    hf_entry = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(rule_row.ruleid)).first()
+                    if hf_entry:
+                        if str(hf_entry.dr_groupid) != str(settings.FLT_OUTBOUND):
+                            db.query(InboundMapping).filter(InboundMapping.groupid == hf_entry.dr_groupid).delete(synchronize_session=False)
+                        db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(rule_row.ruleid)).delete(synchronize_session=False)
 
             # delete single rule by did
             else:
@@ -731,6 +860,11 @@ def handleInboundMapping():
                         payload['status_code'] = StatusCodes.HTTP_NOT_FOUND
                     elif rule_row is not None:
                         _sync_number_status_from_inbound_route(db, rule_row.prefix, '')
+                        hf_entry = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(rule_row.ruleid)).first()
+                        if hf_entry:
+                            if str(hf_entry.dr_groupid) != str(settings.FLT_OUTBOUND):
+                                db.query(InboundMapping).filter(InboundMapping.groupid == hf_entry.dr_groupid).delete(synchronize_session=False)
+                            db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == str(rule_row.ruleid)).delete(synchronize_session=False)
 
                 # no other options
                 else:
@@ -2736,7 +2870,8 @@ def generateCDRS(
     gwgroupid,
     report_type=None,
     send_email=None,
-    dtfilter=None,
+    dt_from=None,
+    dt_to=None,
     cdrfilter=None,
     nonCompletedCalls=None,
     run_standalone=False,
@@ -2747,13 +2882,15 @@ def generateCDRS(
 
     :param gwgroupid:       gwgroup to generate cdr's for
     :type gwgroupid:        int|str
-    :param report_type:            type of report (json|csv)
-    :type report_type:             str
-    :param send_email:           whether the report should be emailed
-    :type send_email:            bool
-    :param dtfilter:        time before which cdr's are not returned
-    :type dtfilter:         datetime
-    :param cdrfilter:       comma seperated cdr id's to include
+    :param report_type:     type of report (json|csv)
+    :type report_type:      str
+    :param send_email:      whether the report should be emailed
+    :type send_email:       bool
+    :param dt_from:         earliest call_start_time to include (inclusive)
+    :type dt_from:          datetime
+    :param dt_to:           latest call_start_time to include (inclusive)
+    :type dt_to:            datetime
+    :param cdrfilter:       comma separated cdr id's to include
     :type cdrfilter:        str
     :return:                returns a json response or file
     :rtype:                 flask.Response
@@ -2781,8 +2918,10 @@ def generateCDRS(
             report_type = report_type.lower()
         if send_email is None:
             send_email = False
-        if dtfilter is None:
-            dtfilter = datetime.min
+        if dt_from is None:
+            dt_from = datetime.min
+        if dt_to is None:
+            dt_to = datetime.max
         if cdrfilter is None:
             cdrfilter = tuple()
         else:
@@ -2804,7 +2943,7 @@ def generateCDRS(
             return jsonify(response_payload)
 
         if len(cdrfilter) > 0:
-            sql_params = {"gwgroupid": gwgroupid, "dtfilter": dtfilter, "cdrfilter": cdrfilter}
+            sql_params = {"gwgroupid": gwgroupid, "dt_from": dt_from, "dt_to": dt_to, "cdrfilter": cdrfilter}
             query1 = (
                 """SELECT t1.cdr_id, t1.call_start_time, t1.duration AS call_duration, t1.calltype AS call_direction,
                           t2.id AS src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
@@ -2813,11 +2952,10 @@ def generateCDRS(
                 FROM cdrs t1
                 JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
                 JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
-                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dtfilter AND t1.cdr_id IN :cdrfilter
-                ORDER BY t1.call_start_time DESC"""
+                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dt_from AND t1.call_start_time <= :dt_to AND t1.cdr_id IN :cdrfilter"""
             )
         else:
-            sql_params = {"gwgroupid": gwgroupid, "dtfilter": dtfilter}
+            sql_params = {"gwgroupid": gwgroupid, "dt_from": dt_from, "dt_to": dt_to}
             query1 = (
                 """SELECT t1.cdr_id, t1.call_start_time, t1.duration AS call_duration, t1.calltype AS call_direction,
                           t2.id AS src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
@@ -2826,8 +2964,7 @@ def generateCDRS(
                 FROM cdrs t1
                 JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
                 JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
-                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dtfilter
-                ORDER BY t1.call_start_time DESC"""
+                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dt_from AND t1.call_start_time <= :dt_to"""
             )
 
         if nonCompletedCalls:
@@ -2839,8 +2976,7 @@ def generateCDRS(
                 FROM acc
                 JOIN dr_gw_lists t2 ON (acc.src_gwgroupid = t2.id)
                 LEFT JOIN dr_gw_lists t3 ON (acc.dst_gwgroupid = t3.id)
-                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND acc.time >= :dtfilter
-                ORDER BY acc.time DESC"""
+                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND acc.time >= :dt_from AND acc.time <= :dt_to"""
             )
             sql = f'SELECT SQL_CALC_FOUND_ROWS * FROM (({query1}) UNION ({query2})) t_all'
         else:
@@ -2877,12 +3013,20 @@ def generateCDRS(
                 OR `dst_address` LIKE :search_val
                 OR `call_id` LIKE :search_val
                 '''
+        # Column whitelist for safe ORDER BY injection; index is 1-based to match order_col
+        _CDR_COLUMNS = [
+            None,  # placeholder so index 1 → 'cdr_id'
+            'cdr_id', 'call_start_time', 'call_duration', 'call_direction',
+            'src_gwgroupid', 'src_gwgroupname', 'dst_gwgroupid', 'dst_gwgroupname',
+            'src_username', 'dst_username', 'src_address', 'dst_address', 'call_id',
+        ]
         if filter_params['ordering']:
-            sql_params['order_col'] = filter_params['order_col']
-            if filter_params['order_dir'] == 'desc':
-                sql = sql + ' ORDER BY :order_col DESC'
-            else:
-                sql = sql + ' ORDER BY :order_col ASC'
+            col_idx = filter_params['order_col']
+            order_col = _CDR_COLUMNS[col_idx] if 0 < col_idx < len(_CDR_COLUMNS) else 'call_start_time'
+            order_dir = 'DESC' if filter_params['order_dir'] == 'desc' else 'ASC'
+            sql = sql + f' ORDER BY `{order_col}` {order_dir}, `cdr_id` {order_dir}'
+        else:
+            sql = sql + ' ORDER BY `call_start_time` DESC, `cdr_id` DESC'
         if filter_params['paging']:
             sql_params['page_start'] = filter_params['page_start']
             sql_params['page_len'] = filter_params['page_len']
@@ -3000,10 +3144,20 @@ def getGatewayGroupCDRS(gwgroupid=None):
     else:
         send_email = False
     cdrfilter = request.args.get('filter', None)
-    if 'dtfilter' in request.args:
-        dtfilter = datetime.strptime(request.args['dtfilter'], "%Y-%m-%d")
-    else:
-        dtfilter = None
+
+    def _parse_dt(value):
+        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(value, fmt)
+            except ValueError:
+                continue
+        raise ValueError(f"Unrecognized datetime format: {value!r}")
+
+    dt_from = _parse_dt(request.args['dt_from']) if 'dt_from' in request.args else None
+    # dtfilter is a legacy alias for dt_from; ignored when dt_from is explicitly provided
+    if dt_from is None and 'dtfilter' in request.args:
+        dt_from = _parse_dt(request.args['dtfilter'])
+    dt_to = _parse_dt(request.args['dt_to']) if 'dt_to' in request.args else None
     if 'nonCompletedCalls' in request.args:
         nonCompletedCalls = json.loads(request.args['nonCompletedCalls'])
     else:
@@ -3037,7 +3191,7 @@ def getGatewayGroupCDRS(gwgroupid=None):
     else:
         filter_params['ordering'] = False
 
-    return generateCDRS(gwgroupid, report_type, send_email, dtfilter, cdrfilter, nonCompletedCalls, filter_params=filter_params)
+    return generateCDRS(gwgroupid, report_type, send_email, dt_from, dt_to, cdrfilter, nonCompletedCalls, filter_params=filter_params)
 
 
 # TODO: standardize response payload (use createApiResponse())
@@ -3100,6 +3254,7 @@ def getGatewayCDRS(gwid=None):
 
 @api.route("/api/v1/backupandrestore/backup", methods=['GET'])
 @api_security
+@api_require_roles(['dsip_admin'])
 def createBackup():
     """
     Generate a backup of the database
@@ -3112,15 +3267,9 @@ def createBackup():
         if (settings.DEBUG):
             debugEndpoint()
 
-        backup_path = os.path.join(settings.BACKUP_FOLDER, f'{time.strftime("%s")}-db.sql')
-
-        dumpcmd = ['sudo', 'dsiprouter', 'backup', '-f', backup_path]
-        proc = subprocess.run(
-            dumpcmd,
-            capture_output=True,
-            text=True
-        )
-        proc.check_returncode()
+        backup_fd, backup_path = tempfile.mkstemp(prefix=f'{time.strftime("%s")}-', suffix='-db.sql', dir=settings.BACKUP_FOLDER)
+        with os.fdopen(backup_fd, 'wb') as backup_file:
+            dumpKamDB(backup_file)
 
         return send_file(backup_path, as_attachment=True), StatusCodes.HTTP_OK
 
@@ -3133,6 +3282,7 @@ def createBackup():
 
 @api.route("/api/v1/backupandrestore/restore", methods=['POST'])
 @api_security
+@api_require_roles(['dsip_admin'])
 def restoreBackup():
     """
     Restore backup of the database
@@ -3160,13 +3310,7 @@ def restoreBackup():
         else:
             raise http_exceptions.BadRequest("Improper file upload")
 
-        restorecmd = ['sudo', 'dsiprouter', 'restore', '-f', restore_path]
-        proc = subprocess.run(
-            restorecmd,
-            capture_output=True,
-            text=True
-        )
-        proc.check_returncode()
+        restoreKamDB(restore_path)
 
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
@@ -3349,6 +3493,7 @@ def testConnectivity(domain):
 @api.route("/api/v1/certificates", methods=['GET'])
 @api.route("/api/v1/certificates/<string:domain>", methods=['GET'])
 @api_security
+@api_require_roles(['dsip_admin', 'dsip_engineer'])
 def getCertificates(domain=None):
     db = DummySession()
 
@@ -3395,6 +3540,7 @@ def getCertificates(domain=None):
 
 @api.route("/api/v1/certificates", methods=['POST', 'PUT'])
 @api_security
+@api_require_roles(['dsip_admin', 'dsip_engineer'])
 def createCertificate():
     """
     Create TLS cert for a domain
@@ -3439,6 +3585,8 @@ def createCertificate():
         domain = request_payload['domain']
         if domain == "default":
             domain = socket.gethostname()
+        elif not isValidHostname(domain):
+            raise http_exceptions.BadRequest("Value for Request Argument 'domain' is Not Valid")
         ip = request_payload['ip'] if 'ip' in request_payload else settings.EXTERNAL_IP_ADDR
         port = request_payload['port'] if 'port' in request_payload else 5061
         server_name_mode = request_payload['server_name_mode'] \
@@ -3507,6 +3655,7 @@ def createCertificate():
 
 @api.route("/api/v1/certificates/<string:domain>", methods=['DELETE'])
 @api_security
+@api_require_roles(['dsip_admin', 'dsip_engineer'])
 def deleteCertificates(domain=None):
     db = DummySession()
 
@@ -3525,7 +3674,9 @@ def deleteCertificates(domain=None):
         Certificates.delete(synchronize_session=False)
 
         # Remove the certificate from the file system
-        letsencrypt.deleteCertificate(domain)
+        # invalid domains are still purged from the DB and TLS config, but never resolved to a path
+        if isValidHostname(domain):
+            letsencrypt.deleteCertificate(domain)
 
         # Remove from Kamailio TLS
         kamtls.deleteCustomTLSConfig(domain)
@@ -3548,6 +3699,7 @@ def deleteCertificates(domain=None):
 
 @api.route("/api/v1/certificates/upload/<string:domain>", methods=['POST'])
 @api_security
+@api_require_roles(['dsip_admin', 'dsip_engineer'])
 def uploadCertificates(domain=None):
     db = DummySession()
 
@@ -3561,9 +3713,12 @@ def uploadCertificates(domain=None):
 
         if 'domain' in data.keys():
             domain = data['domain'][0]
-            print(domain)
         else:
             domain = "default"
+
+        # the domain is used to build filesystem paths and TLS config entries
+        if not isValidHostname(domain):
+            raise http_exceptions.BadRequest("Value for Request Argument 'domain' is Not Valid")
 
         if 'replace_default_cert' in data.keys():
             replace_default_cert = data['replace_default_cert'][0]
@@ -3609,12 +3764,17 @@ def uploadCertificates(domain=None):
         key_base64 = base64.b64encode(pkey_bytes)
         cert_base64 = base64.b64encode(cert_bytes)
 
-        # Store Certificate in dSIPCertificate Table
-        certificate = dSIPCertificates(domain, "uploaded", None, cert_base64, key_base64)
-        db.add(certificate)
+        # Store Certificate in dSIPCertificate Table, re-uploads replace the existing entry
+        certificate = db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).first()
+        if certificate is not None:
+            db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).update(
+                {'email': None, 'type': "uploaded", 'cert': cert_base64, 'key': key_base64})
+        else:
+            certificate = dSIPCertificates(domain, "uploaded", None, cert_base64, key_base64)
+            db.add(certificate)
 
-        if not replace_default_cert:
-            # Write the Kamailio TLS Configuration if it's not the default
+        if replace_default_cert != "true" and domain not in (kamtls.getCustomTLSConfigs() or {}):
+            # Write the Kamailio TLS Configuration if it's not the default and not already there
             if not kamtls.addCustomTLSConfig(domain, ip, port, server_name_mode):
                 raise Exception('Failed to add Certificate to Kamailio')
 

@@ -3,12 +3,19 @@
 # Summary: clean up / harden system before creating an image
 #
 
+DSIP_PROJECT_DIR=$(realpath -m "${BASH_SOURCE[0]}/../..")
+
 function cmdExists() {
     if command -v "$1" >/dev/null 2>&1; then
         return 0
     else
         return 1
     fi
+}
+
+# true if a deb package is installed (status "installed", regardless of hold / manual selection state)
+function debInstalled() {
+    [[ "$(dpkg-query -W -f '${db:Status-Status}' "$1" 2>/dev/null)" == 'installed' ]]
 }
 
 function getDistroName() {
@@ -40,6 +47,13 @@ function clearDiskCache() {
 # TODO: in the future this will instead be handled by using pre-packaged binaries
 function runSecurityUpdates() {
     if cmdExists 'apt-get'; then
+        # never prompt (debconf / needrestart), conffile handling follows /etc/apt/apt.conf.d/99dsiprouter
+        # the dpkg options are repeated here in case that file was removed (e.g. dsiprouter uninstalled before imaging)
+        export DEBIAN_FRONTEND='noninteractive'
+        export DEBIAN_PRIORITY='critical'
+        export NEEDRESTART_MODE='a'
+        local APT_OPTS=(-y -o 'Dpkg::Options::=--force-confdef' -o 'Dpkg::Options::=--force-confnew')
+
         # grub updates adhere to ucf not debconf
         # make sure ucf defaults to unattended upgrade
         unset UCF_FORCE_CONFFOLD
@@ -48,13 +62,15 @@ function runSecurityUpdates() {
 
         apt-mark hold linux-image-* linux-headers-*
         apt-get update -y
-        apt-get upgrade -y
+        apt-get upgrade "${APT_OPTS[@]}"
         apt-mark unhold linux-image-* linux-headers-*
 
-        apt-get remove -y --purge xinetd nis yp-tools tftpd atftpd tftpd-hpa telnetd rsh-server rsh-redone-server
-        apt-get remove -y --purge libcap-dev
+        apt-get remove "${APT_OPTS[@]}" --purge xinetd nis yp-tools tftpd atftpd tftpd-hpa telnetd rsh-server rsh-redone-server
+        apt-get remove "${APT_OPTS[@]}" --purge libcap-dev
 
-        apt-get autoremove -y --purge
+        # cloud-init writes network config, ssh host keys and authorized_keys on first boot, it must survive autoremove
+        debInstalled cloud-init && apt-mark manual cloud-init
+        apt-get autoremove "${APT_OPTS[@]}" --purge
         apt-get clean -y
     elif cmdExists 'dnf'; then
         dnf upgrade -y --exclude='kernel*' --exclude='linux-headers-*'
@@ -80,7 +96,6 @@ function hardenSshdConfigs() {
         cat <<'EOF'
 # |== SSHD Server Settings ==|
 Port 22
-Protocol 2
 
 # |== Log Settings ==|
 SyslogFacility AUTH
@@ -90,10 +105,7 @@ LogLevel INFO
 # we only allow pubkey auth using ssh protocol v2
 PermitRootLogin no
 StrictModes yes
-# enable protocol v2 auth
 PubkeyAuthentication yes
-# disable protocol v1 auth
-RSAAuthentication no
 ChallengeResponseAuthentication no
 PasswordAuthentication no
 KerberosAuthentication no
@@ -102,15 +114,12 @@ PermitEmptyPasswords no
 # HostKeys for protocol v2
 # see: man sshd_config for more details
 HostKey /etc/ssh/ssh_host_rsa_key
-HostKey /etc/ssh/ssh_host_dsa_key
 HostKey /etc/ssh/ssh_host_ecdsa_key
 HostKey /etc/ssh/ssh_host_ed25519_key
 # where to check for authorized keys
 AuthorizedKeysFile .ssh/authorized_keys
 
 # |== Security Settings ==|
-# Process is unprivileged until auth is complete
-UsePrivilegeSeparation yes
 # Make brute force attempts much harder
 # NOTE: if you have many identity keys (>5) each one causes an auth attempt and this may cause auth failure
 # clients with this issue need to specify the key explicitly for that host (on cmdline or in ~/.ssh/ssh_config)
@@ -119,8 +128,6 @@ MaxAuthTries 5
 LoginGraceTime 60
 # Don't read the user's ~/.rhosts and ~/.shosts files
 IgnoreRhosts yes
-# Don't allow remote host auth protocol v1
-RhostsRSAAuthentication no
 # Don't allow remote host auth protocol v2
 HostbasedAuthentication no
 # PAM is needed for some 2-factor auth solutions
@@ -199,10 +206,31 @@ function cleanKeys() {
     chmod 600 /etc/ssh/revoked_keys
 }
 
-# let cloud-init write these on boot
+# remove only cloud-init's build-time network configs, cloud-init rewrites them on first boot
+# dsiprouter owned configs (98-docker.network, 99-dsiprouter.network) must survive in the image
 function cleanNetworkConfigs() {
-    rm -f /etc/systemd/network/*
-    rm -f /etc/netplan/*
+    rm -f /etc/systemd/network/*-cloud-init-* \
+        /etc/netplan/*-cloud-init* \
+        /etc/network/interfaces.d/*-cloud-init* \
+        2>/dev/null
+}
+
+# make sure a mac independent dhcp fallback exists, cloud-init's rendered config is tied to the build instance
+# installed from the same source the dnsmasq installers use so the two can not drift
+function ensureNetworkFallback() {
+    mkdir -p /etc/systemd/network/
+    if [[ ! -f /etc/systemd/network/99-dsiprouter.network ]]; then
+        cp -f "${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdnetworkd/dsiprouter.network" /etc/systemd/network/99-dsiprouter.network
+    fi
+}
+
+# warn if cloud-init is missing, most images rely on it for ssh host keys / authorized_keys / network config on first boot
+# not fatal: images without cloud-init are a valid (less common) case and must provide those by other means
+function warnCloudInitMissing() {
+    # note: a held package (e.g. the rebuilt cloud-init from dsiprouter.sh) reports "hold ok installed", so match on the status only
+    if cmdExists 'dpkg-query' && ! debInstalled cloud-init; then
+        echo 'WARNING: cloud-init is not installed, instances from this image must configure ssh keys and networking by other means' >&2
+    fi
 }
 
 function cleanSourceFiles() {
@@ -215,8 +243,7 @@ function cleanRuntimeFiles() {
         shopt -s globstar
         rm -rf /opt/dsiprouter/**/__pycache__/
     )
-    rm -rf /run/*
-    rm -rf /tmp/* /var/tmp/*
+    rm -rf /run/* /tmp/* /var/tmp/*
 }
 
 # remove logs and any information from build process
@@ -236,8 +263,10 @@ hardenKernelConfigs
 cleanUserAccounts
 cleanKeys
 cleanNetworkConfigs
+ensureNetworkFallback
 cleanSourceFiles
 cleanLogs
 cleanCloudInit
 cleanRuntimeFiles
+warnCloudInitMissing
 exit 0

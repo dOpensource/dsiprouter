@@ -43,6 +43,7 @@ OS Support
 ===================================     ================
 OS / Distro                             Current Support
 ===================================     ================
+Debian 13 (trixie)                      STABLE
 Debian 12 (bookworm)                    STABLE
 Debian 11 (bullseye)                    STABLE
 Debian 10 (buster)                      STABLE

@@ -1,0 +1,19 @@
+# The dsiprouter user requests this action by writing one line to the FIFO below
+# the FIFO is created by systemd, only the dsiprouter user can write to it
+#
+# The following is updated dynamically on install and should not be changed here:
+#   DSIP_REQUESTS_DIR
+
+[Unit]
+Description=dSIPRouter request queue: restart the dSIPRouter services
+
+[Socket]
+ListenFIFO=DSIP_REQUESTS_DIR/restart
+SocketUser=dsiprouter
+SocketGroup=dsiprouter
+SocketMode=0600
+DirectoryMode=0755
+RemoveOnStop=yes
+
+[Install]
+WantedBy=sockets.target

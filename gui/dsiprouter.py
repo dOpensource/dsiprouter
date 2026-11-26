@@ -7,7 +7,7 @@ if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
-import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess, time, requests, socket
+import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, time, requests, socket
 import importlib.util
 from ansi2html import Ansi2HTMLConverter
 from copy import copy
@@ -52,8 +52,8 @@ from util.security import Credentials, urandomChars, AES_CTR
 from util.ipc import SETTINGS_SHMEM_NAME, STATE_SHMEM_NAME, createSharedMemoryDict, getSharedMemoryDict
 from util.parse_json import CreateEncoder
 from util.persistence import updatePersistentState, setPersistentState
-from util.pyasync import process
-from modules.upgrade import UpdateUtils
+from util.sysrequests import UPGRADE_LOG, fileRequest, isRequestOngoing, getUpgradeExitCode
+from modules.upgrade import UpdateUtils, ReleaseLookupPending
 import settings
 
 # TODO: unit testing per component
@@ -70,9 +70,8 @@ import settings
 #       we moved to shared memory instead of domain sockets for sharing state across processes
 
 # module constants
-# TODO: create /var/log/dsiprouter/ and move there
-UPGRADE_LOG = f'{settings.BACKUP_FOLDER}/upgrade.log'
-UPGRADE_OFFSET = f'{UPGRADE_LOG}.offset'
+# position of the upgrade page in the upgrade log, the log itself is written by the handler of the upgrade request
+UPGRADE_OFFSET = f'{settings.BACKUP_FOLDER}/upgrade.log.offset'
 
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
@@ -196,7 +195,41 @@ def displayError():
     return showError(type, code, msg)
 
 
+def has_permissions(required_groups):
+    """
+    Check whether the session user has one of the given roles.
+
+    :param required_groups:     list of role names to check for
+    :type required_groups:      list
+    :return:                    whether the session user has one of the roles
+    :rtype:                     bool
+    """
+    return bool(set(session.get('user_groups', []) or []).intersection(required_groups))
+
+
+def require_permissions(required_groups):
+    """
+    Deny access to a route unless the session user has one of the given roles.
+
+    :param required_groups:     list of role names that may access the route
+    :type required_groups:      list
+    :return:                    decorated route handler
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if not session.get('logged_in'):
+                return render_template('index.html', version=settings.VERSION)
+            if not has_permissions(required_groups):
+                flash('You do not have permission to access this page')
+                return redirect(url_for('index'))
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 @app.route('/backupandrestore')
+@require_permissions(['dsip_admin'])
 def backupandrestore():
     try:
         if (settings.DEBUG):
@@ -215,28 +248,6 @@ def backupandrestore():
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
         return showError(type=error)
-
-
-def require_permissions(required_groups):
-    """
-    Deny access to a route unless the session user has one of the given roles.
-
-    :param required_groups:     list of role names that may access the route
-    :type required_groups:      list
-    :return:                    decorated route handler
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            if not session.get('logged_in'):
-                return render_template('index.html', version=settings.VERSION)
-            user_groups = set(session.get('user_groups', []) or [])
-            if not user_groups.intersection(required_groups):
-                flash('You do not have permission to access this page')
-                return redirect(url_for('index'))
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
 
 
 @app.route('/settings')
@@ -259,6 +270,7 @@ def ui_settings():
 
 
 @app.route('/certificates')
+@require_permissions(['dsip_admin', 'dsip_engineer'])
 def certificates():
     try:
         if (settings.DEBUG):
@@ -2169,6 +2181,7 @@ def addUpdateStirShaken():
 
 
 @app.route('/upgrade')
+@require_permissions(['dsip_admin'])
 def displayUpgrade(msg=None):
     """
     Display Upgrade settings in view
@@ -2193,12 +2206,22 @@ def displayUpgrade(msg=None):
         if os.path.exists(UPGRADE_OFFSET):
             os.remove(UPGRADE_OFFSET)
 
-        latest = UpdateUtils.get_latest_version()
+        lookup_pending = False
+        releases, lookup_error = None, None
+        try:
+            releases, lookup_error = UpdateUtils.get_supported_releases()
+        except ReleaseLookupPending:
+            # the page loads itself again until the lookup finished or failed
+            lookup_pending = True
 
         upgrade_settings = {
             "current_version": settings.VERSION,
-            "latest_version": latest['ver_num'],
-            "upgrade_available": 1 if latest['ver_num'] > float(settings.VERSION) else 0
+            # newest first
+            "releases": [{'tag': x.tag, 'version': x.version, 'prerelease': x.prerelease} for x in reversed(releases or [])],
+            "upgrade_ongoing": isRequestOngoing('upgrade'),
+            "lookup_pending": lookup_pending,
+            # the page does not load itself again, the lookup is tried again when the page is opened later
+            "lookup_error": str(lookup_error) if lookup_error is not None else None
         }
         return render_template('upgrade.html', upgrade_settings=upgrade_settings, msg=msg)
 
@@ -2213,34 +2236,13 @@ def displayUpgrade(msg=None):
         return showError(type=error)
 
 
-@process
-def runUpgrade(cmd, env):
-    try:
-        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_upgrade_ongoing'] = True
-
-        with open(UPGRADE_LOG, 'wb', buffering=0) as f:
-            run_info = subprocess.run(
-                cmd,
-                stdout=f,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True,
-                env=env,
-                restore_signals=False,
-                close_fds=True
-            )
-            run_info.check_returncode()
-
-            # getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
-            # kamailio will be reloaded when dsiprouter is reloaded
-            getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_required'] = True
-    finally:
-        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_upgrade_ongoing'] = False
-
 @app.route('/upgrade/start', methods=['POST'])
 def startUpgrade():
     try:
         if not session.get('logged_in'):
             return redirect(url_for('index'))
+        if not has_permissions(['dsip_admin']):
+            raise http_exceptions.Forbidden('You do not have permission to upgrade dSIPRouter')
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -2248,13 +2250,27 @@ def startUpgrade():
         if getLicenseStatus(license_tag='DSIP_CORE') != 3:
             raise WoocommerceError('invalid license')
 
-        IO.loginfo("starting upgrade")
+        if isRequestOngoing('upgrade'):
+            raise http_exceptions.Conflict('an upgrade is already in progress')
 
+        # only a release the installed version can be upgraded to is requested
+        # the handler of the request checks the release again, against the repo set in the settings
         form = stripDictVals(request.form.to_dict())
-        cmd = ['sudo', '-E', 'dsiprouter', 'upgrade', '-rel', f"{form['latest_version']}", '-url', settings.GIT_REPO_URL]
-        runUpgrade(cmd, None)
+        try:
+            releases, lookup_error = UpdateUtils.get_supported_releases()
+        except ReleaseLookupPending:
+            raise http_exceptions.ServiceUnavailable('the available releases are being looked up, try again in a moment')
+        # the releases of an earlier lookup are used when the last lookup failed, the upgrade checks the release again
+        if releases is None:
+            raise http_exceptions.ServiceUnavailable(f'could not retrieve the available releases: {lookup_error}')
+        if form.get('release') not in [x.tag for x in releases]:
+            raise http_exceptions.BadRequest('requested release is not available, refresh the page and try again')
 
-        IO.loginfo("upgrade started")
+        IO.loginfo("requesting upgrade to {}".format(form['release']))
+
+        fileRequest('upgrade', form['release'])
+
+        IO.loginfo("upgrade requested")
 
         return Response(), StatusCodes.HTTP_OK
 
@@ -2281,10 +2297,9 @@ def formatSSE(data: str, event: str = None) -> str:
 # TODO: move to file handling
 # TODO: figure out why the SSE are not being sent every 1 second as expected
 def readLogChunk(log_file):
-    state = getSharedMemoryDict(STATE_SHMEM_NAME)
-    while state['dsip_upgrade_ongoing'] == True:
+    while isRequestOngoing('upgrade'):
         try:
-            lines = Pygtail(log_file, offset_file=f'{log_file}.offset').read()
+            lines = Pygtail(log_file, offset_file=UPGRADE_OFFSET).read()
             yield formatSSE(
                 ansi_converter.convert(
                     lines,
@@ -2296,7 +2311,7 @@ def readLogChunk(log_file):
         time.sleep(1)
     # process the reset of the lines
     try:
-        lines = Pygtail(log_file, offset_file=f'{log_file}.offset').read()
+        lines = Pygtail(log_file, offset_file=UPGRADE_OFFSET).read()
         yield formatSSE(
             ansi_converter.convert(
                 lines,
@@ -2307,10 +2322,12 @@ def readLogChunk(log_file):
         pass
 
 def checkUpgradeStatus():
-    state = getSharedMemoryDict(STATE_SHMEM_NAME)
-    while state['dsip_upgrade_ongoing'] == True:
+    while isRequestOngoing('upgrade'):
         yield formatSSE('1')
         time.sleep(30)
+    if getUpgradeExitCode() == 0:
+        # kamailio will be reloaded when dsiprouter is reloaded
+        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_required'] = True
     yield formatSSE('0')
 
 
@@ -2319,6 +2336,8 @@ def getUpgradeStatus():
     try:
         if not session.get('logged_in'):
             return 'Unauthorized', 401
+        if not has_permissions(['dsip_admin']):
+            return 'Forbidden', StatusCodes.HTTP_FORBIDDEN
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -2342,6 +2361,8 @@ def getUpgradeLog():
     try:
         if not session.get('logged_in'):
             return 'Unauthorized', 401
+        if not has_permissions(['dsip_admin']):
+            return 'Forbidden', StatusCodes.HTTP_FORBIDDEN
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -2622,12 +2643,10 @@ def intializeGlobalState(**state_updates):
 
     # create/update the shared state file
     # if the state got corrupted throw it away and start fresh
-    # NOTE: upgrade process does not daemonize, it is always gone on startup
     try:
         state = updatePersistentState({
             'dsip_reload_ongoing': False,
             'dsip_reload_required': False,
-            'dsip_upgrade_ongoing': False,
         })
     except json.JSONDecodeError:
         state = {}
@@ -2647,7 +2666,6 @@ def intializeGlobalState(**state_updates):
     state['kam_reload_required'] = state.get('kam_reload_required', False)
     state['dsip_reload_required'] = state.get('dsip_reload_required', False)
     state['dsip_reload_ongoing'] = state.get('dsip_reload_ongoing', False)
-    state['dsip_upgrade_ongoing'] = state.get('dsip_upgrade_ongoing', False)
 
     # after normal logic for loading state we do any overwrites passed in
     state.update(state_updates)

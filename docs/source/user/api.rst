@@ -76,6 +76,66 @@ Delete a route (paired ``dsip_lcr`` row, if any, is removed automatically):
 
     curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X DELETE https://$DSIP_HOSTNAME:5000/api/v1/outboundroutes/<ruleid>
 
+Executing Inbound Mapping API
+-----------------------------
+
+Map a DID to an endpoint group. ``servers`` takes one or two endpoint group IDs, each prefixed with ``#``:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" \
+         -X POST -d '{"did":"13132222223","servers":["#22"],"name":"Main Number"}' \
+         https://$DSIP_HOSTNAME:5000/api/v1/inboundmapping
+
+Map a DID with a hard forward. Calls to the DID are forwarded to the ``did`` given in ``hard-forward``.
+``carrier_group`` is the name of the carrier group (or endpoint group) the forwarded call is sent to, without it the call is routed by the outbound routes:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" \
+         -X POST -d '{"did":"13132222223","servers":["#22"],"name":"Main Number","hard-forward":{"did":"13135555555","carrier_group":"My Carrier"}}' \
+         https://$DSIP_HOSTNAME:5000/api/v1/inboundmapping
+
+Add, change or remove the hard forward of an existing mapping. The mapping is selected with ``ruleid`` or ``did``, sending ``"hard-forward": null`` removes the hard forward:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" \
+         -X PUT -d '{"hard-forward":{"did":"13135555555"}}' \
+         "https://$DSIP_HOSTNAME:5000/api/v1/inboundmapping?did=13132222223"
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" \
+         -X PUT -d '{"hard-forward":null}' \
+         "https://$DSIP_HOSTNAME:5000/api/v1/inboundmapping?did=13132222223"
+
+List the mappings. Each mapping is returned with its ``hard-forward``, which is ``null`` when none is set:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X GET https://$DSIP_HOSTNAME:5000/api/v1/inboundmapping
+
+A request naming a ``carrier_group`` that does not exist is answered with ``400 Bad Request``.
+
+Executing CDR API
+-----------------
+
+Get the CDRs of an endpoint group. ``dt_from`` and ``dt_to`` limit the CDRs to calls that started in that range, both are inclusive and optional.
+The accepted formats are ``YYYY-MM-DD``, ``YYYY-MM-DD HH:MM:SS`` and ``YYYY-MM-DDTHH:MM:SS``:
+
+.. code-block:: bash
+
+    curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X GET \
+         "https://$DSIP_HOSTNAME:5000/api/v1/cdrs/endpointgroups/<gwgroupid>?dt_from=2026-11-01T00:00:00&dt_to=2026-11-30T23:59:59"
+
+``dtfilter`` is still accepted in place of ``dt_from``, it is ignored when ``dt_from`` is given.
+The CDRs are returned as JSON, with ``type=csv`` they are returned as a CSV file.
+
+Managing Users via the API
+--------------------------
+
+The ``/api/v1/auth/user`` endpoints require the API token, like the rest of the API.
+From a session of the UI they can only be used by users with the ``dsip_admin`` role.
+
 Further Reading
 +++++++++++++++
 

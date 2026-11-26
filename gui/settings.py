@@ -39,7 +39,7 @@ DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.793'
+VERSION = '0.794'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -168,7 +168,8 @@ UAC_REG_ADDR = ''
 CLOUD_PLATFORM = ''
 
 # backup settings
-BACKUP_FOLDER = '/var/backups/dsiprouter'
+# where the backups made and restored through the GUI are stored while they are transferred
+BACKUP_FOLDER = '/var/lib/dsiprouter/gui-backups'
 
 # TransNexus Settings
 # TODO: marked for review, these settings should be synced across cluster in the DB
@@ -222,10 +223,6 @@ ROOT_DB_NAME = 'mysql'
 # file  - load from setting.py file
 # db    - load from dsip_settings table
 LOAD_SETTINGS_FROM = 'file'
-
-# where upgrades will be pulled from
-GIT_REPO_URL = 'https://github.com/dOpensource/dsiprouter.git'
-GIT_RELEASE_URL = 'https://api.github.com/repos/dOpensource/dsiprouter/releases'
 
 # auth modules
 # a dictionary of authentication modules to load and their corresponding settings

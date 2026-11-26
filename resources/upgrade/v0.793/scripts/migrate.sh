@@ -6,8 +6,12 @@
 NEW_PROJECT_DIR=${NEW_PROJECT_DIR:-/tmp/dsiprouter}
 # project dir where previous repo was located
 OLD_PROJECT_DIR=${DSIP_PROJECT_DIR:-/opt/dsiprouter}
-# the backup directory set by dsiprouter.sh
-CURR_BACKUP_DIR=${CURR_BACKUP_DIR:-"/var/backups/dsiprouter/$(date '+%s')"}
+# the backup is restored as root when the upgrade fails, so it is kept where only root can write
+# the backup directory set by previous versions of dsiprouter.sh is not used
+# it has a name that can be predicted, in a directory those versions handed to the dsiprouter user
+BACKUPS_DIR='/var/backups/dsiprouter'
+CURR_BACKUP_DIR="${BACKUPS_DIR}/$(date '+%s').$(head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+export CURR_BACKUP_DIR
 # system config files for dsiprouter
 DSIP_SYSTEM_CONFIG_DIR='/etc/dsiprouter'
 DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
@@ -33,13 +37,19 @@ KAMDB_OBJECTS_MANIFEST="${KAMDB_OBJECTS_DIR}/manifest.tsv"
 # column definitions of every kamailio base table, used to ADD COLUMN extra user columns after the reinstall
 KAMDB_COLUMNS_FILE="${CURR_BACKUP_DIR}/kam_columns.tsv"
 # systemd units and drop-in dirs the reinstall can change, each is backed up and restored as one entry
-SYSTEMD_UNITS=(dsiprouter.service kamailio.service rtpengine.service dsip-init.service mariadb.service nginx-watcher.service nginx-watcher.path)
+SYSTEMD_UNITS=(dsiprouter.service kamailio.service rtpengine.service dsip-init.service mariadb.service nginx-watcher.service nginx-watcher.path
+    dsip-request-restart.service dsip-request-upgrade.service dsip-request-provisioner.service)
+# queues for the requests of the dsiprouter user, installed and enabled by the reinstall, each is also backed up and restored as a unit
+REQUEST_SOCKET_UNITS=(dsip-request-restart.socket dsip-request-upgrade.socket dsip-request-provisioner.socket)
+SYSTEMD_UNITS+=("${REQUEST_SOCKET_UNITS[@]}")
 SYSTEMD_DROPINS=(dsiprouter.service.d kamailio.service.d rtpengine.service.d dsip-init.service.d mariadb.service.d nginx.service.d)
 SYSTEM_NGINX_CONFIG_DIR='/etc/nginx'
+# installed by previous versions, removed by this upgrade
+DSIP_SUDOERS_FILE='/etc/sudoers.d/99-dsiprouter'
 # installer-managed files restored as individual entries so unrelated files in the same directory survive
 MANAGED_FILES=(
     /usr/bin/dsiprouter
-    /etc/sudoers.d/99-dsiprouter
+    "$DSIP_SUDOERS_FILE"
     /etc/bash_completion.d/dsiprouter
     /etc/bash.bashrc
     /usr/share/man/man1/dsiprouter.1
@@ -50,6 +60,20 @@ MANAGED_FILES=(
     /etc/rsyslog.d/kamailio.conf
     /etc/rsyslog.d/rtpengine.conf
 )
+# package sources the reinstall rewrites, restored with the packages so the package manager is back on the repos of the saved versions
+PKG_SOURCE_FILES=(
+    /etc/apt/sources.list.d/kamailio.list
+    /etc/apt/preferences.d/kamailio.pref
+    /etc/apt/trusted.gpg.d/kamailiodebkey.gpg
+    /etc/yum.repos.d/kamailio.repo
+)
+# packages the reinstall replaces, an installable copy of each is saved and reinstalled when the upgrade fails
+PKG_PATTERNS=('kamailio*' 'ngcp-rtpengine*')
+PKG_BACKUP_DIR="${CURR_BACKUP_DIR}/packages"
+# one line per saved package: name, version, architecture
+PKG_MANIFEST="${PKG_BACKUP_DIR}/manifest.tsv"
+# kamailio modules dir, holds the modules built by the installer that no package owns, empty when kamailio is not installed
+KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
 # state read by resetConfigsHandler to decide what can be restored safely
 MIGRATION_COMPLETE=0
@@ -57,6 +81,7 @@ BACKUP_COMPLETE=0
 CHANGES_STARTED=0
 KAM_DB_BACKED_UP=0
 KAM_DB_TOUCHED=0
+PKG_BACKED_UP=0
 MASKED_UNITS=()
 STOPPED_UNITS=()
 
@@ -307,6 +332,15 @@ fi
 # never reuse a backup dir that already has content, it could be stale or partial
 if [[ -e "$CURR_BACKUP_DIR" ]] && [[ -n "$(ls -A "$CURR_BACKUP_DIR" 2>/dev/null)" ]]; then
     printerr "backup directory already has content, refusing to reuse it: ${CURR_BACKUP_DIR}"
+    exit 1
+fi
+
+# secureBackupsDir() makes the backups directory writable by root only, the installed version does not have it
+# only that function is taken from the dsip_lib.sh of this release, the rest of it is loaded after the reinstall
+unset -f secureBackupsDir
+eval "$(unset DSIP_LIB_IMPORTED; . "${NEW_PROJECT_DIR}/dsiprouter/dsip_lib.sh" &>/dev/null; declare -f secureBackupsDir)"
+if ! declare -F secureBackupsDir >/dev/null; then
+    printerr "could not load secureBackupsDir() from ${NEW_PROJECT_DIR}/dsiprouter/dsip_lib.sh"
     exit 1
 fi
 
@@ -796,6 +830,153 @@ function setKamDBSettingsVersion() {
     }
 }
 
+# lists the installed packages matching PKG_PATTERNS, one per line as: name, version, architecture (tab separated)
+function listTrackedPackages() {
+    if cmdExists 'apt-get'; then
+        dpkg-query -W -f '${db:Status-Abbrev}\t${Package}\t${Version}\t${Architecture}\n' "${PKG_PATTERNS[@]}" 2>/dev/null |
+            awk -F '\t' '$1 ~ /^.i/ { print $2 "\t" $3 "\t" $4 }'
+    else
+        rpm -qa --qf '%{NAME}\t%{EPOCHNUM}:%{VERSION}-%{RELEASE}\t%{ARCH}\n' "${PKG_PATTERNS[@]}"
+    fi
+    return 0
+}
+
+# prints the version of a package file, in the same format as listTrackedPackages
+# usage: packageFileVersion <package file>
+function packageFileVersion() {
+    if cmdExists 'apt-get'; then
+        dpkg-deb -f "$1" Version
+    else
+        rpm -qp --nosignature --qf '%{EPOCHNUM}:%{VERSION}-%{RELEASE}' "$1" 2>/dev/null
+    fi
+}
+
+# saves an installable copy of an installed package as the only file in ${PKG_BACKUP_DIR}/<name>/
+# usage: savePackage <name> <version> <arch>
+# notes: the package is repacked from the installed files when possible, locally built packages are not in any repo
+#        otherwise the installed version is downloaded from the configured repos
+function savePackage() {
+    local NAME="$1" VERSION="$2" ARCH="$3"
+    local DIR="${PKG_BACKUP_DIR}/${NAME}"
+    local FILES=()
+
+    mkdir -p "$DIR" || return 1
+    if cmdExists 'apt-get'; then
+        (
+            cd "$DIR" || exit 1
+            if cmdExists 'dpkg-repack' && dpkg-repack "$NAME" >/dev/null 2>&1; then
+                exit 0
+            fi
+            rm -f ./*.deb
+            apt-get download "${NAME}=${VERSION}" >/dev/null 2>&1
+        ) || return 1
+        FILES=("$DIR"/*.deb)
+    else
+        if cmdExists 'rpmrebuild' && rpmrebuild --batch --notest-install --directory="$DIR" "$NAME" >/dev/null 2>&1; then
+            # the package is written to a subdirectory named after its architecture
+            find "$DIR" -mindepth 2 -name '*.rpm' -exec mv -f {} "$DIR/" \;
+        elif cmdExists 'dnf'; then
+            dnf download -q --destdir "$DIR" "${NAME}-${VERSION#0:}.${ARCH}" >/dev/null 2>&1 || return 1
+        else
+            yumdownloader -q --destdir "$DIR" "${NAME}-${VERSION#0:}.${ARCH}" >/dev/null 2>&1 || return 1
+        fi
+        FILES=("$DIR"/*.rpm)
+    fi
+
+    # exactly one package file of the installed version must have been saved
+    [[ ${#FILES[@]} -eq 1 && -f "${FILES[0]}" && "$(packageFileVersion "${FILES[0]}")" == "$VERSION" ]]
+}
+
+# saves every installed package matching PKG_PATTERNS so restorePackages can reinstall it
+# notes: the repack tool is installed if it is missing, it is the only way to save a locally built package
+function backupPackages() {
+    local NAME VERSION ARCH
+
+    mkdir -p "$PKG_BACKUP_DIR" || return 1
+    listTrackedPackages >"$PKG_MANIFEST" || return 1
+    [[ -s "$PKG_MANIFEST" ]] || return 0
+
+    if cmdExists 'apt-get'; then
+        cmdExists 'dpkg-repack' || apt-get install -y dpkg-repack >/dev/null 2>&1
+    elif cmdExists 'dnf'; then
+        cmdExists 'rpmrebuild' || dnf install -y rpmrebuild >/dev/null 2>&1
+    else
+        cmdExists 'rpmrebuild' || yum install -y rpmrebuild yum-utils >/dev/null 2>&1
+    fi
+
+    while IFS=$'\t' read -r NAME VERSION ARCH; do
+        savePackage "$NAME" "$VERSION" "$ARCH" || {
+            printerr "could not save a copy of the installed package ${NAME} ${VERSION}"
+            return 1
+        }
+    done <"$PKG_MANIFEST"
+}
+
+# puts the saved packages back: packages the upgrade added are removed, packages it changed or removed are reinstalled
+# notes: a package still at its saved version is left alone, so nothing happens when the upgrade failed before the reinstall
+#        dependencies are not checked while removing, the reinstall that follows puts every tracked package back at one version
+function restorePackages() {
+    local NAME VERSION ARCH CURRENT RETVAL
+    local FILES=() ADDED=()
+    local PKG_EXT='rpm'
+    local -A SAVED=()
+    local POLICY_FILE='/usr/sbin/policy-rc.d'
+    local POLICY_CREATED=0
+
+    [[ -f "$PKG_MANIFEST" ]] || {
+        printerr "package manifest is missing, cannot restore packages: ${PKG_MANIFEST}"
+        return 1
+    }
+    cmdExists 'apt-get' && PKG_EXT='deb'
+    CURRENT=$(listTrackedPackages)
+
+    while IFS=$'\t' read -r NAME VERSION ARCH; do
+        [[ -n "$NAME" ]] || continue
+        SAVED["$NAME"]=1
+        grep -qxF "${NAME}"$'\t'"${VERSION}"$'\t'"${ARCH}" <<<"$CURRENT" && continue
+        FILES+=("${PKG_BACKUP_DIR}/${NAME}"/*."${PKG_EXT}")
+    done <"$PKG_MANIFEST"
+    while IFS=$'\t' read -r NAME VERSION ARCH; do
+        [[ -n "$NAME" ]] || continue
+        [[ -n "${SAVED[$NAME]:-}" ]] || ADDED+=("$NAME")
+    done <<<"$CURRENT"
+
+    if (( ${#FILES[@]} == 0 && ${#ADDED[@]} == 0 )); then
+        return 0
+    fi
+    printwarn 'restoring the packages changed by the upgrade'
+
+    if cmdExists 'apt-get'; then
+        if (( ${#ADDED[@]} > 0 )); then
+            dpkg --purge --force-depends "${ADDED[@]}" || return 1
+        fi
+        if (( ${#FILES[@]} > 0 )); then
+            # the package scripts fail if a service does not start, and it may not with the configs of the failed upgrade
+            # service starts are denied while reinstalling, the services are started once everything is restored
+            if [[ ! -e "$POLICY_FILE" ]]; then
+                printf '#!/bin/sh\nexit 101\n' >"$POLICY_FILE" && chmod 755 "$POLICY_FILE" && POLICY_CREATED=1
+            fi
+            DEBIAN_FRONTEND=noninteractive dpkg -i --force-confold --force-confdef "${FILES[@]}"
+            RETVAL=$?
+            if (( POLICY_CREATED == 1 )); then
+                rm -f "$POLICY_FILE"
+            fi
+            (( RETVAL == 0 )) || return 1
+        fi
+    else
+        if (( ${#ADDED[@]} > 0 )); then
+            rpm -e --nodeps "${ADDED[@]}" || return 1
+        fi
+        if (( ${#FILES[@]} > 0 )); then
+            rpm -U --oldpackage --replacepkgs "${FILES[@]}" || return 1
+        fi
+    fi
+
+    # every saved package must be back at its saved version
+    CURRENT=$(listTrackedPackages)
+    [[ "$(sort <<<"$CURRENT")" == "$(sort "$PKG_MANIFEST")" ]]
+}
+
 # usage: backupFailed <message>
 # notes: only called before any system change, so nothing needs restoring
 function backupFailed() {
@@ -881,6 +1062,16 @@ resetConfigsHandler() {
     fi
 
     printwarn 'upgrade failed, resetting system to previous state'
+    # packages are put back first, their install scripts can start the services and replace the units and configs restored below
+    for FILE in "${PKG_SOURCE_FILES[@]}"; do
+        restoreEntry "$FILE" || RESTORE_FAILED=1
+    done
+    if (( PKG_BACKED_UP == 1 )); then
+        restorePackages || {
+            printerr "could not restore packages, the saved copies are here: ${PKG_BACKUP_DIR}"
+            RESTORE_FAILED=1
+        }
+    fi
     # every masked unit is stopped before the restore, the installer may have started it with the upgraded config and code
     # a start on a running unit does nothing, so only the units that were running before the upgrade are started after the restore
     for UNIT in "${MASKED_UNITS[@]}"; do
@@ -890,6 +1081,17 @@ resetConfigsHandler() {
 
     for TREE in "$OLD_PROJECT_DIR" "$DSIP_LIB_DIR" "$DSIP_SYSTEM_CONFIG_DIR" "$SYSTEM_KAMAILIO_CONFIG_DIR" "$SYSTEM_RTPENGINE_CONFIG_DIR" "$SYSTEM_NGINX_CONFIG_DIR"; do
         restoreTree "$TREE" || RESTORE_FAILED=1
+    done
+    # after the packages, so the modules built by the installer replace the ones shipped in the packages
+    if [[ -n "$KAM_MODULES_DIR" ]]; then
+        restoreTree "$KAM_MODULES_DIR" || RESTORE_FAILED=1
+    fi
+    # request queues the upgrade installed are stopped and disabled before their unit files are removed
+    for UNIT in "${REQUEST_SOCKET_UNITS[@]}"; do
+        if [[ ! -e "${CURR_BACKUP_DIR}/lib/systemd/system/${UNIT}" && -e "/lib/systemd/system/${UNIT}" ]]; then
+            systemctl stop "$UNIT"
+            systemctl disable "$UNIT"
+        fi
     done
     for SYS_DIR in /etc/systemd/system /lib/systemd/system; do
         for NAME in "${SYSTEMD_UNITS[@]}" "${SYSTEMD_DROPINS[@]}"; do
@@ -974,6 +1176,9 @@ function restoreKamDBAfterReinstall() {
         withRootDBConn mysql -e "DROP USER ${ACCOUNT};" || return 1
     done
     withRootDBConn mysql <"$KAMDB_USER_DUMP_FILE" || return 1
+    # the saved grants predate GUI backups being made by the kamailio DB user
+    grantKamDBRoutinePrivs ||
+        printwarn 'could not allow the kamailio DB user to read stored routines, backups from the GUI will fail'
 
     # the installer seeds rows (dispatcher, gateways, rules, ...), so every base table is emptied before extra columns and the saved rows are loaded
     TABLES=$(kamDBBaseTables "$KAM_DB_NAME") || return 1
@@ -1065,6 +1270,11 @@ function applyUpgrade() {
     [[ -f "${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh" ]] || return 1
     export PYTHON_CMD="${DSIP_PROJECT_DIR}/venv/bin/python"
     . "${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh"
+
+    # the dsiprouter user no longer runs commands as root, the GUI files its requests in the queues of the dsip-request units
+    # the installer of this release does not know the file, it is put back with the other managed files when the upgrade fails
+    printdbg 'removing the sudoers file of the installed version'
+    rm -f "$DSIP_SUDOERS_FILE" || return 1
 
     printdbg 'adding new settings to the dSIPRouter config'
     addMissingSettings "${NEW_PROJECT_DIR}/gui/settings.py" "${DSIP_CONFIG_FILE}" || return 1
@@ -1213,7 +1423,9 @@ trap 'resetConfigsHandler 143' SIGTERM
 trap 'resetConfigsHandler $?' EXIT
 
 printdbg 'backing up configs and databases before making any change'
-mkdir -p "$CURR_BACKUP_DIR" || backupFailed "could not create ${CURR_BACKUP_DIR}"
+# from here on only root can add to the backups, the backup directory must be new
+secureBackupsDir "$BACKUPS_DIR" &&
+    mkdir -m 700 "$CURR_BACKUP_DIR" || backupFailed "could not create ${CURR_BACKUP_DIR}"
 backupTree "$OLD_PROJECT_DIR" || backupFailed "${OLD_PROJECT_DIR}"
 backupTree "$DSIP_LIB_DIR" || backupFailed "${DSIP_LIB_DIR}"
 backupTree "$DSIP_SYSTEM_CONFIG_DIR" || backupFailed "${DSIP_SYSTEM_CONFIG_DIR}"
@@ -1233,10 +1445,15 @@ for FILE in /etc/profile.d/dsip_*.sh; do
     backupEntry "$FILE" || backupFailed "${FILE}"
 done
 shopt -u nullglob
-for FILE in "${MANAGED_FILES[@]}"; do
+for FILE in "${MANAGED_FILES[@]}" "${PKG_SOURCE_FILES[@]}"; do
     backupEntry "$FILE" || backupFailed "${FILE}"
 done
 backupCrontab || backupFailed "root crontab"
+if [[ -n "$KAM_MODULES_DIR" ]]; then
+    backupTree "$KAM_MODULES_DIR" || backupFailed "${KAM_MODULES_DIR}"
+fi
+backupPackages || backupFailed "installed packages"
+PKG_BACKED_UP=1
 
 if (( KAM_DB_EXISTS == 1 )); then
     dumpKamDBFull "$KAM_DB_NAME" >"$KAMDB_DUMP_FILE" || backupFailed "${KAM_DB_NAME} DB dump"
