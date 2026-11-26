@@ -741,9 +741,12 @@ function getInternalIP() {
 
     # Get the ip address without depending on DNS
     if (( ${IPV4_ENABLED} == 1 )); then
-        # Marked for removal because it depends on DNS
-		#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+        # use the source address for routes out of the default interface, it may have multiple addresses
+        # this is a routing table lookup only, no packets are sent
+        INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 oif $INTERFACE 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+        if [[ -z "$INTERNAL_IP" ]]; then
+            INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+        fi
     fi
 
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
@@ -961,8 +964,10 @@ function getInternalCIDR() {
         # use the default IPv4 interface if not given
         if [[ -z "$INTERFACE" ]]; then
             INTERFACE=$(ip -4 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
+            INT_IP=$(getInternalIP -4)
         fi
-        CIDR=$(ip -4 address show "$INTERFACE" | grep 'inet ' | awk '{print $2}' | head -1)
+        # select the subnet of the internal IP if the interface has multiple addresses, otherwise the first one
+        CIDR=$(ip -4 address show "$INTERFACE" | awk -v ip="$INT_IP" '$1 == "inet" { if (first == "") first = $2; if (index($2, ip "/") == 1) { print $2; found = 1; exit } } END { if (!found) print first }')
         if [[ -n "$CIDR" ]]; then
             INT_IP=$(cut -s -d'/' -f1 <<<"$CIDR")
             # some administrators will manage network routes external to the system and assign a /32 address to the interface
