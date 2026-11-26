@@ -799,9 +799,12 @@ function getInternalIP() {
 
     # Get the ip address without depending on DNS
     if (( ${IPV4_ENABLED} == 1 )); then
-        # Marked for removal because it depends on DNS
-		#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+        # use the source address for routes out of the default interface, it may have multiple addresses
+        # this is a routing table lookup only, no packets are sent
+        INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 oif $INTERFACE 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+        if [[ -z "$INTERNAL_IP" ]]; then
+            INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+        fi
     fi
 
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
@@ -813,6 +816,31 @@ function getInternalIP() {
     printf '%s' "$INTERNAL_IP"
 }
 export -f getInternalIP
+
+# $1 == internal ip address
+# output: the first public IPv4 address assigned to the same interface as the internal IP
+# notes: prints the address, or empty string if not available
+# returns: 0 on success, 1 if no address was found
+function getSecondaryIP() {
+    local INTERNAL_IP="$1" ADDR=""
+
+    [[ -n "$INTERNAL_IP" ]] || return 1
+
+    for ADDR in $(
+        ip -4 -json address show scope global 2>/dev/null |
+        jq -r --arg ip "$INTERNAL_IP" '.[] | select(any(.addr_info[]; .local == $ip)) | .addr_info[].local | select(. != $ip)'
+    ); do
+        # skip private, carrier-grade NAT and link-local addresses
+        if ipv4TestRFC1918 "$ADDR" || ipv4AddrInSubnet "$ADDR" '100.64.0.0/10' || ipv4AddrInSubnet "$ADDR" '169.254.0.0/16'; then
+            continue
+        fi
+        printf '%s' "$ADDR"
+        return 0
+    done
+
+    return 1
+}
+export -f getSecondaryIP
 
 # $1 == [-4|-6] to force specific IP version
 # $2 == network interface 
@@ -1019,8 +1047,10 @@ function getInternalCIDR() {
         # use the default IPv4 interface if not given
         if [[ -z "$INTERFACE" ]]; then
             INTERFACE=$(ip -4 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
+            INT_IP=$(getInternalIP -4)
         fi
-        CIDR=$(ip -4 address show "$INTERFACE" | grep 'inet ' | awk '{print $2}' | head -1)
+        # select the subnet of the internal IP if the interface has multiple addresses, otherwise the first one
+        CIDR=$(ip -4 address show "$INTERFACE" | awk -v ip="$INT_IP" '$1 == "inet" { if (first == "") first = $2; if (index($2, ip "/") == 1) { print $2; found = 1; exit } } END { if (!found) print first }')
         if [[ -n "$CIDR" ]]; then
             INT_IP=$(cut -s -d'/' -f1 <<<"$CIDR")
             # some administrators will manage network routes external to the system and assign a /32 address to the interface
